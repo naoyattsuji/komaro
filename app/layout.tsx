@@ -10,6 +10,9 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 export const metadata: Metadata = {
   title: "KOMARO — コマで見る日程調整",
   description: "会員登録不要・URL共有で使える日程調整サービス。マトリクス表でグループの空き時間を一目で確認。",
+  verification: {
+    google: "5urXdpMctfnAZKVgbC7piw2KOctwpNlqCgSCgXT3ayw",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
