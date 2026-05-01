@@ -145,6 +145,9 @@ export default function CreatePage() {
   // Drag-and-drop for label reordering
   const dragFrom = useRef<{ which: "row" | "col"; index: number } | null>(null);
   const [dragInsertAt, setDragInsertAt] = useState<{ which: "row" | "col"; insertAt: number } | null>(null);
+  // Touch DnD refs (separate from HTML5 DnD)
+  const touchDragFrom = useRef<{ which: "row" | "col"; index: number } | null>(null);
+  const touchInsertAtRef = useRef<{ which: "row" | "col"; insertAt: number } | null>(null);
 
   const handleDragStart = (which: "row" | "col", index: number) => {
     dragFrom.current = { which, index };
@@ -185,6 +188,82 @@ export default function CreatePage() {
     dragFrom.current = null;
     setDragInsertAt(null);
   };
+
+  // Touch drop: reads from refs so no stale-state issues
+  const performTouchDrop = (which: "row" | "col") => {
+    const from = touchDragFrom.current;
+    const target = touchInsertAtRef.current;
+    if (!from || !target || from.which !== which) {
+      touchDragFrom.current = null;
+      touchInsertAtRef.current = null;
+      setDragInsertAt(null);
+      return;
+    }
+    const fromIdx = from.index;
+    let toIdx = target.insertAt;
+    if (toIdx > fromIdx) toIdx -= 1;
+    if (fromIdx !== toIdx) {
+      if (which === "row") {
+        setRowLabels((prev) => {
+          const next = [...prev];
+          const [moved] = next.splice(fromIdx, 1);
+          next.splice(toIdx, 0, moved);
+          return next;
+        });
+        setRowMeta((prev) => {
+          const next = [...prev];
+          const [movedMeta] = next.splice(fromIdx, 1);
+          next.splice(toIdx, 0, movedMeta ?? { start: "", end: "" });
+          return next;
+        });
+      } else {
+        setColLabels((prev) => {
+          const next = [...prev];
+          const [moved] = next.splice(fromIdx, 1);
+          next.splice(toIdx, 0, moved);
+          return next;
+        });
+      }
+    }
+    touchDragFrom.current = null;
+    touchInsertAtRef.current = null;
+    setDragInsertAt(null);
+  };
+
+  // Native touchmove listener for touch DnD (non-passive so we can preventDefault)
+  useEffect(() => {
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!touchDragFrom.current) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      let el = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement | null;
+      // Walk up DOM to find a drag item
+      while (el && !el.dataset.dragIndex) {
+        el = el.parentElement;
+      }
+      if (!el || el.dataset.dragWhich !== touchDragFrom.current.which) return;
+      const index = parseInt(el.dataset.dragIndex!);
+      const rect = el.getBoundingClientRect();
+      const insertAt = touch.clientY < rect.top + rect.height / 2 ? index : index + 1;
+      const insertInfo = { which: touchDragFrom.current.which as "row" | "col", insertAt };
+      touchInsertAtRef.current = insertInfo;
+      setDragInsertAt(insertInfo);
+    };
+    const handleTouchEnd = () => {
+      // Cleanup if touch ended outside a container's onTouchEnd
+      if (touchDragFrom.current) {
+        touchDragFrom.current = null;
+        touchInsertAtRef.current = null;
+        setDragInsertAt(null);
+      }
+    };
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", handleTouchEnd);
+    return () => {
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, []);
 
   useEffect(() => {
     if (tableType !== "calendar") return;
@@ -405,7 +484,7 @@ export default function CreatePage() {
               <p className="text-sm font-medium text-gray-700 mb-3">縦軸ラベル（行）— 日付</p>
               {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1">
                     <p className="text-xs text-gray-500 mb-1">開始日</p>
                     <input
@@ -438,7 +517,7 @@ export default function CreatePage() {
               <p className="text-sm font-medium text-gray-700 mb-3">縦軸ラベル（行）— 時間スロット</p>
               {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1">
                     <p className="text-xs text-gray-500 mb-1">開始</p>
                     <TimeSelect value={calRowStart} onChange={setCalRowStart} maxHour={23} />
@@ -501,6 +580,7 @@ export default function CreatePage() {
                 className="space-y-0"
                 onDragOver={(e) => { if (tableType === "timetable") e.preventDefault(); }}
                 onDrop={() => tableType === "timetable" && handleDrop("row")}
+                onTouchEnd={() => { if (touchDragFrom.current?.which === "row") performTouchDrop("row"); }}
               >
                 {rowLabels.map((label, i) => (
                   <React.Fragment key={i}>
@@ -513,6 +593,8 @@ export default function CreatePage() {
                     )}
                   <div
                     className="flex gap-2 items-center rounded-lg py-1"
+                    data-drag-which="row"
+                    data-drag-index={i}
                     draggable={tableType === "timetable"}
                     onDragStart={() => handleDragStart("row", i)}
                     onDragOver={(e) => tableType === "timetable" && handleDragOver(e, "row", i)}
@@ -520,7 +602,12 @@ export default function CreatePage() {
                     onDragEnd={() => setDragInsertAt(null)}
                   >
                     {tableType === "timetable" && (
-                      <GripVertical size={16} className="text-gray-300 cursor-grab flex-shrink-0" />
+                      <div
+                        className="touch-none flex-shrink-0 p-1 -m-1 cursor-grab"
+                        onTouchStart={() => { touchDragFrom.current = { which: "row", index: i }; }}
+                      >
+                        <GripVertical size={16} className="text-gray-300" />
+                      </div>
                     )}
                     <Input
                       value={label}
@@ -578,7 +665,7 @@ export default function CreatePage() {
               <p className="text-sm font-medium text-gray-700 mb-3">横軸ラベル（列）— 日付</p>
               {errors.colLabels && <p className="text-xs text-red-500 mb-2">{errors.colLabels}</p>}
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1">
                     <p className="text-xs text-gray-500 mb-1">開始日</p>
                     <input
@@ -616,6 +703,7 @@ export default function CreatePage() {
                 className="space-y-0"
                 onDragOver={(e) => { if (tableType === "timetable") e.preventDefault(); }}
                 onDrop={() => tableType === "timetable" && handleDrop("col")}
+                onTouchEnd={() => { if (touchDragFrom.current?.which === "col") performTouchDrop("col"); }}
               >
                 {colLabels.map((label, i) => (
                   <React.Fragment key={i}>
@@ -628,6 +716,8 @@ export default function CreatePage() {
                     )}
                   <div
                     className="flex gap-2 items-center rounded-lg py-1"
+                    data-drag-which="col"
+                    data-drag-index={i}
                     draggable={tableType === "timetable"}
                     onDragStart={() => handleDragStart("col", i)}
                     onDragOver={(e) => tableType === "timetable" && handleDragOver(e, "col", i)}
@@ -635,7 +725,12 @@ export default function CreatePage() {
                     onDragEnd={() => setDragInsertAt(null)}
                   >
                     {tableType === "timetable" && (
-                      <GripVertical size={16} className="text-gray-300 cursor-grab flex-shrink-0" />
+                      <div
+                        className="touch-none flex-shrink-0 p-1 -m-1 cursor-grab"
+                        onTouchStart={() => { touchDragFrom.current = { which: "col", index: i }; }}
+                      >
+                        <GripVertical size={16} className="text-gray-300" />
+                      </div>
                     )}
                     <Input
                       value={label}

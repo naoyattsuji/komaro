@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { cn, getHeatmapColor, getHeatmapTextColor } from "@/lib/utils";
 
 interface CellSummary {
@@ -56,8 +56,56 @@ export function AvailabilityTable({
     ? new Set(highlightedParticipantCells.map((c) => cellKey(c.rowIndex, c.colIndex)))
     : null;
 
+  // Mouse drag state
   const isDragging = useRef(false);
   const dragMode = useRef<"select" | "deselect">("select");
+
+  // Touch state
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+  const touchStartCell = useRef<{ r: number; c: number } | null>(null);
+  const touchMoved = useRef(false);
+  const touchToggledInGesture = useRef(new Set<string>());
+  // Mirror of selectedCells as a ref so the native touchmove handler always reads current state
+  const selectedCellsRef = useRef<Set<string>>(new Set());
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    selectedCellsRef.current = selectedCells ?? new Set();
+  }, [selectedCells]);
+
+  // Non-passive native touchmove: prevents scroll during swipe-select and toggles cells
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || mode !== "edit") return;
+
+    const handleNativeTouchMove = (e: TouchEvent) => {
+      if (!isDragging.current || !touchStartPos.current) return;
+      const touch = e.touches[0];
+      const dx = touch.clientX - touchStartPos.current.x;
+      const dy = touch.clientY - touchStartPos.current.y;
+      if (Math.sqrt(dx * dx + dy * dy) <= 8) return;
+
+      touchMoved.current = true;
+      e.preventDefault(); // prevent scroll during swipe-select
+
+      const cellEl = document.elementFromPoint(touch.clientX, touch.clientY);
+      const key = cellEl?.getAttribute("data-cell");
+      if (!key || touchToggledInGesture.current.has(key)) return;
+
+      const [r, c] = key.split("-").map(Number);
+      const isSelected = selectedCellsRef.current.has(key);
+      if (dragMode.current === "select" && !isSelected) {
+        touchToggledInGesture.current.add(key);
+        onCellToggle?.(r, c);
+      } else if (dragMode.current === "deselect" && isSelected) {
+        touchToggledInGesture.current.add(key);
+        onCellToggle?.(r, c);
+      }
+    };
+
+    el.addEventListener("touchmove", handleNativeTouchMove, { passive: false });
+    return () => el.removeEventListener("touchmove", handleNativeTouchMove);
+  }, [mode, onCellToggle]);
 
   const handleMouseDown = useCallback(
     (r: number, c: number) => {
@@ -81,31 +129,30 @@ export function AvailabilityTable({
     [mode, onCellToggle, selectedCells]
   );
 
-  const handleTouchMove = useCallback(
-    (e: React.TouchEvent) => {
-      if (mode !== "edit" || !onCellToggle) return;
-      const touch = e.touches[0];
-      const el = document.elementFromPoint(touch.clientX, touch.clientY);
-      const key = el?.getAttribute("data-cell");
-      if (!key) return;
-      const [r, c] = key.split("-").map(Number);
-      const isSelected = selectedCells?.has(key) ?? false;
-      if (dragMode.current === "select" && !isSelected) onCellToggle(r, c);
-      if (dragMode.current === "deselect" && isSelected) onCellToggle(r, c);
-    },
-    [mode, onCellToggle, selectedCells]
-  );
-
-  // Explicit total width forces table-fixed to honour each <col> width exactly
   const tableWidth = ROW_LABEL_W + colLabels.length * COL_W;
 
   return (
     <div
+      ref={containerRef}
       className="overflow-auto rounded-xl border border-gray-200 shadow-sm select-none relative z-0"
       onMouseUp={() => { isDragging.current = false; }}
       onMouseLeave={() => { isDragging.current = false; }}
-      onTouchEnd={() => { isDragging.current = false; }}
-      onTouchMove={handleTouchMove}
+      onTouchEnd={() => {
+        // Tap (no significant movement): toggle the cell that was touched
+        if (
+          mode === "edit" &&
+          !touchMoved.current &&
+          touchStartCell.current &&
+          onCellToggle
+        ) {
+          onCellToggle(touchStartCell.current.r, touchStartCell.current.c);
+        }
+        isDragging.current = false;
+        touchStartPos.current = null;
+        touchStartCell.current = null;
+        touchMoved.current = false;
+        touchToggledInGesture.current = new Set();
+      }}
     >
       <table
         className="border-collapse table-fixed"
@@ -153,10 +200,14 @@ export function AvailabilityTable({
                       data-cell={key}
                       onMouseDown={() => handleMouseDown(ri, ci)}
                       onMouseEnter={() => handleMouseEnter(ri, ci)}
-                      onTouchStart={() => {
+                      onTouchStart={(e) => {
+                        const touch = e.touches[0];
                         isDragging.current = true;
                         dragMode.current = isSelected ? "deselect" : "select";
-                        onCellToggle?.(ri, ci);
+                        touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+                        touchStartCell.current = { r: ri, c: ci };
+                        touchMoved.current = false;
+                        touchToggledInGesture.current = new Set();
                       }}
                       className={cn(
                         "border-b border-r border-gray-200 text-center cursor-pointer transition-colors h-10",
