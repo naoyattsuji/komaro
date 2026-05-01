@@ -1,65 +1,137 @@
-import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="flex flex-col">
+
+      {/* Hero */}
+      <section className="bg-white py-24 sm:py-36 border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6">
+          <p className="text-xs tracking-[0.2em] text-gray-400 uppercase mb-8">Schedule Coordination</p>
+          <h1 className="text-5xl sm:text-7xl font-bold text-gray-900 leading-[1.05] tracking-tight mb-8">
+            コマで見る、<br />日程調整。
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-lg text-gray-500 max-w-md mb-12 leading-relaxed">
+            マトリクス表で全員の空き時間を一目で把握。<br />
+            登録不要、URLを送るだけで使えます。
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/create"
+            className="inline-flex items-center gap-3 bg-gray-900 text-white font-medium px-8 py-4 rounded-md hover:bg-gray-700 transition-colors text-base"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            イベントを作成する
+            <ArrowRight size={18} />
+          </Link>
         </div>
-      </main>
+      </section>
+
+      {/* Demo */}
+      <section className="bg-white py-20 border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6">
+          <p className="text-xs tracking-[0.2em] text-gray-400 uppercase mb-10">Preview</p>
+          <div className="max-w-2xl">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="border-b border-gray-100 px-4 py-3 flex items-center gap-2">
+                <div className="flex gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-gray-200" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-gray-200" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-gray-200" />
+                </div>
+                <span className="text-xs text-gray-400 ml-1">ミーティングの日程調整</span>
+              </div>
+              <div className="p-5 overflow-x-auto">
+                <DemoTable />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="bg-gray-50 py-20 border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6">
+          <p className="text-xs tracking-[0.2em] text-gray-400 uppercase mb-10">Features</p>
+          <div className="grid sm:grid-cols-3 gap-12">
+            {[
+              { num: "01", title: "マトリクス表で一目把握", desc: "縦軸×横軸の表で空き時間を可視化。全員の状況をひと目で比較できます。" },
+              { num: "02", title: "登録不要・URL共有のみ", desc: "アカウント作成なし。URLを送るだけで回答を集められます。" },
+              { num: "03", title: "カレンダー連携", desc: "確定した日程をGoogle・Yahoo・iCloudなど各カレンダーに直接追加できます。" },
+            ].map((f) => (
+              <div key={f.num}>
+                <p className="text-xs text-gray-300 font-mono mb-4">{f.num}</p>
+                <h3 className="font-bold text-gray-900 text-base mb-2">{f.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="bg-white py-20">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 tracking-tight">さっそく使ってみる</h2>
+          <p className="text-gray-500 mb-8 text-base">無料・会員登録不要で今すぐ始められます。</p>
+          <Link
+            href="/create"
+            className="inline-flex items-center gap-3 bg-gray-900 text-white font-medium px-8 py-4 rounded-md hover:bg-gray-700 transition-colors text-base"
+          >
+            イベントを作成する
+            <ArrowRight size={18} />
+          </Link>
+        </div>
+      </section>
+
     </div>
+  );
+}
+
+function DemoTable() {
+  const cols = ["5/7(水)", "5/8(木)", "5/9(金)"];
+  const rows = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
+  const data = [
+    [4,  8,  10],
+    [7,  10, 6],
+    [3,  5,  8],
+    [5,  6,  10],
+    [10, 7,  4],
+    [3,  10, 9],
+    [8,  5,  7],
+  ];
+  const max = 10;
+
+  function cellColor(v: number) {
+    const r = v / max;
+    if (r <= 0.25) return "bg-gray-100 text-gray-600";
+    if (r <= 0.5)  return "bg-gray-200 text-gray-700";
+    if (r <= 0.75) return "bg-gray-400 text-white";
+    if (r < 1)     return "bg-gray-600 text-white";
+    return "bg-red-600 text-white";
+  }
+
+  return (
+    <table className="border-collapse text-sm w-full">
+      <thead>
+        <tr>
+          <th className="bg-gray-50 border border-gray-100 px-3 py-2 text-xs text-gray-400 w-14" />
+          {cols.map((c) => (
+            <th key={c} className="bg-gray-50 border border-gray-100 px-4 py-2 text-xs font-semibold text-gray-500 text-center">{c}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r, ri) => (
+          <tr key={r}>
+            <td className="bg-gray-50 border border-gray-100 px-3 py-2 text-xs font-medium text-gray-500 whitespace-nowrap">{r}</td>
+            {data[ri].map((v, ci) => (
+              <td key={ci} className={`border border-gray-100 text-center font-semibold w-12 h-10 text-xs ${cellColor(v)}`}>
+                {v}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

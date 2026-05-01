@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Event {
+  id              String    @id @default(uuid())
+  editToken       String    @unique @map("edit_token")
+  title           String
+  description     String?
+  tableType       String    @map("table_type")
+  rowLabels       String    @map("row_labels")
+  colLabels       String    @map("col_labels")
+  rowMeta         String?   @map("row_meta")
+  colMeta         String?   @map("col_meta")
+  maxParticipants Int       @default(50) @map("max_participants")
+  passwordHash    String?   @map("password_hash")
+  status          String    @default("active")
+  lastUpdatedAt   DateTime  @default(now()) @map("last_updated_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  participants Participant[]
+  comments     EventComment[]
+
+  @@map("events")
+}
+
+model Participant {
+  id        String   @id @default(uuid())
+  eventId   String   @map("event_id")
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  event Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  cells AvailabilityCell[]
+
+  @@map("participants")
+}
+
+model AvailabilityCell {
+  id            String   @id @default(uuid())
+  participantId String   @map("participant_id")
+  eventId       String   @map("event_id")
+  rowIndex      Int      @map("row_index")
+  colIndex      Int      @map("col_index")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, rowIndex, colIndex])
+  @@index([eventId, rowIndex, colIndex])
+  @@map("availability_cells")
+}
+
+model EventComment {
+  id         String    @id @default(uuid())
+  eventId    String    @map("event_id")
+  authorName String?   @map("author_name")
+  body       String
+  createdAt  DateTime  @default(now()) @map("created_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("event_comments")
+}
+
+model LoginAttempt {
+  id        String    @id @default(uuid())
+  eventId   String    @map("event_id")
+  ipAddress String    @map("ip_address")
+  attempts  Int       @default(1)
+  lockedAt  DateTime? @map("locked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([eventId, ipAddress])
+  @@map("login_attempts")
+}
