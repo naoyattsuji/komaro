@@ -5,29 +5,53 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
 
-      {/* Hero */}
-      <section className="bg-white py-24 sm:py-36 border-b border-gray-100">
+      {/* Hero — 2-column on desktop */}
+      <section className="bg-white py-16 sm:py-24 border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6">
-          <p className="text-xs tracking-[0.2em] text-gray-400 uppercase mb-8">Schedule Coordination</p>
-          <h1 className="text-5xl sm:text-7xl font-bold text-gray-900 leading-[1.05] tracking-tight mb-8">
-            コマで見る、<br />日程調整。
-          </h1>
-          <p className="text-lg text-gray-500 max-w-md mb-12 leading-relaxed">
-            マトリクス表で全員の空き時間を一目で把握。<br />
-            登録不要、URLを送るだけで使えます。
-          </p>
-          <Link
-            href="/create"
-            className="inline-flex items-center gap-3 bg-gray-900 text-white font-medium px-8 py-4 rounded-md hover:bg-gray-700 transition-colors text-base"
-          >
-            イベントを作成する
-            <ArrowRight size={18} />
-          </Link>
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+
+            {/* Left: copy */}
+            <div>
+              <p className="text-xs tracking-[0.2em] text-gray-400 uppercase mb-8">Schedule Coordination</p>
+              <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 leading-[1.05] tracking-tight mb-8">
+                コマで見る、<br />日程調整。
+              </h1>
+              <p className="text-lg text-gray-500 mb-12 leading-relaxed">
+                マトリクス表で全員の空き時間を一目で把握。<br />
+                登録不要、URLを送るだけで使えます。
+              </p>
+              <Link
+                href="/create"
+                className="inline-flex items-center gap-3 bg-gray-900 text-white font-medium px-8 py-4 rounded-md hover:bg-gray-700 transition-colors text-base"
+              >
+                イベントを作成する
+                <ArrowRight size={18} />
+              </Link>
+            </div>
+
+            {/* Right: demo preview — desktop only */}
+            <div className="hidden lg:block">
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-lg">
+                <div className="border-b border-gray-100 px-4 py-3 flex items-center gap-2 bg-gray-50/60">
+                  <div className="flex gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-gray-200" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-gray-200" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-gray-200" />
+                  </div>
+                  <span className="text-xs text-gray-400 ml-1">ミーティングの日程調整</span>
+                </div>
+                <div className="p-5 overflow-x-auto">
+                  <DemoTable />
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 
-      {/* Demo */}
-      <section className="bg-white py-20 border-b border-gray-100">
+      {/* Demo — mobile only (desktop sees it in the hero) */}
+      <section className="lg:hidden bg-white py-16 border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6">
           <p className="text-xs tracking-[0.2em] text-gray-400 uppercase mb-10">Preview</p>
           <div className="max-w-2xl">
