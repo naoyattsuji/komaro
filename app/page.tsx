@@ -78,7 +78,7 @@ export default function HomePage() {
           <p className="text-xs tracking-[0.2em] text-gray-400 uppercase mb-10">Features</p>
           <div className="grid sm:grid-cols-3 gap-12">
             {[
-              { num: "01", title: "全員の都合が、ひと目でわかる", desc: "コマを参加人数で色分け。「ここが一番集まれる」が一目瞭然。" },
+              { num: "01", title: "全員の都合が、ひと目でわかる", desc: "コマを参加人数で色分け。「ここが一番集まれる」が一目瞭然です。" },
               { num: "02", title: "登録不要・URL共有のみ", desc: "アカウント作成なし。URLを送るだけで回答を集められます。" },
               { num: "03", title: "カレンダー連携", desc: "確定した日程をGoogle・Yahoo・iCloudなど各カレンダーに直接追加できます。" },
             ].map((f) => (
