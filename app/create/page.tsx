@@ -46,29 +46,31 @@ const DEFAULT_COL_LABELS: Record<TableType, string[]> = {
 };
 
 // ── Mini preview grids (text labels + colored cells) ────────────────────
+// All types use 3 rows so height is uniform across buttons.
 const PREVIEW_LEVELS = ["bg-gray-200", "bg-gray-400", "bg-gray-600"] as const;
+type PreviewLevel = 0 | 1 | 2;
 
 function MiniPreview({ type }: { type: TableType }) {
-  type Level = 0 | 1 | 2;
-  const cell = (v: Level, key: number) => (
-    <div key={key} className={`w-6 h-3.5 rounded-[2px] ${PREVIEW_LEVELS[v]}`} />
+  const cell = (v: PreviewLevel, key: number) => (
+    <div key={key} className={`w-6 h-3 rounded-[2px] ${PREVIEW_LEVELS[v]}`} />
   );
 
   if (type === "calendar") {
     const cols = ["1日", "2日", "3日"];
-    const rows: { lbl: string; vals: Level[] }[] = [
-      { lbl: "午前", vals: [2, 0, 2] },
-      { lbl: "午後", vals: [0, 2, 1] },
+    const rows: { lbl: string; vals: PreviewLevel[] }[] = [
+      { lbl: "10:00", vals: [2, 0, 2] },
+      { lbl: "14:00", vals: [0, 2, 1] },
+      { lbl: "18:00", vals: [1, 2, 0] },
     ];
     return (
       <div className="shrink-0 flex flex-col gap-px text-[9px] leading-none text-gray-400">
         <div className="flex gap-px mb-0.5">
-          <div className="w-7" />
+          <div className="w-9" />
           {cols.map(c => <div key={c} className="w-6 text-center">{c}</div>)}
         </div>
         {rows.map(row => (
           <div key={row.lbl} className="flex gap-px items-center">
-            <div className="w-7">{row.lbl}</div>
+            <div className="w-9">{row.lbl}</div>
             {row.vals.map((v, i) => cell(v, i))}
           </div>
         ))}
@@ -78,7 +80,7 @@ function MiniPreview({ type }: { type: TableType }) {
 
   if (type === "timetable") {
     const cols = ["月", "火", "水"];
-    const rows: { lbl: string; vals: Level[] }[] = [
+    const rows: { lbl: string; vals: PreviewLevel[] }[] = [
       { lbl: "1限", vals: [1, 2, 0] },
       { lbl: "2限", vals: [2, 0, 2] },
       { lbl: "3限", vals: [0, 1, 2] },
@@ -99,22 +101,21 @@ function MiniPreview({ type }: { type: TableType }) {
     );
   }
 
-  // date: rows = dates, single column
-  const rows: { lbl: string; v: Level }[] = [
-    { lbl: "5/1", v: 2 },
-    { lbl: "5/2", v: 0 },
-    { lbl: "5/3", v: 1 },
-    { lbl: "5/4", v: 2 },
+  // date: 3 rows, single column
+  const rows: { lbl: string; v: PreviewLevel }[] = [
+    { lbl: "5/1(木)", v: 2 },
+    { lbl: "5/2(金)", v: 0 },
+    { lbl: "5/3(土)", v: 1 },
   ];
   return (
     <div className="shrink-0 flex flex-col gap-px text-[9px] leading-none text-gray-400">
       <div className="flex gap-px mb-0.5">
-        <div className="w-8" />
+        <div className="w-[46px]" />
         <div className="w-6 text-center">参加</div>
       </div>
       {rows.map(row => (
         <div key={row.lbl} className="flex gap-px items-center">
-          <div className="w-8">{row.lbl}</div>
+          <div className="w-[46px]">{row.lbl}</div>
           {cell(row.v, 0)}
         </div>
       ))}
