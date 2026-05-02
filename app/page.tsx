@@ -121,7 +121,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6">
           <FadeInSection>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 tracking-tight">さっそく使ってみる</h2>
-            <p className="text-gray-500 mb-8 text-base">無料・会員登録不要で今すぐ始められます。</p>
+            <p className="text-sm sm:text-base text-gray-500 mb-8">無料・会員登録不要で今すぐ始められます。</p>
             <Link
               href="/create"
               className="inline-flex items-center gap-3 bg-gray-900 text-white font-medium px-8 py-4 rounded-md hover:bg-gray-700 transition-colors text-base"
