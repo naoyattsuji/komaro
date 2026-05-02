@@ -502,7 +502,7 @@ export default function CreatePage() {
         <div className="space-y-5">
           <Input
             label="イベント名 *"
-            placeholder="例: 春学期の空きコマ調整"
+            placeholder="例: ゼミのミーティング日程調整"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={60}
@@ -511,7 +511,7 @@ export default function CreatePage() {
           />
           <Textarea
             label="イベントの詳細（任意）"
-            placeholder="例: サークルメンバー全員の空きコマを集計します"
+            placeholder="例: 参加できる日程を登録してください"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={500}
