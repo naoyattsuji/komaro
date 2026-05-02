@@ -557,17 +557,17 @@ export default function CreatePage() {
               <p className="text-sm font-medium text-gray-700 mb-3">縦軸ラベル（行）— 日付</p>
               {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
               <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="min-w-0">
                     <p className="text-xs text-gray-500 mb-1">開始日</p>
                     <input
                       type="date"
                       value={dateRowStartDate}
                       onChange={(e) => setDateRowStartDate(e.target.value)}
-                      className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                      className="w-full min-w-0 text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
                     />
                   </div>
-                  <div className="flex-1">
+                  <div className="min-w-0">
                     <p className="text-xs text-gray-500 mb-1">日数</p>
                     <select
                       value={dateRowDays}
@@ -738,17 +738,17 @@ export default function CreatePage() {
               <p className="text-sm font-medium text-gray-700 mb-3">横軸ラベル（列）— 日付</p>
               {errors.colLabels && <p className="text-xs text-red-500 mb-2">{errors.colLabels}</p>}
               <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="min-w-0">
                     <p className="text-xs text-gray-500 mb-1">開始日</p>
                     <input
                       type="date"
                       value={calColStartDate}
                       onChange={(e) => setCalColStartDate(e.target.value)}
-                      className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                      className="w-full min-w-0 text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
                     />
                   </div>
-                  <div className="flex-1">
+                  <div className="min-w-0">
                     <p className="text-xs text-gray-500 mb-1">日数</p>
                     <select
                       value={calColDays}
