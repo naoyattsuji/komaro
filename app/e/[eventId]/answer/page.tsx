@@ -10,6 +10,8 @@ import { showToast } from "@/components/ui/Toast";
 import { ArrowLeft, CheckSquare, Square } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
+import { CopyButton } from "@/components/CopyButton";
+import { getParticipantUrl } from "@/lib/utils";
 
 interface EventInfo {
   id: string;
@@ -157,6 +159,12 @@ export default function AnswerPage({
           <h1 className="text-lg font-bold text-gray-900">{event.title}</h1>
           <p className="text-xs text-gray-500">参加できるコマをタップして選択してください</p>
         </div>
+      </div>
+
+      {/* Share URL */}
+      <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 mb-4">
+        <span className="text-xs text-gray-500 truncate flex-1">{getParticipantUrl(eventId)}</span>
+        <CopyButton text={getParticipantUrl(eventId)} label="URLをコピー" />
       </div>
 
       {/* Name input */}
