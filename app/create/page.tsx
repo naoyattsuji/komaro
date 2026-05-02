@@ -511,7 +511,7 @@ export default function CreatePage() {
           />
           <Textarea
             label="イベントの詳細（任意）"
-            placeholder="例: 参加できる日程を教えてください！"
+            placeholder="例: 5月中に1回集まる予定です。参加できる日程を教えてください！"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={500}
