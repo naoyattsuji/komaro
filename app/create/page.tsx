@@ -557,28 +557,26 @@ export default function CreatePage() {
               <p className="text-sm font-medium text-gray-700 mb-3">縦軸ラベル（行）— 日付</p>
               {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs text-gray-500 mb-1">開始日</p>
-                    <input
-                      type="date"
-                      value={dateRowStartDate}
-                      onChange={(e) => setDateRowStartDate(e.target.value)}
-                      className="w-full min-w-0 text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs text-gray-500 mb-1">日数</p>
-                    <select
-                      value={dateRowDays}
-                      onChange={(e) => setDateRowDays(Number(e.target.value))}
-                      className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
-                    >
-                      {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
-                        <option key={d} value={d}>{d}日間</option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">開始日</p>
+                  <input
+                    type="date"
+                    value={dateRowStartDate}
+                    onChange={(e) => setDateRowStartDate(e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">日数</p>
+                  <select
+                    value={dateRowDays}
+                    onChange={(e) => setDateRowDays(Number(e.target.value))}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  >
+                    {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>{d}日間</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="text-xs bg-gray-50 rounded-lg px-3 py-2 text-gray-500">
                   {rowLabels.length}日: {rowLabels[0]} 〜 {rowLabels[rowLabels.length - 1]}
@@ -738,28 +736,26 @@ export default function CreatePage() {
               <p className="text-sm font-medium text-gray-700 mb-3">横軸ラベル（列）— 日付</p>
               {errors.colLabels && <p className="text-xs text-red-500 mb-2">{errors.colLabels}</p>}
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs text-gray-500 mb-1">開始日</p>
-                    <input
-                      type="date"
-                      value={calColStartDate}
-                      onChange={(e) => setCalColStartDate(e.target.value)}
-                      className="w-full min-w-0 text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs text-gray-500 mb-1">日数</p>
-                    <select
-                      value={calColDays}
-                      onChange={(e) => setCalColDays(Number(e.target.value))}
-                      className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
-                    >
-                      {Array.from({ length: 20 }, (_, i) => i + 1).map((d) => (
-                        <option key={d} value={d}>{d}日間</option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">開始日</p>
+                  <input
+                    type="date"
+                    value={calColStartDate}
+                    onChange={(e) => setCalColStartDate(e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">日数</p>
+                  <select
+                    value={calColDays}
+                    onChange={(e) => setCalColDays(Number(e.target.value))}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  >
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>{d}日間</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="text-xs bg-gray-50 rounded-lg px-3 py-2 text-gray-500">
                   {colLabels.length}日: {colLabels[0]} 〜 {colLabels[colLabels.length - 1]}
