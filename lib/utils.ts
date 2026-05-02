@@ -171,13 +171,16 @@ export function generateIcsContent(p: CalendarEventParams): string {
 }
 
 export function downloadIcs(filename: string, content: string) {
-  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
+  // data URI works more reliably than blob URL on iOS Safari.
+  // The element must stay in the DOM briefly before removal —
+  // synchronous removeChild after click is ignored on iOS.
+  const dataUri = `data:text/calendar;charset=utf-8,${encodeURIComponent(content)}`;
   const a = document.createElement("a");
-  a.href = url;
+  a.href = dataUri;
   a.download = `${filename}.ics`;
+  // position:fixed + top/left:0 keeps iOS from discarding the synthetic click
+  a.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => document.body.removeChild(a), 300);
 }

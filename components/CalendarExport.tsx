@@ -77,6 +77,7 @@ export function CalendarExport({ params, copyText }: CalendarExportProps) {
           Outlook
         </a>
         <button
+          type="button"
           onClick={handleIcs}
           className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         >
