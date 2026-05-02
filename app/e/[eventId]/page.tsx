@@ -1,6 +1,28 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { EventClient } from "./EventClient";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ eventId: string }>;
+}): Promise<Metadata> {
+  const { eventId } = await params;
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, deletedAt: null },
+    select: { title: true },
+  });
+  const title = event?.title ?? "日程調整";
+  return {
+    title: `「${title}」の日程調整 | KOMARO`,
+    description: `「${title}」の参加可能な日程を登録してください。登録不要・URLを開くだけで回答できます。`,
+    openGraph: {
+      title: `「${title}」の日程調整 | KOMARO`,
+      description: `「${title}」の参加可能な日程を登録してください。登録不要・URLを開くだけで回答できます。`,
+    },
+  };
+}
 
 export default async function EventPage({
   params,
