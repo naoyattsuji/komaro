@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
+import { ContactForm } from "@/components/ContactForm";
 
 export const metadata = {
   title: "ヘルプ / FAQ — KOMARO",
@@ -109,6 +110,13 @@ export default function HelpPage() {
             </details>
           ))}
         </div>
+      </section>
+
+      {/* Contact form */}
+      <section className="mt-12 bg-white rounded-2xl border border-gray-200 p-6">
+        <h2 className="font-bold text-gray-900 mb-1">お問い合わせ</h2>
+        <p className="text-sm text-gray-500 mb-6">FAQで解決しない場合はこちらからご連絡ください。</p>
+        <ContactForm />
       </section>
 
       <div className="mt-10 text-center">
