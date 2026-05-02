@@ -16,7 +16,7 @@ export default function HomePage() {
               <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 leading-[1.05] tracking-tight mb-8">
                 コマで見る、<br />日程調整。
               </h1>
-              <p className="text-lg text-gray-500 mb-12 leading-relaxed">
+              <p className="text-sm sm:text-lg text-gray-500 mb-12 leading-relaxed">
                 誰がいつ空いているか、コマの色で一発確認。<br />
                 登録不要、URLを送るだけで使えます。
               </p>
