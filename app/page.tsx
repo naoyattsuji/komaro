@@ -17,7 +17,7 @@ export default function HomePage() {
                 コマで見る、<br />日程調整。
               </h1>
               <p className="text-lg text-gray-500 mb-12 leading-relaxed">
-                マトリクス表で全員の空き時間を一目で把握。<br />
+                誰がいつ空いているか、コマの色で一発確認。<br />
                 登録不要、URLを送るだけで使えます。
               </p>
               <Link
@@ -78,7 +78,7 @@ export default function HomePage() {
           <p className="text-xs tracking-[0.2em] text-gray-400 uppercase mb-10">Features</p>
           <div className="grid sm:grid-cols-3 gap-12">
             {[
-              { num: "01", title: "マトリクス表で一目把握", desc: "縦軸×横軸の表で空き時間を可視化。全員の状況をひと目で比較できます。" },
+              { num: "01", title: "全員の都合が、ひと目でわかる", desc: "日程×時間帯のコマを参加人数で色分け。「ここが一番集まれる」が一目瞭然で、迷わず決められます。" },
               { num: "02", title: "登録不要・URL共有のみ", desc: "アカウント作成なし。URLを送るだけで回答を集められます。" },
               { num: "03", title: "カレンダー連携", desc: "確定した日程をGoogle・Yahoo・iCloudなど各カレンダーに直接追加できます。" },
             ].map((f) => (
