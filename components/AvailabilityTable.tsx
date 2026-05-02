@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { cn, getHeatmapColor, getHeatmapTextColor } from "@/lib/utils";
 
 interface CellSummary {
@@ -34,8 +34,8 @@ function cellKey(r: number, c: number) {
   return `${r}-${c}`;
 }
 
-const ROW_LABEL_W = 76; // px — wide enough for "1限（Nm）" or "09:00"
-const COL_W = 48;       // px — equal for every data column
+const ROW_LABEL_W = 76;
+const COL_W = 48;
 
 export function AvailabilityTable({
   rowLabels,
@@ -56,103 +56,26 @@ export function AvailabilityTable({
     ? new Set(highlightedParticipantCells.map((c) => cellKey(c.rowIndex, c.colIndex)))
     : null;
 
-  // Mouse drag state
+  // Drag state (shared by both pointer and mouse)
   const isDragging = useRef(false);
   const dragMode = useRef<"select" | "deselect">("select");
 
-  // Touch state
-  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
-  const touchStartCell = useRef<{ r: number; c: number } | null>(null);
-  const touchMoved = useRef(false);
-  const touchToggledInGesture = useRef(new Set<string>());
-  // Mirror of selectedCells as a ref so the native touchmove handler always reads current state
+  // Always-current mirror of selectedCells so pointer/touch handlers don't
+  // operate on stale closure values
   const selectedCellsRef = useRef<Set<string>>(new Set());
-  const containerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     selectedCellsRef.current = selectedCells ?? new Set();
   }, [selectedCells]);
-
-  // Non-passive native touchmove: prevents scroll during swipe-select and toggles cells
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el || mode !== "edit") return;
-
-    const handleNativeTouchMove = (e: TouchEvent) => {
-      if (!isDragging.current || !touchStartPos.current) return;
-      const touch = e.touches[0];
-      const dx = touch.clientX - touchStartPos.current.x;
-      const dy = touch.clientY - touchStartPos.current.y;
-      if (Math.sqrt(dx * dx + dy * dy) <= 8) return;
-
-      touchMoved.current = true;
-      e.preventDefault(); // prevent scroll during swipe-select
-
-      const cellEl = document.elementFromPoint(touch.clientX, touch.clientY);
-      const key = cellEl?.getAttribute("data-cell");
-      if (!key || touchToggledInGesture.current.has(key)) return;
-
-      const [r, c] = key.split("-").map(Number);
-      const isSelected = selectedCellsRef.current.has(key);
-      if (dragMode.current === "select" && !isSelected) {
-        touchToggledInGesture.current.add(key);
-        onCellToggle?.(r, c);
-      } else if (dragMode.current === "deselect" && isSelected) {
-        touchToggledInGesture.current.add(key);
-        onCellToggle?.(r, c);
-      }
-    };
-
-    el.addEventListener("touchmove", handleNativeTouchMove, { passive: false });
-    return () => el.removeEventListener("touchmove", handleNativeTouchMove);
-  }, [mode, onCellToggle]);
-
-  const handleMouseDown = useCallback(
-    (r: number, c: number) => {
-      if (mode !== "edit" || !onCellToggle) return;
-      isDragging.current = true;
-      const key = cellKey(r, c);
-      dragMode.current = selectedCells?.has(key) ? "deselect" : "select";
-      onCellToggle(r, c);
-    },
-    [mode, onCellToggle, selectedCells]
-  );
-
-  const handleMouseEnter = useCallback(
-    (r: number, c: number) => {
-      if (mode !== "edit" || !isDragging.current || !onCellToggle) return;
-      const key = cellKey(r, c);
-      const isSelected = selectedCells?.has(key) ?? false;
-      if (dragMode.current === "select" && !isSelected) onCellToggle(r, c);
-      if (dragMode.current === "deselect" && isSelected) onCellToggle(r, c);
-    },
-    [mode, onCellToggle, selectedCells]
-  );
 
   const tableWidth = ROW_LABEL_W + colLabels.length * COL_W;
 
   return (
     <div
-      ref={containerRef}
       className="overflow-auto rounded-xl border border-gray-200 shadow-sm select-none relative z-0"
-      onMouseUp={() => { isDragging.current = false; }}
-      onMouseLeave={() => { isDragging.current = false; }}
-      onTouchEnd={() => {
-        // Tap (no significant movement): toggle the cell that was touched
-        if (
-          mode === "edit" &&
-          !touchMoved.current &&
-          touchStartCell.current &&
-          onCellToggle
-        ) {
-          onCellToggle(touchStartCell.current.r, touchStartCell.current.c);
-        }
-        isDragging.current = false;
-        touchStartPos.current = null;
-        touchStartCell.current = null;
-        touchMoved.current = false;
-        touchToggledInGesture.current = new Set();
-      }}
+      // Reset drag when pointer is released anywhere (including outside cells)
+      onPointerUp={() => { isDragging.current = false; }}
+      onPointerLeave={() => { isDragging.current = false; }}
+      onPointerCancel={() => { isDragging.current = false; }}
     >
       <table
         className="border-collapse table-fixed"
@@ -198,16 +121,27 @@ export function AvailabilityTable({
                     <td
                       key={ci}
                       data-cell={key}
-                      onMouseDown={() => handleMouseDown(ri, ci)}
-                      onMouseEnter={() => handleMouseEnter(ri, ci)}
-                      onTouchStart={(e) => {
-                        const touch = e.touches[0];
+                      // touch-action:none disables native iOS/Android scroll on cells
+                      // so pointer events fire reliably for tap and swipe selection.
+                      // Scroll still works when starting from header/label areas.
+                      style={{ touchAction: "none" }}
+                      onPointerDown={(e) => {
+                        if (!onCellToggle) return;
+                        // Prevent ghost mouse events on touch devices
+                        e.preventDefault();
                         isDragging.current = true;
-                        dragMode.current = isSelected ? "deselect" : "select";
-                        touchStartPos.current = { x: touch.clientX, y: touch.clientY };
-                        touchStartCell.current = { r: ri, c: ci };
-                        touchMoved.current = false;
-                        touchToggledInGesture.current = new Set();
+                        dragMode.current = selectedCellsRef.current.has(key)
+                          ? "deselect"
+                          : "select";
+                        onCellToggle(ri, ci);
+                      }}
+                      onPointerEnter={() => {
+                        if (!isDragging.current || !onCellToggle) return;
+                        const isNowSelected = selectedCellsRef.current.has(key);
+                        if (dragMode.current === "select" && !isNowSelected)
+                          onCellToggle(ri, ci);
+                        if (dragMode.current === "deselect" && isNowSelected)
+                          onCellToggle(ri, ci);
                       }}
                       className={cn(
                         "border-b border-r border-gray-200 text-center cursor-pointer transition-colors h-10",
