@@ -18,6 +18,8 @@ import {
   CalendarEventParams,
 } from "@/lib/utils";
 import { CalendarExport } from "@/components/CalendarExport";
+import { CopyButton } from "@/components/CopyButton";
+import { getParticipantUrl } from "@/lib/utils";
 
 interface EventClientProps {
   eventId: string;
@@ -206,13 +208,19 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
 
       {/* Action buttons */}
       {!isExpired && (
-        <div className="flex gap-2 mb-5 flex-wrap">
-          <Link href={`/e/${eventId}/answer`}>
-            <Button size="lg" className="gap-2">
-              <Edit3 size={16} />
-              回答する
-            </Button>
-          </Link>
+        <div className="flex flex-col gap-2 mb-5">
+          <div className="flex gap-2 flex-wrap">
+            <Link href={`/e/${eventId}/answer`}>
+              <Button size="lg" className="gap-2">
+                <Edit3 size={16} />
+                回答する
+              </Button>
+            </Link>
+          </div>
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+            <span className="text-xs text-gray-500 truncate flex-1">{getParticipantUrl(eventId)}</span>
+            <CopyButton text={getParticipantUrl(eventId)} label="URLをコピー" />
+          </div>
         </div>
       )}
 
