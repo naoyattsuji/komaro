@@ -127,8 +127,12 @@ export function AvailabilityTable({
                       style={{ touchAction: "none" }}
                       onPointerDown={(e) => {
                         if (!onCellToggle) return;
-                        // Prevent ghost mouse events on touch devices
                         e.preventDefault();
+                        // Release implicit touch capture so the pointer is
+                        // dispatched to whatever element is under the finger —
+                        // this makes onPointerEnter fire on neighbouring cells
+                        // during a swipe, enabling multi-cell selection.
+                        e.currentTarget.releasePointerCapture(e.pointerId);
                         isDragging.current = true;
                         dragMode.current = selectedCellsRef.current.has(key)
                           ? "deselect"
