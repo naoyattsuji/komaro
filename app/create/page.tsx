@@ -15,11 +15,6 @@ const TABLE_TYPE_LABELS: Record<TableType, string> = {
   date: "日付形式（日付のみ）",
 };
 
-const TABLE_TYPE_DESCS: Record<TableType, string> = {
-  timetable: "大学の時間割・週次シフト調整に最適",
-  calendar: "合宿・旅行・プロジェクト日程調整に最適",
-  date: "候補日を縦に並べてどの日に参加できるかを集計",
-};
 
 interface RowMeta { start: string; end: string; }
 
@@ -460,7 +455,6 @@ export default function CreatePage() {
                   }`}
                 >
                   <div className="font-medium text-gray-900 text-sm">{TABLE_TYPE_LABELS[t]}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{TABLE_TYPE_DESCS[t]}</div>
                 </button>
               ))}
             </div>
