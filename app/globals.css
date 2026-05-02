@@ -17,3 +17,28 @@
 .slide-in-from-bottom-2 {
   animation-name: slide-in-from-bottom-2;
 }
+
+/* ── Page animations ─────────────────────────────────────────── */
+
+/* Hero: plays on page load */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.anim-hero {
+  animation: fade-in-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Scroll reveal: driven by IntersectionObserver adding .is-visible */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
