@@ -20,12 +20,10 @@ interface AvailabilityTableProps {
   colLabels: string[];
   rowMeta?: RowMeta[];
   mode: "view" | "edit";
-  // view mode
   cells?: CellSummary[];
   maxCount?: number;
   highlightedParticipantCells?: { rowIndex: number; colIndex: number }[];
   onCellClick?: (rowIndex: number, colIndex: number) => void;
-  // edit mode
   selectedCells?: Set<string>;
   onCellToggle?: (rowIndex: number, colIndex: number) => void;
 }
@@ -56,26 +54,70 @@ export function AvailabilityTable({
     ? new Set(highlightedParticipantCells.map((c) => cellKey(c.rowIndex, c.colIndex)))
     : null;
 
-  // Drag state (shared by both pointer and mouse)
-  const isDragging = useRef(false);
-  const dragMode = useRef<"select" | "deselect">("select");
+  // ── gesture state (all refs so handlers never go stale) ──────────────────
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Always-current mirror of selectedCells so pointer/touch handlers don't
-  // operate on stale closure values
+  // Always-current mirror of selectedCells (avoids stale closure in move handler)
   const selectedCellsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     selectedCellsRef.current = selectedCells ?? new Set();
   }, [selectedCells]);
 
+  const isDragging    = useRef(false);
+  const dragMode      = useRef<"select" | "deselect">("select");
+  const startCell     = useRef<{ r: number; c: number } | null>(null);
+  const startPos      = useRef<{ x: number; y: number } | null>(null);
+  const didSwipe      = useRef(false);
+  // Track cells toggled in this gesture to avoid double-toggle
+  const toggledInGesture = useRef(new Set<string>());
+
+  const resetGesture = () => {
+    isDragging.current    = false;
+    didSwipe.current      = false;
+    startCell.current     = null;
+    startPos.current      = null;
+    toggledInGesture.current = new Set();
+  };
+
   const tableWidth = ROW_LABEL_W + colLabels.length * COL_W;
 
   return (
     <div
+      ref={containerRef}
       className="overflow-auto rounded-xl border border-gray-200 shadow-sm select-none relative z-0"
-      // Reset drag when pointer is released anywhere (including outside cells)
-      onPointerUp={() => { isDragging.current = false; }}
-      onPointerLeave={() => { isDragging.current = false; }}
-      onPointerCancel={() => { isDragging.current = false; }}
+
+      // ── container-level pointer handlers ────────────────────────────────
+      // pointermove fires on the container because the cell transfers pointer
+      // capture here in onPointerDown. elementFromPoint() tells us which cell
+      // is actually under the finger — this works on iOS, Android and desktop.
+      onPointerMove={(e) => {
+        if (!isDragging.current || !onCellToggle) return;
+
+        // Ignore micro-movement so a normal tap doesn't accidentally start a swipe
+        const dx = e.clientX - (startPos.current?.x ?? e.clientX);
+        const dy = e.clientY - (startPos.current?.y ?? e.clientY);
+        if (Math.sqrt(dx * dx + dy * dy) < 8) return;
+        didSwipe.current = true;
+
+        const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+        const key = el?.getAttribute("data-cell");
+        if (!key || toggledInGesture.current.has(key)) return;
+
+        const [r, c] = key.split("-").map(Number);
+        const isSel = selectedCellsRef.current.has(key);
+        if (dragMode.current === "select"   && !isSel) { toggledInGesture.current.add(key); onCellToggle(r, c); }
+        if (dragMode.current === "deselect" &&  isSel) { toggledInGesture.current.add(key); onCellToggle(r, c); }
+      }}
+
+      onPointerUp={() => {
+        if (isDragging.current && !didSwipe.current && startCell.current && onCellToggle) {
+          // Pure tap — toggle the cell that was pressed
+          onCellToggle(startCell.current.r, startCell.current.c);
+        }
+        resetGesture();
+      }}
+      onPointerCancel={resetGesture}
+      onPointerLeave={resetGesture}
     >
       <table
         className="border-collapse table-fixed"
@@ -121,37 +163,27 @@ export function AvailabilityTable({
                     <td
                       key={ci}
                       data-cell={key}
-                      // touch-action:none disables native iOS/Android scroll on cells
-                      // so pointer events fire reliably for tap and swipe selection.
-                      // Scroll still works when starting from header/label areas.
+                      // touch-action:none prevents iOS/Android from claiming the
+                      // touch for native scroll so pointer events fire on every move.
+                      // Headers/labels keep their default touch-action for scrolling.
                       style={{ touchAction: "none" }}
                       onPointerDown={(e) => {
                         if (!onCellToggle) return;
                         e.preventDefault();
-                        // Release implicit touch capture so the pointer is
-                        // dispatched to whatever element is under the finger —
-                        // this makes onPointerEnter fire on neighbouring cells
-                        // during a swipe, enabling multi-cell selection.
-                        e.currentTarget.releasePointerCapture(e.pointerId);
+                        // Transfer pointer capture to the container so that
+                        // onPointerMove above always receives move events — even
+                        // as the finger slides across multiple cells on iOS.
+                        containerRef.current?.setPointerCapture(e.pointerId);
                         isDragging.current = true;
-                        dragMode.current = selectedCellsRef.current.has(key)
-                          ? "deselect"
-                          : "select";
-                        onCellToggle(ri, ci);
-                      }}
-                      onPointerEnter={() => {
-                        if (!isDragging.current || !onCellToggle) return;
-                        const isNowSelected = selectedCellsRef.current.has(key);
-                        if (dragMode.current === "select" && !isNowSelected)
-                          onCellToggle(ri, ci);
-                        if (dragMode.current === "deselect" && isNowSelected)
-                          onCellToggle(ri, ci);
+                        didSwipe.current   = false;
+                        startCell.current  = { r: ri, c: ci };
+                        startPos.current   = { x: e.clientX, y: e.clientY };
+                        dragMode.current   = selectedCellsRef.current.has(key) ? "deselect" : "select";
+                        toggledInGesture.current = new Set();
                       }}
                       className={cn(
                         "border-b border-r border-gray-200 text-center cursor-pointer transition-colors h-10",
-                        isSelected
-                          ? "bg-gray-900 hover:bg-gray-700"
-                          : "bg-white hover:bg-gray-50"
+                        isSelected ? "bg-gray-900 hover:bg-gray-700" : "bg-white hover:bg-gray-50"
                       )}
                       role="checkbox"
                       aria-checked={isSelected}
@@ -179,12 +211,7 @@ export function AvailabilityTable({
                     aria-label={`${row} ${colLabels[ci]} ${summary?.count ?? 0}名参加可能`}
                   >
                     {summary && summary.count > 0 && (
-                      <span
-                        className={cn(
-                          "text-xs font-bold leading-none",
-                          getHeatmapTextColor(summary.count, maxCount)
-                        )}
-                      >
+                      <span className={cn("text-xs font-bold leading-none", getHeatmapTextColor(summary.count, maxCount))}>
                         {summary.count}
                       </span>
                     )}
