@@ -219,7 +219,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
           </div>
           <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-gray-400 mb-0.5">参加者に共有するURL</p>
+              <p className="text-[10px] text-gray-400 mb-0.5">参加者向けURL</p>
               <span className="text-xs text-gray-500 truncate block">{getParticipantUrl(eventId)}</span>
             </div>
             <CopyButton text={getParticipantUrl(eventId)} label="コピー" />
