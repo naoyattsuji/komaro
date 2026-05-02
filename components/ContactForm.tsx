@@ -17,7 +17,6 @@ export function ContactForm() {
   const [error, setError]       = useState("");
 
   const handleSubmit = async () => {
-    if (!email.trim()) { setError("メールアドレスを入力してください"); return; }
     if (!message.trim()) { setError("メッセージを入力してください"); return; }
     setError("");
     setSending(true);
@@ -69,7 +68,7 @@ export function ContactForm() {
       />
 
       <Input
-        label="メールアドレス *"
+        label="メールアドレス（任意）"
         type="email"
         placeholder="例: your@email.com"
         value={email}

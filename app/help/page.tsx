@@ -57,6 +57,13 @@ export default function HelpPage() {
         <p className="text-gray-500 text-sm">よくあるご質問をまとめました</p>
       </div>
 
+      {/* Contact form */}
+      <section className="mb-10 bg-white rounded-2xl border border-gray-200 p-6">
+        <h2 className="font-bold text-gray-900 mb-1">お問い合わせ</h2>
+        <p className="text-sm text-gray-500 mb-6">FAQで解決しない場合はこちらからご連絡ください。</p>
+        <ContactForm />
+      </section>
+
       {/* Quick start */}
       <section className="mb-10 bg-gray-100 rounded-2xl p-6 border border-gray-200">
         <h2 className="font-bold text-gray-900 mb-4">クイックスタート</h2>
@@ -110,13 +117,6 @@ export default function HelpPage() {
             </details>
           ))}
         </div>
-      </section>
-
-      {/* Contact form */}
-      <section className="mt-12 bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-bold text-gray-900 mb-1">お問い合わせ</h2>
-        <p className="text-sm text-gray-500 mb-6">FAQで解決しない場合はこちらからご連絡ください。</p>
-        <ContactForm />
       </section>
 
       <div className="mt-10 text-center">

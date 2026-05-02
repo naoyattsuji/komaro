@@ -5,8 +5,8 @@ export async function POST(req: NextRequest) {
   try {
     const { name, email, category, message } = await req.json();
 
-    if (!email || !message) {
-      return NextResponse.json({ error: "メールアドレスとメッセージは必須です" }, { status: 400 });
+    if (!message) {
+      return NextResponse.json({ error: "メッセージは必須です" }, { status: 400 });
     }
     if (message.length > 2000) {
       return NextResponse.json({ error: "メッセージは2000文字以内で入力してください" }, { status: 400 });
