@@ -45,32 +45,31 @@ const DEFAULT_COL_LABELS: Record<TableType, string[]> = {
   date: [""],
 };
 
-// ── Mini preview grids shown inside each table-type button ───────────────
-const CELL_COLORS = ["bg-gray-100", "bg-gray-300", "bg-gray-500", "bg-gray-700"] as const;
+// ── Mini preview grids (text labels + colored cells) ────────────────────
+const PREVIEW_LEVELS = ["bg-gray-200", "bg-gray-400", "bg-gray-600"] as const;
 
 function MiniPreview({ type }: { type: TableType }) {
-  // v: 0=empty 1=low 2=mid 3=high
-  const c = (v: number) => (
-    <div className={`w-4 h-[7px] rounded-[2px] ${CELL_COLORS[v]}`} />
-  );
-  const lbl = (w: string) => (
-    <div className={`${w} h-[7px] rounded-[2px] bg-gray-200`} />
-  );
-  const hdr = (w: string) => (
-    <div className={`${w} h-1 rounded-[2px] bg-gray-200`} />
+  type Level = 0 | 1 | 2;
+  const cell = (v: Level, key: number) => (
+    <div key={key} className={`w-6 h-3.5 rounded-[2px] ${PREVIEW_LEVELS[v]}`} />
   );
 
   if (type === "calendar") {
-    const rows = [[3, 1, 3], [1, 3, 2]];
+    const cols = ["1日", "2日", "3日"];
+    const rows: { lbl: string; vals: Level[] }[] = [
+      { lbl: "午前", vals: [2, 0, 2] },
+      { lbl: "午後", vals: [0, 2, 1] },
+    ];
     return (
-      <div className="flex flex-col gap-[2px] shrink-0">
-        <div className="flex gap-[2px] pl-[18px]">
-          {[0,1,2].map(i => <div key={i}>{hdr("w-4")}</div>)}
+      <div className="shrink-0 flex flex-col gap-px text-[9px] leading-none text-gray-400">
+        <div className="flex gap-px mb-0.5">
+          <div className="w-7" />
+          {cols.map(c => <div key={c} className="w-6 text-center">{c}</div>)}
         </div>
-        {rows.map((row, ri) => (
-          <div key={ri} className="flex gap-[2px]">
-            {lbl("w-[16px]")}
-            {row.map((v, ci) => <div key={ci}>{c(v)}</div>)}
+        {rows.map(row => (
+          <div key={row.lbl} className="flex gap-px items-center">
+            <div className="w-7">{row.lbl}</div>
+            {row.vals.map((v, i) => cell(v, i))}
           </div>
         ))}
       </div>
@@ -78,32 +77,45 @@ function MiniPreview({ type }: { type: TableType }) {
   }
 
   if (type === "timetable") {
-    const rows = [[2, 3, 1], [3, 1, 3], [1, 2, 3]];
+    const cols = ["月", "火", "水"];
+    const rows: { lbl: string; vals: Level[] }[] = [
+      { lbl: "1限", vals: [1, 2, 0] },
+      { lbl: "2限", vals: [2, 0, 2] },
+      { lbl: "3限", vals: [0, 1, 2] },
+    ];
     return (
-      <div className="flex flex-col gap-[2px] shrink-0">
-        <div className="flex gap-[2px] pl-[18px]">
-          {[0,1,2].map(i => <div key={i}>{hdr("w-4")}</div>)}
+      <div className="shrink-0 flex flex-col gap-px text-[9px] leading-none text-gray-400">
+        <div className="flex gap-px mb-0.5">
+          <div className="w-7" />
+          {cols.map(c => <div key={c} className="w-6 text-center">{c}</div>)}
         </div>
-        {rows.map((row, ri) => (
-          <div key={ri} className="flex gap-[2px]">
-            {lbl("w-[16px]")}
-            {row.map((v, ci) => <div key={ci}>{c(v)}</div>)}
+        {rows.map(row => (
+          <div key={row.lbl} className="flex gap-px items-center">
+            <div className="w-7">{row.lbl}</div>
+            {row.vals.map((v, i) => cell(v, i))}
           </div>
         ))}
       </div>
     );
   }
 
-  // date: wide row labels, single data column
+  // date: rows = dates, single column
+  const rows: { lbl: string; v: Level }[] = [
+    { lbl: "5/1", v: 2 },
+    { lbl: "5/2", v: 0 },
+    { lbl: "5/3", v: 1 },
+    { lbl: "5/4", v: 2 },
+  ];
   return (
-    <div className="flex flex-col gap-[2px] shrink-0">
-      <div className="flex gap-[2px] pl-[40px]">
-        {hdr("w-4")}
+    <div className="shrink-0 flex flex-col gap-px text-[9px] leading-none text-gray-400">
+      <div className="flex gap-px mb-0.5">
+        <div className="w-8" />
+        <div className="w-6 text-center">参加</div>
       </div>
-      {[3, 1, 2, 3].map((v, ri) => (
-        <div key={ri} className="flex gap-[2px]">
-          {lbl("w-[38px]")}
-          {c(v)}
+      {rows.map(row => (
+        <div key={row.lbl} className="flex gap-px items-center">
+          <div className="w-8">{row.lbl}</div>
+          {cell(row.v, 0)}
         </div>
       ))}
     </div>
@@ -513,7 +525,7 @@ export default function CreatePage() {
                 <button
                   key={t}
                   onClick={() => handleTableTypeChange(t)}
-                  className={`flex items-center justify-between gap-4 text-left p-4 rounded-xl border-2 transition-colors w-full ${
+                  className={`flex items-start justify-between gap-4 text-left p-4 rounded-xl border-2 transition-colors w-full ${
                     tableType === t
                       ? "border-gray-900 bg-gray-50"
                       : "border-gray-200 bg-white hover:border-gray-300"
