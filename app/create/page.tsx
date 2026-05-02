@@ -923,8 +923,7 @@ export default function CreatePage() {
             <div className="text-gray-600 space-y-1">
               <p>イベント名: <span className="font-medium text-gray-900">{title}</span></p>
               <p>形式: <span className="font-medium text-gray-900">{TABLE_TYPE_LABELS[tableType]}</span></p>
-              <p>縦軸: <span className="font-medium text-gray-900">{rowLabels.length}項目</span></p>
-              <p>横軸: <span className="font-medium text-gray-900">{colLabels.length}項目</span></p>
+
               <p>パスワード: <span className="font-medium text-gray-900">{password ? "設定あり" : "なし"}</span></p>
             </div>
           </div>
