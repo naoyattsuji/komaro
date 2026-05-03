@@ -74,14 +74,15 @@ export default async function OgImage() {
             <img src={logoSrc} width={64} height={64} style={{ objectFit: "contain" }} alt="" />
             <span style={{ fontSize: "52px", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.02em" }}>KOMARO</span>
           </div>
-          <div style={{ fontSize: "48px", fontWeight: 700, color: "#ffffff", lineHeight: 1.2, marginBottom: "24px" }}>
-            コマで見る、{"\n"}日程調整。
+          <div style={{ display: "flex", flexDirection: "column", fontSize: "48px", fontWeight: 700, color: "#ffffff", lineHeight: 1.2, marginBottom: "24px" }}>
+            <span>コマで見る、</span>
+            <span>日程調整。</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <span style={{ fontSize: "22px", color: "#9ca3af" }}>誰がいつ空いているか、コマの色で一発確認。</span>
             <span style={{ fontSize: "22px", color: "#6b7280" }}>登録不要 · URLを送るだけ</span>
           </div>
-          <div style={{ display: "flex", marginTop: "52px", background: "#dc2626", borderRadius: "10px", padding: "12px 28px", width: "fit-content", fontSize: "18px", fontWeight: 700, color: "#ffffff" }}>
+          <div style={{ display: "flex", marginTop: "52px", background: "#dc2626", borderRadius: "10px", padding: "12px 28px", fontSize: "18px", fontWeight: 700, color: "#ffffff", alignSelf: "flex-start" }}>
             無料で今すぐ使う
           </div>
         </div>
