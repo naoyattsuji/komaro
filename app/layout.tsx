@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "KOMARO — コマで見る日程調整",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "KOMARO — コマで見る日程調整",
     description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化します。",
-    images: ["/og-image.png"],
+    images: ["/opengraph-image"],
   },
   verification: {
     google: "5urXdpMctfnAZKVgbC7piw2KOctwpNlqCgSCgXT3ayw",
