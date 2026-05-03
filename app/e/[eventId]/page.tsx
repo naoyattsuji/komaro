@@ -20,6 +20,12 @@ export async function generateMetadata({
     openGraph: {
       title: `「${title}」の日程調整 | KOMARO`,
       description: `「${title}」の参加可能な日程を登録してください。登録不要・URLを開くだけで回答できます。`,
+      // opengraph-image.tsx が動的に生成するため images は指定しない
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `「${title}」の日程調整 | KOMARO`,
+      description: `「${title}」の参加可能な日程を登録してください。登録不要・URLを開くだけで回答できます。`,
     },
   };
 }
