@@ -239,21 +239,47 @@ export function VoiceInputReader({
     recognition.onerror = (event: any) => {
       setListening(false);
       setStatus("error");
-      if (event.error === "not-allowed") {
-        setMessage("マイクへのアクセスが拒否されました。ブラウザの設定を確認してください。");
-      } else if (event.error === "no-speech") {
-        setMessage("音声が検出されませんでした。もう一度お試しください。");
-      } else {
-        setMessage(`エラーが発生しました（${event.error}）`);
+      switch (event.error) {
+        case "not-allowed":
+        case "permission-denied":
+          setMessage("マイクへのアクセスが拒否されました。ブラウザのアドレスバー横の🔒マークからマイクを許可してください。");
+          break;
+        case "no-speech":
+          setMessage("音声が検出されませんでした。もう少し大きな声でお試しください。");
+          break;
+        case "network":
+          setMessage("ネットワークエラーが発生しました。インターネット接続を確認してください（Chrome は音声認識にネット接続が必要です）。");
+          break;
+        case "audio-capture":
+          setMessage("マイクが見つかりません。デバイスにマイクが接続されているか確認してください。");
+          break;
+        case "service-not-allowed":
+          setMessage("このブラウザ・環境では音声入力が許可されていません。Chrome をお試しください。");
+          break;
+        default:
+          setMessage(`音声認識エラー: ${event.error} — Chrome または Edge でお試しください。`);
       }
     };
 
     recognition.onend = () => {
       setListening(false);
+      // 結果なしで終了した場合（沈黙タイムアウト等）にエラーを表示
+      setStatus((prev) => {
+        if (prev === "listening") {
+          setMessage("音声を認識できませんでした。ボタンを押してからすぐに話してください。");
+          return "error";
+        }
+        return prev;
+      });
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
+    try {
+      recognition.start();
+    } catch {
+      setStatus("error");
+      setMessage("音声入力を開始できませんでした。ページを再読み込みしてもう一度お試しください。");
+    }
   }, [rowLabels, colLabels]);
 
   const stopListening = useCallback(() => {
