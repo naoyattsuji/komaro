@@ -4,9 +4,7 @@ import { useState } from "react";
 import { Copy, Check, Download, ExternalLink } from "lucide-react";
 import {
   CalendarEventParams,
-  buildGoogleCalendarUrl,
-  buildYahooCalendarUrl,
-  buildOutlookUrl,
+  buildShortCalendarUrl,
   generateIcsContent,
   downloadIcs,
 } from "@/lib/utils";
@@ -50,7 +48,7 @@ export function CalendarExport({ params, copyText }: CalendarExportProps) {
       </p>
       <div className="grid grid-cols-2 gap-2">
         <a
-          href={buildGoogleCalendarUrl(params)}
+          href={buildShortCalendarUrl("google", params)}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
@@ -59,7 +57,7 @@ export function CalendarExport({ params, copyText }: CalendarExportProps) {
           Google
         </a>
         <a
-          href={buildYahooCalendarUrl(params)}
+          href={buildShortCalendarUrl("yahoo", params)}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
@@ -68,7 +66,7 @@ export function CalendarExport({ params, copyText }: CalendarExportProps) {
           Yahoo
         </a>
         <a
-          href={buildOutlookUrl(params)}
+          href={buildShortCalendarUrl("outlook", params)}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"

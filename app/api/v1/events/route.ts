@@ -2,8 +2,11 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { createEditJwt } from "@/lib/auth";
 import bcrypt from "bcryptjs";
-import { v4 as uuidv4 } from "uuid";
+import { customAlphabet } from "nanoid";
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rateLimit";
+
+// URL安全な英数字のみ（記号なし）
+const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit({ key: `events:create:${getIP(req)}`, limit: 10, windowSec: 3600 });
@@ -56,10 +59,12 @@ export async function POST(req: NextRequest) {
 
     const participants = Math.max(1, Math.min(50, Number(maxParticipants) || 50));
     const passwordHash = password ? await bcrypt.hash(password, 12) : null;
-    const editToken = uuidv4();
+    const eventId = nanoid(8);    // 例: "aB3xK7mQ"
+    const editToken = nanoid(16); // 例: "aB3xK7mQpL9wR2nZ"
 
     const event = await prisma.event.create({
       data: {
+        id: eventId,
         title: title.trim(),
         description: description?.trim() || null,
         tableType,

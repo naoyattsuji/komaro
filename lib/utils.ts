@@ -64,10 +64,23 @@ export function getEditUrl(eventId: string, editToken: string): string {
 // ─── Calendar export utilities ───────────────────────────────────────────────
 
 export interface CalendarEventParams {
+  eventId: string;
   title: string;
   startDate: Date | null;
   endDate: Date | null;
   description?: string;
+}
+
+/** /cal/{type}/{eventId}?s=...&e=... 形式の短縮カレンダーURL */
+export function buildShortCalendarUrl(
+  type: "google" | "yahoo" | "outlook",
+  p: CalendarEventParams
+): string {
+  const base = `${getBaseUrl()}/cal/${type}/${p.eventId}`;
+  if (!p.startDate || !p.endDate) return base;
+  const s = toIcsDateTime(p.startDate);
+  const e = toIcsDateTime(p.endDate);
+  return `${base}?s=${s}&e=${e}`;
 }
 
 function toIcsDateTime(d: Date): string {

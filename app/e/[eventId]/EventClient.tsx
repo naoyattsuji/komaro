@@ -12,9 +12,7 @@ import {
   formatDateTime,
   parseColLabelToDate,
   buildDateRange,
-  buildGoogleCalendarUrl,
-  buildYahooCalendarUrl,
-  buildOutlookUrl,
+  buildShortCalendarUrl,
   CalendarEventParams,
 } from "@/lib/utils";
 import { CalendarExport } from "@/components/CalendarExport";
@@ -430,6 +428,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
         const endTime = meta?.end;
         const dateRange = baseDate ? buildDateRange(baseDate, startTime, endTime) : null;
         const calendarParams: CalendarEventParams = {
+          eventId,
           title: event.title,
           startDate: dateRange?.start ?? null,
           endDate: dateRange?.end ?? null,
@@ -445,9 +444,9 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
             : "",
           "",
           "── カレンダーに追加 ──",
-          `Google: ${buildGoogleCalendarUrl(calendarParams)}`,
-          `Yahoo:  ${buildYahooCalendarUrl(calendarParams)}`,
-          `Outlook: ${buildOutlookUrl(calendarParams)}`,
+          `Google: ${buildShortCalendarUrl("google", calendarParams)}`,
+          `Yahoo:  ${buildShortCalendarUrl("yahoo", calendarParams)}`,
+          `Outlook: ${buildShortCalendarUrl("outlook", calendarParams)}`,
           "Apple・タイムツリー・その他: ページ上の「Apple・その他」ボタンから.icsをダウンロード",
         ]
           .filter(Boolean)
