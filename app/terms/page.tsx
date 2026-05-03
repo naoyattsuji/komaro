@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "利用規約 — KOMARO",
-  description: "KOMARoの利用規約です。",
+  description: "KOMAROの利用規約です。",
 };
 
 export default function TermsPage() {
