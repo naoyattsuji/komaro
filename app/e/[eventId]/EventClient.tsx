@@ -20,6 +20,7 @@ import {
 import { CalendarExport } from "@/components/CalendarExport";
 import { CopyButton } from "@/components/CopyButton";
 import { getParticipantUrl } from "@/lib/utils";
+import { FadeInSection } from "@/components/FadeInSection";
 
 interface EventClientProps {
   eventId: string;
@@ -183,16 +184,27 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
     <div className="max-w-5xl mx-auto px-4 py-6">
       {/* Header */}
       <div className="mb-4">
-        <div className="flex items-start gap-3 flex-wrap">
+        <div
+          className="anim-hero flex items-start gap-3 flex-wrap"
+          style={{ animationDelay: "0ms" }}
+        >
           <Badge variant={isExpired ? "expired" : "active"}>
             {isExpired ? "期限切れ" : "受付中"}
           </Badge>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex-1">{event.title}</h1>
         </div>
         {event.description && (
-          <p className="mt-2 text-sm text-gray-600">{event.description}</p>
+          <p
+            className="anim-hero mt-2 text-sm text-gray-600"
+            style={{ animationDelay: "80ms" }}
+          >
+            {event.description}
+          </p>
         )}
-        <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+        <div
+          className="anim-hero flex items-center gap-4 mt-2 text-sm text-gray-500"
+          style={{ animationDelay: "120ms" }}
+        >
           <span className="flex items-center gap-1">
             <Users size={14} />
             {event.currentParticipantCount} / {event.maxParticipants}名
@@ -208,7 +220,10 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
 
       {/* Action buttons */}
       {!isExpired && (
-        <div className="flex flex-col gap-2 mb-5">
+        <div
+          className="anim-hero flex flex-col gap-2 mb-5"
+          style={{ animationDelay: "200ms" }}
+        >
           <div className="flex gap-2 flex-wrap">
             <Link href={`/e/${eventId}/answer`}>
               <Button size="lg" className="gap-2">
@@ -229,8 +244,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
 
       <div className="grid lg:grid-cols-[1fr_280px] gap-6">
         {/* Main: Table */}
-        <div>
-
+        <FadeInSection delay={80}>
           {displayMaxCount > 0 && (
             <p className="text-xs text-gray-500 mb-2">
               最多 <span className="font-bold text-red-600">{displayMaxCount}名</span> 参加可能のコマがあります。セルをタップで参加者を確認できます。
@@ -246,10 +260,10 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
             maxCount={displayMaxCount}
             onCellClick={handleCellClick}
           />
-        </div>
+        </FadeInSection>
 
         {/* Sidebar: Members */}
-        <div className="space-y-4">
+        <FadeInSection delay={160} className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex items-center gap-2 mb-3">
               <Users size={16} className="text-gray-500" />
@@ -318,10 +332,11 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               </Button>
             </Link>
           </div>
-        </div>
+        </FadeInSection>
       </div>
 
       {/* Comments */}
+      <FadeInSection delay={100}>
       <div className="mt-8 bg-white rounded-xl border border-gray-200 p-5">
         <div className="flex items-center gap-2 mb-4">
           <MessageSquare size={16} className="text-gray-500" />
@@ -378,6 +393,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
           </div>
         )}
       </div>
+      </FadeInSection>
 
       {/* Cell detail modal */}
       {selectedCell !== null && (() => {

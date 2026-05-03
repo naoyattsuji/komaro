@@ -465,12 +465,25 @@ export default function CreatePage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">イベントを作成</h1>
-        <p className="text-sm text-gray-500">3ステップで日程調整表を作成できます</p>
+        <h1
+          className="anim-hero text-2xl font-bold text-gray-900 mb-1"
+          style={{ animationDelay: "0ms" }}
+        >
+          イベントを作成
+        </h1>
+        <p
+          className="anim-hero text-sm text-gray-500"
+          style={{ animationDelay: "80ms" }}
+        >
+          3ステップで日程調整表を作成できます
+        </p>
       </div>
 
       {/* Step indicator */}
-      <div className="flex items-center gap-2 mb-8">
+      <div
+        className="anim-hero flex items-center gap-2 mb-8"
+        style={{ animationDelay: "160ms" }}
+      >
         {[1, 2, 3].map((s) => (
           <div key={s} className="flex items-center gap-2">
             <button

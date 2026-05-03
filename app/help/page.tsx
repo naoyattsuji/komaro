@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { ContactForm } from "@/components/ContactForm";
+import { FadeInSection } from "@/components/FadeInSection";
 
 export const metadata = {
   title: "ヘルプ / FAQ — KOMARO",
@@ -52,80 +53,91 @@ const faqs = [
 export default function HelpPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
+
+      {/* Page title */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">ヘルプ / FAQ</h1>
-        <p className="text-gray-500 text-sm">よくあるご質問をまとめました</p>
+        <h1
+          className="anim-hero text-2xl font-bold text-gray-900 mb-2"
+          style={{ animationDelay: "0ms" }}
+        >
+          ヘルプ / FAQ
+        </h1>
+        <p
+          className="anim-hero text-gray-500 text-sm"
+          style={{ animationDelay: "80ms" }}
+        >
+          よくあるご質問をまとめました
+        </p>
       </div>
 
       {/* Contact form */}
-      <section className="mb-10 bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-bold text-gray-900 mb-1">お問い合わせ</h2>
-        <p className="text-sm text-gray-500 mb-6">FAQで解決しない場合はこちらからご連絡ください。</p>
-        <ContactForm />
-      </section>
+      <FadeInSection delay={120}>
+        <section className="mb-10 bg-white rounded-2xl border border-gray-200 p-6">
+          <h2 className="font-bold text-gray-900 mb-1">お問い合わせ</h2>
+          <p className="text-sm text-gray-500 mb-6">FAQで解決しない場合はこちらからご連絡ください。</p>
+          <ContactForm />
+        </section>
+      </FadeInSection>
 
       {/* Quick start */}
-      <section className="mb-10 bg-gray-100 rounded-2xl p-6 border border-gray-200">
-        <h2 className="font-bold text-gray-900 mb-4">クイックスタート</h2>
-        <ol className="space-y-3 text-sm text-gray-800">
-          <li className="flex gap-3">
-            <span className="shrink-0 w-6 h-6 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-bold">1</span>
-            <span>
-              <strong>イベントを作成</strong> — トップページの「イベントを作成する」から開始。イベント名と表の形式を選びます。
-            </span>
-          </li>
-          <li className="flex gap-3">
-            <span className="shrink-0 w-6 h-6 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-bold">2</span>
-            <span>
-              <strong>URLを共有</strong> — 作成完了後に表示される「参加者向けURL」をコピーしてメンバーに送ります。
-            </span>
-          </li>
-          <li className="flex gap-3">
-            <span className="shrink-0 w-6 h-6 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-bold">3</span>
-            <span>
-              <strong>回答を集める</strong> — 参加者はURLを開いて名前を入力し、参加できるコマをタップするだけ。
-            </span>
-          </li>
-          <li className="flex gap-3">
-            <span className="shrink-0 w-6 h-6 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-bold">4</span>
-            <span>
-              <strong>集計を確認</strong> — ヒートマップで全体の空き状況を確認。セルをタップで参加者名も確認できます。
-            </span>
-          </li>
-        </ol>
-      </section>
+      <FadeInSection delay={60}>
+        <section className="mb-10 bg-gray-100 rounded-2xl p-6 border border-gray-200">
+          <h2 className="font-bold text-gray-900 mb-4">クイックスタート</h2>
+          <ol className="space-y-3 text-sm text-gray-800">
+            {[
+              { n: "1", title: "イベントを作成", desc: "トップページの「イベントを作成する」から開始。イベント名と表の形式を選びます。" },
+              { n: "2", title: "URLを共有", desc: "作成完了後に表示される「参加者向けURL」をコピーしてメンバーに送ります。" },
+              { n: "3", title: "回答を集める", desc: "参加者はURLを開いて名前を入力し、参加できるコマをタップするだけ。" },
+              { n: "4", title: "集計を確認", desc: "ヒートマップで全体の空き状況を確認。セルをタップで参加者名も確認できます。" },
+            ].map((step, i) => (
+              <li key={step.n} className="flex gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-bold">
+                  {step.n}
+                </span>
+                <span>
+                  <strong>{step.title}</strong> — {step.desc}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </FadeInSection>
 
       {/* FAQ */}
       <section>
-        <h2 className="font-bold text-gray-800 mb-4">よくある質問</h2>
+        <FadeInSection>
+          <h2 className="font-bold text-gray-800 mb-4">よくある質問</h2>
+        </FadeInSection>
         <div className="space-y-2">
           {faqs.map((faq, i) => (
-            <details
-              key={i}
-              className="group bg-white rounded-xl border border-gray-200 overflow-hidden"
-            >
-              <summary className="flex items-center justify-between px-5 py-4 cursor-pointer text-sm font-medium text-gray-800 hover:bg-gray-50 list-none">
-                {faq.q}
-                <ChevronDown
-                  size={16}
-                  className="text-gray-400 shrink-0 ml-2 transition-transform group-open:rotate-180"
-                />
-              </summary>
-              <div className="px-5 pb-4 text-sm text-gray-600 leading-relaxed">
-                {faq.a}
-              </div>
-            </details>
+            <FadeInSection key={i} delay={i * 50}>
+              <details className="group bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <summary className="flex items-center justify-between px-5 py-4 cursor-pointer text-sm font-medium text-gray-800 hover:bg-gray-50 list-none">
+                  {faq.q}
+                  <ChevronDown
+                    size={16}
+                    className="text-gray-400 shrink-0 ml-2 transition-transform group-open:rotate-180"
+                  />
+                </summary>
+                <div className="px-5 pb-4 text-sm text-gray-600 leading-relaxed">
+                  {faq.a}
+                </div>
+              </details>
+            </FadeInSection>
           ))}
         </div>
       </section>
 
-      <div className="mt-10 text-center">
-        <Link href="/create">
-          <button className="bg-gray-900 text-white font-semibold px-8 py-4 rounded-md hover:bg-gray-700 transition-colors">
-            さっそくイベントを作成する
-          </button>
-        </Link>
-      </div>
+      <FadeInSection delay={80}>
+        <div className="mt-10 text-center">
+          <Link href="/create">
+            <button className="bg-gray-900 text-white font-semibold px-8 py-4 rounded-md hover:bg-gray-700 transition-colors">
+              さっそくイベントを作成する
+            </button>
+          </Link>
+        </div>
+      </FadeInSection>
+
     </div>
   );
 }

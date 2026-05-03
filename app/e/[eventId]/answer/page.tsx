@@ -10,6 +10,7 @@ import { showToast } from "@/components/ui/Toast";
 import { ArrowLeft, CheckSquare, Square } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
+import { FadeInSection } from "@/components/FadeInSection";
 
 interface EventInfo {
   id: string;
@@ -149,7 +150,10 @@ export default function AnswerPage({
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
-      <div className="flex items-center gap-2 mb-4">
+      <div
+        className="anim-hero flex items-center gap-2 mb-4"
+        style={{ animationDelay: "0ms" }}
+      >
         <Link href={`/e/${eventId}`} className="text-gray-400 hover:text-gray-600">
           <ArrowLeft size={20} />
         </Link>
@@ -160,7 +164,10 @@ export default function AnswerPage({
       </div>
 
       {/* Name input */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+      <div
+        className="anim-hero bg-white rounded-xl border border-gray-200 p-4 mb-4"
+        style={{ animationDelay: "100ms" }}
+      >
         <Input
           label="あなたの名前 *"
           placeholder="例: 田中太郎"
@@ -173,7 +180,10 @@ export default function AnswerPage({
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
+      <div
+        className="anim-hero flex items-center gap-2 mb-3 flex-wrap"
+        style={{ animationDelay: "180ms" }}
+      >
         <span className="text-sm text-gray-600 font-medium">
           {selectedCells.size}コマ選択中
         </span>
@@ -192,14 +202,16 @@ export default function AnswerPage({
       </div>
 
       {/* Table */}
-      <AvailabilityTable
-        rowLabels={event.rowLabels}
-        colLabels={event.colLabels}
-        rowMeta={event.rowMeta}
-        mode="edit"
-        selectedCells={selectedCells}
-        onCellToggle={toggleCell}
-      />
+      <FadeInSection delay={60}>
+        <AvailabilityTable
+          rowLabels={event.rowLabels}
+          colLabels={event.colLabels}
+          rowMeta={event.rowMeta}
+          mode="edit"
+          selectedCells={selectedCells}
+          onCellToggle={toggleCell}
+        />
+      </FadeInSection>
 
       {/* Submit — sticky keeps it visible while scrolling table, but won't overlap footer */}
       <div className="sticky bottom-4 z-[60] mt-4">

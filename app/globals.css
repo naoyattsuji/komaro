@@ -18,27 +18,86 @@
   animation-name: slide-in-from-bottom-2;
 }
 
-/* ── Page animations ─────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Animation System  ―  Leverages-style
+   Easing: expo-out  cubic-bezier(0.16, 1, 0.3, 1)
+═══════════════════════════════════════════════════════════════ */
 
-/* Hero: plays on page load */
+/* ── Keyframes ───────────────────────────────────────────────── */
+
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(32px); }
   to   { opacity: 1; transform: translateY(0);    }
 }
 
-.anim-hero {
-  animation: fade-in-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-/* Scroll reveal: driven by IntersectionObserver adding .is-visible */
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.86); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+
+/* ── Hero: plays immediately on page load ───────────────────── */
+
+.anim-hero {
+  animation: fade-in-up 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+.anim-hero-scale {
+  animation: scale-in 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+.anim-hero-fade {
+  animation: fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity;
+}
+
+/* ── Scroll reveal: IntersectionObserver adds .is-visible ────── */
+
 .reveal {
   opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(32px);
+  transition:
+    opacity  0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.reveal-fade {
+  opacity: 0;
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.94);
+  transition:
+    opacity  0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.reveal.is-visible,
+.reveal-fade.is-visible {
+  opacity: 1;
 }
 
 .reveal.is-visible {
-  opacity: 1;
   transform: translateY(0);
+}
+
+.reveal-scale.is-visible {
+  opacity: 1;
+  transform: scale(1);
 }
