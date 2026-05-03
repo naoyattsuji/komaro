@@ -5,6 +5,46 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * "10:00", "10", "10am", "10 AM", "午前10時" などを
+ * 午前0時からの分数に変換する。パース失敗時は null を返す。
+ */
+export function parseTimeToMinutes(text: string): number | null {
+  const t = text.trim().toLowerCase().replace(/\s+/g, "");
+
+  // HH:MM 形式
+  const hhmm = t.match(/^(\d{1,2}):(\d{2})$/);
+  if (hhmm) return parseInt(hhmm[1]) * 60 + parseInt(hhmm[2]);
+
+  // "10am" / "10pm"
+  const ampm = t.match(/^(\d{1,2})(am|pm)$/);
+  if (ampm) {
+    let h = parseInt(ampm[1]);
+    if (ampm[2] === "pm" && h !== 12) h += 12;
+    if (ampm[2] === "am" && h === 12) h = 0;
+    return h * 60;
+  }
+
+  // 日本語 "午前10時" "午後2時" "10時"
+  const jp = t.match(/^(午前|午後)?(\d{1,2})時(\d{0,2}分?)?$/);
+  if (jp) {
+    let h = parseInt(jp[2]);
+    if (jp[1] === "午後" && h !== 12) h += 12;
+    if (jp[1] === "午前" && h === 12) h = 0;
+    const m = jp[3] ? parseInt(jp[3].replace("分", "")) || 0 : 0;
+    return h * 60 + m;
+  }
+
+  // 数字のみ（"9", "10" など → 時間として解釈）
+  const num = t.match(/^(\d{1,2})$/);
+  if (num) {
+    const h = parseInt(num[1]);
+    if (h >= 0 && h <= 23) return h * 60;
+  }
+
+  return null;
+}
+
 export function parseJsonField<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback;
   try {

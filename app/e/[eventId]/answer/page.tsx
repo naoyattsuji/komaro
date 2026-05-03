@@ -11,6 +11,7 @@ import { ArrowLeft, CheckSquare, Square } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import { FadeInSection } from "@/components/FadeInSection";
+import { CalendarImageReader } from "@/components/CalendarImageReader";
 
 interface EventInfo {
   id: string;
@@ -176,6 +177,15 @@ export default function AnswerPage({
           maxLength={30}
           error={nameError}
           hint={`${name.length}/30文字`}
+        />
+      </div>
+
+      {/* Screenshot auto-fill */}
+      <div className="anim-hero mb-2" style={{ animationDelay: "160ms" }}>
+        <CalendarImageReader
+          rowLabels={event.rowLabels}
+          colLabels={event.colLabels}
+          onDetected={(cells) => setSelectedCells(cells)}
         />
       </div>
 
