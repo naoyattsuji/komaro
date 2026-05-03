@@ -4,7 +4,6 @@ export const runtime = "edge";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// ── Demo heatmap data ────────────────────────────────────────────
 const cols = ["5/7(水)", "5/8(木)", "5/9(金)", "5/10(土)"];
 const rows = ["10:00", "12:00", "14:00", "16:00", "18:00"];
 const data = [
@@ -29,36 +28,7 @@ function cellFg(v: number) {
   return v / MAX <= 0.4 ? "#374151" : "#ffffff";
 }
 
-// Load only the characters actually used in the image — keeps the font tiny
-async function loadFont(): Promise<ArrayBuffer | null> {
-  const chars = "コマで見る日程調整登録不要URLを送るだけ全員空き時間ひとで確認Schedule Coordination0123456789/(水木金土):KOMARO";
-  try {
-    // IE6 UA → Google Fonts returns woff (supported by ImageResponse)
-    const css = await fetch(
-      `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&text=${encodeURIComponent(chars)}`,
-      {
-        headers: {
-          "User-Agent":
-            "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)",
-        },
-      }
-    ).then((r) => r.text());
-
-    const url = css.match(/url\((.+?)\)/)?.[1];
-    if (!url) return null;
-    return fetch(url).then((r) => r.arrayBuffer());
-  } catch {
-    return null;
-  }
-}
-
-export default async function OgImage() {
-  const fontData = await loadFont();
-  const fonts = fontData
-    ? [{ name: "NotoSansJP", data: fontData, weight: 700 as const, style: "normal" as const }]
-    : [];
-  const ff = fontData ? "NotoSansJP, sans-serif" : "sans-serif";
-
+export default function OgImage() {
   return new ImageResponse(
     (
       <div
@@ -67,7 +37,7 @@ export default async function OgImage() {
           width: "100%",
           height: "100%",
           display: "flex",
-          fontFamily: ff,
+          fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
         {/* ── Left panel ──────────────────────────────────── */}
@@ -86,8 +56,8 @@ export default async function OgImage() {
               display: "flex",
               background: "#f3f4f6",
               borderRadius: "100px",
-              padding: "6px 20px",
-              marginBottom: "36px",
+              padding: "8px 22px",
+              marginBottom: "40px",
               width: "fit-content",
               fontSize: "18px",
               color: "#9ca3af",
@@ -98,45 +68,51 @@ export default async function OgImage() {
           </div>
 
           {/* Logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "32px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "36px" }}>
             <div
               style={{
-                width: "72px",
-                height: "72px",
+                width: "76px",
+                height: "76px",
                 background: "#111827",
                 borderRadius: "18px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "38px",
-                fontWeight: 700,
+                fontSize: "40px",
+                fontWeight: 900,
                 color: "#ffffff",
               }}
             >
               K
             </div>
-            <span style={{ fontSize: "56px", fontWeight: 700, color: "#111827", letterSpacing: "-0.02em" }}>
+            <span style={{ fontSize: "60px", fontWeight: 900, color: "#111827", letterSpacing: "-0.03em" }}>
               KOMARO
             </span>
           </div>
 
-          {/* Tagline */}
-          <div
-            style={{
-              fontSize: "42px",
-              fontWeight: 700,
-              color: "#111827",
-              lineHeight: 1.25,
-              marginBottom: "28px",
-            }}
-          >
-            コマで見る、日程調整。
+          {/* Tagline — ASCII only, no Japanese font needed */}
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#374151", marginBottom: "16px" }}>
+            Scheduling made visual.
+          </div>
+          <div style={{ fontSize: "22px", color: "#9ca3af" }}>
+            No sign-up required. Just share a URL.
           </div>
 
-          {/* Description */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <span style={{ fontSize: "23px", color: "#9ca3af" }}>登録不要・URLを送るだけ。</span>
-            <span style={{ fontSize: "23px", color: "#9ca3af" }}>全員の空き時間をひと目で確認。</span>
+          {/* URL */}
+          <div
+            style={{
+              display: "flex",
+              marginTop: "48px",
+              background: "#f9fafb",
+              border: "1px solid #e5e7eb",
+              borderRadius: "10px",
+              padding: "10px 20px",
+              fontSize: "18px",
+              color: "#6b7280",
+              width: "fit-content",
+            }}
+          >
+            komaro.vercel.app
           </div>
         </div>
 
@@ -154,7 +130,7 @@ export default async function OgImage() {
         >
           <div style={{ display: "flex", flexDirection: "column" }}>
             {/* Header */}
-            <div style={{ display: "flex", marginBottom: "2px" }}>
+            <div style={{ display: "flex" }}>
               <div style={{ width: "68px" }} />
               {cols.map((c) => (
                 <div
@@ -162,10 +138,10 @@ export default async function OgImage() {
                   style={{
                     width: "72px",
                     textAlign: "center",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: 700,
                     color: "#6b7280",
-                    paddingBottom: "6px",
+                    paddingBottom: "8px",
                   }}
                 >
                   {c}
@@ -179,10 +155,10 @@ export default async function OgImage() {
                 <div
                   style={{
                     width: "68px",
-                    height: "62px",
+                    height: "64px",
                     display: "flex",
                     alignItems: "center",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: 700,
                     color: "#9ca3af",
                   }}
@@ -194,7 +170,7 @@ export default async function OgImage() {
                     key={ci}
                     style={{
                       width: "72px",
-                      height: "62px",
+                      height: "64px",
                       background: cellBg(v),
                       border: "1px solid #e5e7eb",
                       display: "flex",
@@ -214,6 +190,6 @@ export default async function OgImage() {
         </div>
       </div>
     ),
-    { ...size, fonts }
+    { ...size }
   );
 }
