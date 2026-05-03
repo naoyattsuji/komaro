@@ -10,6 +10,29 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 export const metadata: Metadata = {
   title: "KOMARO — コマで見る日程調整",
   description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化し、最適な日程がひと目でわかります。",
+  metadataBase: new URL("https://komaro.vercel.app"),
+  openGraph: {
+    title: "KOMARO — コマで見る日程調整",
+    description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化し、最適な日程がひと目でわかります。",
+    url: "https://komaro.vercel.app",
+    siteName: "KOMARO",
+    locale: "ja_JP",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "KOMARO — コマで見る日程調整",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "KOMARO — コマで見る日程調整",
+    description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化します。",
+    images: ["/og-image.png"],
+  },
   verification: {
     google: "5urXdpMctfnAZKVgbC7piw2KOctwpNlqCgSCgXT3ayw",
   },
@@ -37,12 +60,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main className="flex-1">{children}</main>
         <footer className="border-t border-gray-100 bg-white">
-          <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Image src="/komaro-icon.png" alt="" width={20} height={20} className="h-5 w-5 object-contain opacity-40" />
               <span className="text-xs text-gray-400">© 2026 KOMARO</span>
             </div>
-            <Link href="/help" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">ヘルプ / FAQ</Link>
+            <div className="flex items-center gap-5">
+              <Link href="/help" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">ヘルプ / FAQ</Link>
+              <Link href="/terms" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">利用規約</Link>
+              <Link href="/privacy" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">プライバシーポリシー</Link>
+            </div>
           </div>
         </footer>
         <ToastContainer />
