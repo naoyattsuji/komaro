@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { createEditJwt, verifyEditJwt } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { rateLimit, getIP, rateLimitResponse } from "@/lib/rateLimit";
 
 const LOCK_ATTEMPTS = 5;
 const LOCK_MINUTES = 15;
@@ -34,6 +35,9 @@ export async function POST(
   req: NextRequest,
   ctx: RouteContext<"/api/v1/events/[eventId]/edit-auth">
 ) {
+  const rl = rateLimit({ key: `edit-auth:${getIP(req)}`, limit: 20, windowSec: 3600 });
+  if (!rl.success) return rateLimitResponse(rl.resetAt);
+
   const { eventId } = await ctx.params;
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
 

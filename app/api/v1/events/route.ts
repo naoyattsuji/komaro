@@ -3,8 +3,12 @@ import { prisma } from "@/lib/db";
 import { createEditJwt } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
+import { rateLimit, getIP, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit({ key: `events:create:${getIP(req)}`, limit: 10, windowSec: 3600 });
+  if (!rl.success) return rateLimitResponse(rl.resetAt);
+
   try {
     const body = await req.json();
     const {

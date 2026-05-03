@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { rateLimit, getIP, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function GET(
   _req: NextRequest,
@@ -28,6 +29,9 @@ export async function POST(
   req: NextRequest,
   ctx: RouteContext<"/api/v1/events/[eventId]/participants">
 ) {
+  const rl = rateLimit({ key: `participants:post:${getIP(req)}`, limit: 30, windowSec: 3600 });
+  if (!rl.success) return rateLimitResponse(rl.resetAt);
+
   const { eventId } = await ctx.params;
 
   const event = await prisma.event.findFirst({
