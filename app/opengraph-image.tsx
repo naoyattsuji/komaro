@@ -5,16 +5,14 @@ import path from "path";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// ヒートマップのカラースキーム（トップページ準拠）
-const HEAT_COLORS = [
-  "#f3f4f6", "#e5e7eb", "#9ca3af",
-  "#4b5563", "#dc2626", "#e5e7eb",
-  "#9ca3af", "#f3f4f6", "#4b5563",
-  "#dc2626", "#e5e7eb", "#9ca3af",
-  "#f3f4f6", "#4b5563", "#e5e7eb",
-  "#dc2626", "#9ca3af", "#f3f4f6",
-  "#4b5563", "#e5e7eb", "#dc2626",
-  "#9ca3af", "#f3f4f6", "#4b5563",
+const HEAT: string[] = [
+  "#f3f4f6", "#9ca3af", "#dc2626", "#e5e7eb",
+  "#4b5563", "#e5e7eb", "#9ca3af", "#f3f4f6",
+  "#dc2626", "#4b5563", "#f3f4f6", "#9ca3af",
+  "#e5e7eb", "#dc2626", "#4b5563", "#e5e7eb",
+  "#9ca3af", "#f3f4f6", "#e5e7eb", "#dc2626",
+  "#4b5563", "#9ca3af", "#dc2626", "#f3f4f6",
+  "#e5e7eb", "#4b5563", "#9ca3af", "#dc2626",
 ];
 
 async function loadFont(): Promise<ArrayBuffer | null> {
@@ -39,36 +37,11 @@ async function loadFont(): Promise<ArrayBuffer | null> {
   }
 }
 
-/** 左右の装飾グリッド（フル表示時のみ見える） */
-function DecoGrid({ cols, rows }: { cols: number; rows: number }) {
-  const cells: { color: string; i: number }[] = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      cells.push({ color: HEAT_COLORS[(r * cols + c) % HEAT_COLORS.length], i: r * cols + c });
-    }
-  }
-  const SIZE = 44;
-  const GAP = 5;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px` }}>
-      {Array.from({ length: rows }).map((_, r) => (
-        <div key={r} style={{ display: "flex", gap: `${GAP}px` }}>
-          {Array.from({ length: cols }).map((_, c) => (
-            <div
-              key={c}
-              style={{
-                width: `${SIZE}px`,
-                height: `${SIZE}px`,
-                background: HEAT_COLORS[(r * cols + c) % HEAT_COLORS.length],
-                borderRadius: "6px",
-                opacity: 0.55,
-              }}
-            />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
+// 列インデックスに応じた透明度（中央側ほど濃く）
+function colOpacity(col: number, totalCols: number, fromRight: boolean): number {
+  const pos = fromRight ? col : totalCols - 1 - col;
+  const ratio = pos / (totalCols - 1); // 0=中央側, 1=外側
+  return 0.65 - ratio * 0.55; // 0.65 → 0.10
 }
 
 export default async function OgImage() {
@@ -81,31 +54,60 @@ export default async function OgImage() {
     : [];
   const ff = fontData ? "JP, sans-serif" : "sans-serif";
 
+  const ROWS = 7;
+  const COLS = 4;
+  const CELL = 44;
+  const GAP = 5;
+
   return new ImageResponse(
     (
-      <div style={{ background: "#ffffff", width: "100%", height: "100%", display: "flex", flexDirection: "column", fontFamily: ff }}>
+      <div
+        style={{
+          background: "#ffffff",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          fontFamily: ff,
+        }}
+      >
+        {/* 上部アクセントバー */}
+        <div style={{ height: "6px", background: "#111827", display: "flex" }} />
 
-        {/* 上部アクセントバー（全幅） */}
-        <div style={{ height: "6px", background: "#111827", width: "100%", display: "flex" }} />
+        <div style={{ flex: 1, display: "flex", alignItems: "stretch" }}>
 
-        <div style={{ flex: 1, display: "flex" }}>
-
-          {/* ── 左装飾（x:0〜285 フル表示のみ） ── */}
+          {/* 左装飾（x:0〜285 フル表示のみ） */}
           <div
             style={{
               width: "285px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
+              justifyContent: "flex-end",
+              paddingRight: "12px",
               overflow: "hidden",
             }}
           >
-            {/* グラデーションオーバーレイ */}
-            <div style={{ position: "absolute", left: 0, top: 0, width: "285px", height: "630px", backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.85) 100%)", display: "flex", zIndex: 1 }} />
-            <DecoGrid cols={4} rows={7} />
+            <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px` }}>
+              {Array.from({ length: ROWS }).map((_, r) => (
+                <div key={r} style={{ display: "flex", gap: `${GAP}px` }}>
+                  {Array.from({ length: COLS }).map((_, c) => (
+                    <div
+                      key={c}
+                      style={{
+                        width: `${CELL}px`,
+                        height: `${CELL}px`,
+                        background: HEAT[(r * COLS + c) % HEAT.length],
+                        borderRadius: "6px",
+                        opacity: colOpacity(c, COLS, true),
+                      }}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* ── 中央セーフゾーン（x:285〜915 = 630px） ── */}
+          {/* 中央セーフゾーン（x:285〜915 = 630px） */}
           <div
             style={{
               width: "630px",
@@ -113,25 +115,54 @@ export default async function OgImage() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              padding: "0 40px",
+              padding: "0 44px",
               gap: "0px",
             }}
           >
-            {/* ロゴ + サービス名 */}
-            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "28px" }}>
+            {/* ロゴ + 名前 */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                marginBottom: "28px",
+              }}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoSrc} width={52} height={52} style={{ objectFit: "contain" }} alt="" />
-              <span style={{ fontSize: "42px", fontWeight: 700, color: "#111827", letterSpacing: "-0.025em" }}>
+              <img
+                src={logoSrc}
+                width={52}
+                height={52}
+                style={{ objectFit: "contain" }}
+                alt=""
+              />
+              <span
+                style={{
+                  fontSize: "42px",
+                  fontWeight: 700,
+                  color: "#111827",
+                  letterSpacing: "-0.025em",
+                }}
+              >
                 KOMARO
               </span>
             </div>
 
-            {/* Eyebrow ラベル */}
-            <span style={{ fontSize: "13px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "18px" }}>
+            {/* Eyebrow */}
+            <span
+              style={{
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#9ca3af",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                marginBottom: "18px",
+              }}
+            >
               Schedule Coordination
             </span>
 
-            {/* メインヘッドライン */}
+            {/* ヘッドライン */}
             <div
               style={{
                 display: "flex",
@@ -143,7 +174,6 @@ export default async function OgImage() {
                 lineHeight: 1.08,
                 letterSpacing: "-0.025em",
                 marginBottom: "22px",
-                textAlign: "center",
               }}
             >
               <span>コマで見る、</span>
@@ -151,8 +181,16 @@ export default async function OgImage() {
             </div>
 
             {/* サブテキスト */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", marginBottom: "36px" }}>
-              <span style={{ fontSize: "18px", color: "#4b5563", textAlign: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "6px",
+                marginBottom: "36px",
+              }}
+            >
+              <span style={{ fontSize: "18px", color: "#4b5563" }}>
                 誰がいつ空いているか、コマの色で一発確認。
               </span>
               <span style={{ fontSize: "16px", color: "#9ca3af" }}>
@@ -160,7 +198,7 @@ export default async function OgImage() {
               </span>
             </div>
 
-            {/* CTA ボタン */}
+            {/* CTA */}
             <div
               style={{
                 display: "flex",
@@ -170,26 +208,41 @@ export default async function OgImage() {
                 fontSize: "18px",
                 fontWeight: 700,
                 color: "#ffffff",
-                letterSpacing: "-0.01em",
               }}
             >
               イベントを作成する →
             </div>
           </div>
 
-          {/* ── 右装飾（x:915〜1200 フル表示のみ） ── */}
+          {/* 右装飾（x:915〜1200 フル表示のみ） */}
           <div
             style={{
               flex: 1,
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
+              justifyContent: "flex-start",
+              paddingLeft: "12px",
               overflow: "hidden",
             }}
           >
-            {/* グラデーションオーバーレイ */}
-            <div style={{ position: "absolute", right: 0, top: 0, width: "285px", height: "630px", backgroundImage: "linear-gradient(to left, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.85) 100%)", display: "flex", zIndex: 1 }} />
-            <DecoGrid cols={4} rows={7} />
+            <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px` }}>
+              {Array.from({ length: ROWS }).map((_, r) => (
+                <div key={r} style={{ display: "flex", gap: `${GAP}px` }}>
+                  {Array.from({ length: COLS }).map((_, c) => (
+                    <div
+                      key={c}
+                      style={{
+                        width: `${CELL}px`,
+                        height: `${CELL}px`,
+                        background: HEAT[(r * COLS + c + 3) % HEAT.length],
+                        borderRadius: "6px",
+                        opacity: colOpacity(c, COLS, false),
+                      }}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
 
         </div>

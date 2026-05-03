@@ -6,16 +6,21 @@ import path from "path";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const HEAT_COLORS = [
-  "#f3f4f6", "#e5e7eb", "#9ca3af",
-  "#4b5563", "#dc2626", "#e5e7eb",
-  "#9ca3af", "#f3f4f6", "#4b5563",
-  "#dc2626", "#e5e7eb", "#9ca3af",
-  "#f3f4f6", "#4b5563", "#e5e7eb",
-  "#dc2626", "#9ca3af", "#f3f4f6",
-  "#4b5563", "#e5e7eb", "#dc2626",
-  "#9ca3af", "#f3f4f6", "#4b5563",
+const HEAT: string[] = [
+  "#f3f4f6", "#9ca3af", "#dc2626", "#e5e7eb",
+  "#4b5563", "#e5e7eb", "#9ca3af", "#f3f4f6",
+  "#dc2626", "#4b5563", "#f3f4f6", "#9ca3af",
+  "#e5e7eb", "#dc2626", "#4b5563", "#e5e7eb",
+  "#9ca3af", "#f3f4f6", "#e5e7eb", "#dc2626",
+  "#4b5563", "#9ca3af", "#dc2626", "#f3f4f6",
+  "#e5e7eb", "#4b5563", "#9ca3af", "#dc2626",
 ];
+
+function colOpacity(col: number, totalCols: number, fromRight: boolean): number {
+  const pos = fromRight ? col : totalCols - 1 - col;
+  const ratio = pos / (totalCols - 1);
+  return 0.65 - ratio * 0.55;
+}
 
 async function loadFont(extraChars: string): Promise<ArrayBuffer | null> {
   const base = "コマで見る日程調整登録不要URLを送るだけ参加して回答する人が回答中への招待募集中 KOMARO0123456789/(水木金土月火)年月日:.";
@@ -38,29 +43,6 @@ async function loadFont(extraChars: string): Promise<ArrayBuffer | null> {
   }
 }
 
-function DecoGrid({ cols, rows }: { cols: number; rows: number }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-      {Array.from({ length: rows }).map((_, r) => (
-        <div key={r} style={{ display: "flex", gap: "5px" }}>
-          {Array.from({ length: cols }).map((_, c) => (
-            <div
-              key={c}
-              style={{
-                width: "44px",
-                height: "44px",
-                background: HEAT_COLORS[(r * cols + c) % HEAT_COLORS.length],
-                borderRadius: "6px",
-                opacity: 0.55,
-              }}
-            />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default async function OgImage({
   params,
 }: {
@@ -70,7 +52,7 @@ export default async function OgImage({
 
   const event = await prisma.event.findFirst({
     where: { id: eventId, deletedAt: null },
-    select: { title: true, colLabels: true },
+    select: { title: true },
   });
 
   const participantCount = event
@@ -88,7 +70,6 @@ export default async function OgImage({
     const rest = title.slice(LINE_MAX);
     line2 = rest.length > LINE_MAX ? rest.slice(0, LINE_MAX - 1) + "…" : rest;
   }
-
   const titleFontSize = line2 ? 52 : 60;
 
   const logoBuffer = fs.readFileSync(path.join(process.cwd(), "public/komaro-logo.png"));
@@ -100,22 +81,60 @@ export default async function OgImage({
     : [];
   const ff = fontData ? "JP, sans-serif" : "sans-serif";
 
+  const ROWS = 7;
+  const COLS = 4;
+  const CELL = 44;
+  const GAP = 5;
+
   return new ImageResponse(
     (
-      <div style={{ background: "#ffffff", width: "100%", height: "100%", display: "flex", flexDirection: "column", fontFamily: ff }}>
-
+      <div
+        style={{
+          background: "#ffffff",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          fontFamily: ff,
+        }}
+      >
         {/* 上部アクセントバー */}
-        <div style={{ height: "6px", background: "#111827", width: "100%", display: "flex" }} />
+        <div style={{ height: "6px", background: "#111827", display: "flex" }} />
 
-        <div style={{ flex: 1, display: "flex" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "stretch" }}>
 
-          {/* ── 左装飾（フル表示のみ） ── */}
-          <div style={{ width: "285px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-            <div style={{ position: "absolute", left: 0, top: 0, width: "285px", height: "630px", backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.85) 100%)", display: "flex", zIndex: 1 }} />
-            <DecoGrid cols={4} rows={7} />
+          {/* 左装飾 */}
+          <div
+            style={{
+              width: "285px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              paddingRight: "12px",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px` }}>
+              {Array.from({ length: ROWS }).map((_, r) => (
+                <div key={r} style={{ display: "flex", gap: `${GAP}px` }}>
+                  {Array.from({ length: COLS }).map((_, c) => (
+                    <div
+                      key={c}
+                      style={{
+                        width: `${CELL}px`,
+                        height: `${CELL}px`,
+                        background: HEAT[(r * COLS + c) % HEAT.length],
+                        borderRadius: "6px",
+                        opacity: colOpacity(c, COLS, true),
+                      }}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* ── 中央セーフゾーン（630px） ── */}
+          {/* 中央セーフゾーン（630px） */}
           <div
             style={{
               width: "630px",
@@ -127,20 +146,49 @@ export default async function OgImage({
             }}
           >
             {/* ブランド */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "30px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                marginBottom: "28px",
+              }}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoSrc} width={40} height={40} style={{ objectFit: "contain" }} alt="" />
-              <span style={{ fontSize: "32px", fontWeight: 700, color: "#9ca3af", letterSpacing: "-0.02em" }}>
+              <img
+                src={logoSrc}
+                width={40}
+                height={40}
+                style={{ objectFit: "contain" }}
+                alt=""
+              />
+              <span
+                style={{
+                  fontSize: "32px",
+                  fontWeight: 700,
+                  color: "#9ca3af",
+                  letterSpacing: "-0.02em",
+                }}
+              >
                 KOMARO
               </span>
             </div>
 
             {/* ラベル */}
-            <span style={{ fontSize: "13px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "16px" }}>
+            <span
+              style={{
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#9ca3af",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                marginBottom: "16px",
+              }}
+            >
               日程調整への招待
             </span>
 
-            {/* イベントタイトル */}
+            {/* タイトル */}
             <div
               style={{
                 display: "flex",
@@ -152,14 +200,13 @@ export default async function OgImage({
                 lineHeight: 1.1,
                 letterSpacing: "-0.025em",
                 marginBottom: "28px",
-                textAlign: "center",
               }}
             >
               <span>{line1}</span>
               {line2 && <span>{line2}</span>}
             </div>
 
-            {/* 参加者数バッジ */}
+            {/* 参加者バッジ */}
             <div
               style={{
                 display: "flex",
@@ -170,10 +217,12 @@ export default async function OgImage({
                 fontSize: "16px",
                 fontWeight: 700,
                 color: "#4b5563",
-                marginBottom: "36px",
+                marginBottom: "32px",
               }}
             >
-              {participantCount > 0 ? `${participantCount}人が回答中` : "回答者募集中"}
+              {participantCount > 0
+                ? `${participantCount}人が回答中`
+                : "回答者募集中"}
             </div>
 
             {/* CTA */}
@@ -186,17 +235,41 @@ export default async function OgImage({
                 fontSize: "18px",
                 fontWeight: 700,
                 color: "#ffffff",
-                letterSpacing: "-0.01em",
               }}
             >
               参加して回答する →
             </div>
           </div>
 
-          {/* ── 右装飾（フル表示のみ） ── */}
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-            <div style={{ position: "absolute", right: 0, top: 0, width: "285px", height: "630px", backgroundImage: "linear-gradient(to left, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.85) 100%)", display: "flex", zIndex: 1 }} />
-            <DecoGrid cols={4} rows={7} />
+          {/* 右装飾 */}
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              paddingLeft: "12px",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px` }}>
+              {Array.from({ length: ROWS }).map((_, r) => (
+                <div key={r} style={{ display: "flex", gap: `${GAP}px` }}>
+                  {Array.from({ length: COLS }).map((_, c) => (
+                    <div
+                      key={c}
+                      style={{
+                        width: `${CELL}px`,
+                        height: `${CELL}px`,
+                        background: HEAT[(r * COLS + c + 3) % HEAT.length],
+                        borderRadius: "6px",
+                        opacity: colOpacity(c, COLS, false),
+                      }}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
 
         </div>
