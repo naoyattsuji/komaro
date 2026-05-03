@@ -571,7 +571,7 @@ export default function CreatePage() {
               {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
               <div className="space-y-3">
                 <div className="flex gap-3">
-                  <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-500 mb-1">開始日</p>
                     <input
                       type="date"
@@ -580,7 +580,7 @@ export default function CreatePage() {
                       className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="w-28 shrink-0">
                     <p className="text-xs text-gray-500 mb-1">日数</p>
                     <select
                       value={dateRowDays}
@@ -752,7 +752,7 @@ export default function CreatePage() {
               {errors.colLabels && <p className="text-xs text-red-500 mb-2">{errors.colLabels}</p>}
               <div className="space-y-3">
                 <div className="flex gap-3">
-                  <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-500 mb-1">開始日</p>
                     <input
                       type="date"
@@ -761,7 +761,7 @@ export default function CreatePage() {
                       className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="w-28 shrink-0">
                     <p className="text-xs text-gray-500 mb-1">日数</p>
                     <select
                       value={calColDays}
