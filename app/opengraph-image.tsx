@@ -5,35 +5,21 @@ import path from "path";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// ヒートマップデータ（トップページ DemoTable 準拠のグレースキーム）
-const cols = ["5/7(水)", "5/8(木)", "5/9(金)", "5/10(土)"];
-const rows = ["10:00", "12:00", "14:00", "16:00", "18:00"];
-const data = [
-  [3,  8, 10,  5],
-  [7, 10,  6,  3],
-  [5,  6, 10,  8],
-  [10, 7,  4,  6],
-  [3, 10,  9,  4],
+// ヒートマップのカラースキーム（トップページ準拠）
+const HEAT_COLORS = [
+  "#f3f4f6", "#e5e7eb", "#9ca3af",
+  "#4b5563", "#dc2626", "#e5e7eb",
+  "#9ca3af", "#f3f4f6", "#4b5563",
+  "#dc2626", "#e5e7eb", "#9ca3af",
+  "#f3f4f6", "#4b5563", "#e5e7eb",
+  "#dc2626", "#9ca3af", "#f3f4f6",
+  "#4b5563", "#e5e7eb", "#dc2626",
+  "#9ca3af", "#f3f4f6", "#4b5563",
 ];
-const MAX = 10;
-
-function cellBg(v: number) {
-  const r = v / MAX;
-  if (r <= 0.25) return "#f3f4f6";
-  if (r <= 0.5)  return "#e5e7eb";
-  if (r <= 0.75) return "#9ca3af";
-  if (r < 1)     return "#4b5563";
-  return "#dc2626";
-}
-function cellFg(v: number) {
-  const r = v / MAX;
-  if (r <= 0.5) return "#4b5563";
-  return "#ffffff";
-}
 
 async function loadFont(): Promise<ArrayBuffer | null> {
   const text = encodeURIComponent(
-    "コマで見る日程調整登録不要URLを送るだけ全員の空き時間ひと目確認無料イベントを作成する KOMARO水木金土:."
+    "コマで見る日程調整登録不要URLを送るだけ全員の空き時間ひと目確認イベントを作成する KOMARO0123456789ScheduleCoordinatin."
   );
   try {
     const css = await fetch(
@@ -53,6 +39,38 @@ async function loadFont(): Promise<ArrayBuffer | null> {
   }
 }
 
+/** 左右の装飾グリッド（フル表示時のみ見える） */
+function DecoGrid({ cols, rows }: { cols: number; rows: number }) {
+  const cells: { color: string; i: number }[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      cells.push({ color: HEAT_COLORS[(r * cols + c) % HEAT_COLORS.length], i: r * cols + c });
+    }
+  }
+  const SIZE = 44;
+  const GAP = 5;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px` }}>
+      {Array.from({ length: rows }).map((_, r) => (
+        <div key={r} style={{ display: "flex", gap: `${GAP}px` }}>
+          {Array.from({ length: cols }).map((_, c) => (
+            <div
+              key={c}
+              style={{
+                width: `${SIZE}px`,
+                height: `${SIZE}px`,
+                background: HEAT_COLORS[(r * cols + c) % HEAT_COLORS.length],
+                borderRadius: "6px",
+                opacity: 0.55,
+              }}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default async function OgImage() {
   const logoBuffer = fs.readFileSync(path.join(process.cwd(), "public/komaro-logo.png"));
   const logoSrc = `data:image/png;base64,${logoBuffer.toString("base64")}`;
@@ -65,144 +83,116 @@ export default async function OgImage() {
 
   return new ImageResponse(
     (
-      <div
-        style={{
-          background: "#ffffff",
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          fontFamily: ff,
-        }}
-      >
-        {/* ═══ 左側：1:1 クロップ時のセーフゾーン（630×630px） ═══ */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            width: "630px",
-            height: "630px",
-            padding: "56px 60px",
-            borderRight: "1px solid #f3f4f6",
-          }}
-        >
-          {/* ロゴ + サービス名 */}
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoSrc} width={44} height={44} style={{ objectFit: "contain" }} alt="" />
-            <span style={{ fontSize: "36px", fontWeight: 700, color: "#111827", letterSpacing: "-0.02em" }}>
-              KOMARO
-            </span>
+      <div style={{ background: "#ffffff", width: "100%", height: "100%", display: "flex", flexDirection: "column", fontFamily: ff }}>
+
+        {/* 上部アクセントバー（全幅） */}
+        <div style={{ height: "6px", background: "#111827", width: "100%", display: "flex" }} />
+
+        <div style={{ flex: 1, display: "flex" }}>
+
+          {/* ── 左装飾（x:0〜285 フル表示のみ） ── */}
+          <div
+            style={{
+              width: "285px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            {/* グラデーションオーバーレイ */}
+            <div style={{ position: "absolute", left: 0, top: 0, width: "285px", height: "630px", backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.85) 100%)", display: "flex", zIndex: 1 }} />
+            <DecoGrid cols={4} rows={7} />
           </div>
 
-          {/* メインコピー */}
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: "13px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "18px" }}>
+          {/* ── 中央セーフゾーン（x:285〜915 = 630px） ── */}
+          <div
+            style={{
+              width: "630px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "0 40px",
+              gap: "0px",
+            }}
+          >
+            {/* ロゴ + サービス名 */}
+            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "28px" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoSrc} width={52} height={52} style={{ objectFit: "contain" }} alt="" />
+              <span style={{ fontSize: "42px", fontWeight: 700, color: "#111827", letterSpacing: "-0.025em" }}>
+                KOMARO
+              </span>
+            </div>
+
+            {/* Eyebrow ラベル */}
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "18px" }}>
               Schedule Coordination
             </span>
-            <div style={{ display: "flex", flexDirection: "column", fontSize: "58px", fontWeight: 700, color: "#111827", lineHeight: 1.05, letterSpacing: "-0.025em", marginBottom: "24px" }}>
+
+            {/* メインヘッドライン */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                fontSize: "62px",
+                fontWeight: 700,
+                color: "#111827",
+                lineHeight: 1.08,
+                letterSpacing: "-0.025em",
+                marginBottom: "22px",
+                textAlign: "center",
+              }}
+            >
               <span>コマで見る、</span>
               <span>日程調整。</span>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <span style={{ fontSize: "19px", color: "#4b5563", lineHeight: 1.5 }}>
+
+            {/* サブテキスト */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", marginBottom: "36px" }}>
+              <span style={{ fontSize: "18px", color: "#4b5563", textAlign: "center" }}>
                 誰がいつ空いているか、コマの色で一発確認。
               </span>
-              <span style={{ fontSize: "17px", color: "#9ca3af" }}>
+              <span style={{ fontSize: "16px", color: "#9ca3af" }}>
                 登録不要 · URLを送るだけ
               </span>
             </div>
+
+            {/* CTA ボタン */}
+            <div
+              style={{
+                display: "flex",
+                background: "#111827",
+                borderRadius: "9px",
+                padding: "15px 32px",
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#ffffff",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              イベントを作成する →
+            </div>
           </div>
 
-          {/* CTA */}
+          {/* ── 右装飾（x:915〜1200 フル表示のみ） ── */}
           <div
             style={{
+              flex: 1,
               display: "flex",
-              background: "#111827",
-              borderRadius: "8px",
-              padding: "14px 28px",
-              fontSize: "17px",
-              fontWeight: 700,
-              color: "#ffffff",
-              alignSelf: "flex-start",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
             }}
           >
-            イベントを作成する →
+            {/* グラデーションオーバーレイ */}
+            <div style={{ position: "absolute", right: 0, top: 0, width: "285px", height: "630px", backgroundImage: "linear-gradient(to left, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.85) 100%)", display: "flex", zIndex: 1 }} />
+            <DecoGrid cols={4} rows={7} />
           </div>
-        </div>
 
-        {/* ═══ 右側：装飾ヒートマップ（1:1クロップでは非表示） ═══ */}
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-            background: "#fafafa",
-            padding: "48px 40px",
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {/* 列ヘッダー */}
-            <div style={{ display: "flex", marginBottom: "2px" }}>
-              <div style={{ width: "52px" }} />
-              {cols.map((c) => (
-                <div
-                  key={c}
-                  style={{
-                    width: "60px",
-                    textAlign: "center",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    color: "#9ca3af",
-                    paddingBottom: "8px",
-                  }}
-                >
-                  {c}
-                </div>
-              ))}
-            </div>
-            {/* データ行 */}
-            {rows.map((r, ri) => (
-              <div key={r} style={{ display: "flex", marginBottom: "2px" }}>
-                <div
-                  style={{
-                    width: "52px",
-                    height: "48px",
-                    display: "flex",
-                    alignItems: "center",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    color: "#9ca3af",
-                  }}
-                >
-                  {r}
-                </div>
-                {data[ri].map((v, ci) => (
-                  <div
-                    key={ci}
-                    style={{
-                      width: "58px",
-                      height: "48px",
-                      background: cellBg(v),
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "14px",
-                      fontWeight: 700,
-                      color: cellFg(v),
-                      margin: "1px",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    {v}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
         </div>
-
       </div>
     ),
     { ...size, fonts }
