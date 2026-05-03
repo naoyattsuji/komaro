@@ -15,15 +15,41 @@ interface VoiceInputReaderProps {
 type AnySpeechRecognition = any;
 
 // 曜日パターン（長いものから先に照合して誤マッチを防ぐ）
-const DAY_PATTERNS: { keywords: string[]; colPattern: string }[] = [
-  { keywords: ["月曜日", "月曜"], colPattern: "(月)" },
-  { keywords: ["火曜日", "火曜"], colPattern: "(火)" },
-  { keywords: ["水曜日", "水曜"], colPattern: "(水)" },
-  { keywords: ["木曜日", "木曜"], colPattern: "(木)" },
-  { keywords: ["金曜日", "金曜"], colPattern: "(金)" },
-  { keywords: ["土曜日", "土曜"], colPattern: "(土)" },
-  { keywords: ["日曜日", "日曜"], colPattern: "(日)" },
+const DAY_PATTERNS: { keywords: string[]; dayChar: string }[] = [
+  { keywords: ["月曜日", "月曜", "月"], dayChar: "月" },
+  { keywords: ["火曜日", "火曜", "火"], dayChar: "火" },
+  { keywords: ["水曜日", "水曜", "水"], dayChar: "水" },
+  { keywords: ["木曜日", "木曜", "木"], dayChar: "木" },
+  { keywords: ["金曜日", "金曜", "金"], dayChar: "金" },
+  { keywords: ["土曜日", "土曜", "土"], dayChar: "土" },
+  { keywords: ["日曜日", "日曜", "日"], dayChar: "日" },
 ];
+
+/**
+ * 列ラベルが指定の曜日を表しているか判定。
+ * "5/7(月)" "(月)" "月曜" "月曜日" "月" など多様な形式に対応。
+ */
+function labelMatchesDay(label: string, dayChar: string): boolean {
+  return (
+    label.includes(`(${dayChar})`) ||   // "5/7(月)", "(月)"
+    label.includes(`${dayChar}曜`) ||    // "月曜", "月曜日"
+    label === dayChar                    // ラベルがそのまま "月"
+  );
+}
+
+/**
+ * 行ラベルから開始時刻（分）を取得。
+ * "10:00" "10時" "10:00〜12:00" "10:00-12:00" などに対応。
+ */
+function parseRowMinutes(label: string): number | null {
+  // そのまま試す
+  const direct = parseTimeToMinutes(label);
+  if (direct !== null) return direct;
+  // 範囲表記から先頭の時刻を取り出す ("10:00〜12:00" → "10:00")
+  const rangeStart = label.match(/^(\d{1,2}:\d{2})/);
+  if (rangeStart) return parseTimeToMinutes(rangeStart[1]);
+  return null;
+}
 
 // ──────────────────────────────────────────────
 // 音声テキストから空きコマを解析するコアロジック
@@ -57,10 +83,10 @@ function parseVoiceText(
     debug.push("全列を対象");
   } else {
     // 曜日キーワードで照合
-    for (const { keywords, colPattern } of DAY_PATTERNS) {
+    for (const { keywords, dayChar } of DAY_PATTERNS) {
       if (keywords.some((kw) => text.includes(kw))) {
         colLabels.forEach((label, ci) => {
-          if (label.includes(colPattern)) mentionedColIndices.add(ci);
+          if (labelMatchesDay(label, dayChar)) mentionedColIndices.add(ci);
         });
       }
     }
@@ -142,7 +168,7 @@ function parseVoiceText(
           available.add(`${ri}-${ci}`);
           continue;
         }
-        const rowMinutes = parseTimeToMinutes(rowLabels[ri]);
+        const rowMinutes = parseRowMinutes(rowLabels[ri]);
         if (rowMinutes === null) continue;
 
         const inRange =
@@ -155,6 +181,8 @@ function parseVoiceText(
     }
   }
 
+  // 行ラベルのパース結果をデバッグ出力
+  debug.push(`行ラベル解析: ${rowLabels.map((l) => `${l}→${parseRowMinutes(l) ?? "null"}`).join(", ")}`);
   debug.push(`選択されたコマ数: ${available.size}`);
   return { available, debug };
 }
