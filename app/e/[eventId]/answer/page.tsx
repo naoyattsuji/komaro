@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { FadeInSection } from "@/components/FadeInSection";
 import { CalendarImageReader } from "@/components/CalendarImageReader";
+import { VoiceInputReader } from "@/components/VoiceInputReader";
 
 interface EventInfo {
   id: string;
@@ -180,9 +181,14 @@ export default function AnswerPage({
         />
       </div>
 
-      {/* Screenshot auto-fill */}
-      <div className="anim-hero mb-2" style={{ animationDelay: "160ms" }}>
+      {/* 自動入力ボタン群 */}
+      <div className="anim-hero flex flex-wrap gap-2 mb-2" style={{ animationDelay: "160ms" }}>
         <CalendarImageReader
+          rowLabels={event.rowLabels}
+          colLabels={event.colLabels}
+          onDetected={(cells) => setSelectedCells(cells)}
+        />
+        <VoiceInputReader
           rowLabels={event.rowLabels}
           colLabels={event.colLabels}
           onDetected={(cells) => setSelectedCells(cells)}
