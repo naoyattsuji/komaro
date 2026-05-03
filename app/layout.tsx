@@ -45,7 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5">
-              <Image src="/komaro-icon.png" alt="" width={36} height={36} className="h-9 w-9 object-contain" priority />
+              <Image src="/komaro-logo.png" alt="" width={36} height={36} className="h-9 w-9 object-contain" priority />
               <Image src="/komaro-word.png" alt="KOMARO" width={110} height={30} className="h-7 w-auto object-contain" priority />
             </Link>
             <nav className="flex items-center gap-5">
@@ -62,7 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="border-t border-gray-100 bg-white">
           <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Image src="/komaro-icon.png" alt="" width={20} height={20} className="h-5 w-5 object-contain opacity-40" />
+              <Image src="/komaro-logo.png" alt="" width={20} height={20} className="h-5 w-5 object-contain opacity-40" />
               <span className="text-xs text-gray-400">© 2026 KOMARO</span>
             </div>
             <div className="flex items-center gap-5">
