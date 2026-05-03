@@ -4,6 +4,7 @@ import "./globals.css";
 import { ToastContainer } from "@/components/ui/Toast";
 import Link from "next/link";
 import Image from "next/image";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </footer>
         <ToastContainer />
+        <GoogleAnalytics gaId="G-BM1B0C55N2" />
       </body>
     </html>
   );
