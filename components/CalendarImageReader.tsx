@@ -69,6 +69,9 @@ async function analyzeWithGemini(
         available.add(`${row}-${col}`);
       }
     }
+    // extractedEvents をデバッグ用に添付
+    (available as Set<string> & { _debug?: string })._debug =
+      `Gemini が検出した予定数: ${data.extractedEvents ?? "?"} 件`;
     return available;
   } catch {
     return null;
@@ -172,7 +175,8 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
     if (geminiResult !== null) {
       setPendingCells(geminiResult);
       setDetectedCount(geminiResult.size);
-      setDebugLines(["✨ Gemini AI で解析しました"]);
+      const debugNote = (geminiResult as Set<string> & { _debug?: string })._debug ?? "";
+      setDebugLines([`✨ Gemini AI で解析しました`, ...(debugNote ? [debugNote] : [])]);
       if (geminiResult.size === 0) {
         setStatus("error");
         setMessage("空き時間を検出できませんでした。別の画像をお試しください。");
