@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Mic, MicOff, X, CheckCircle, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Mic, MicOff, X, CheckCircle, AlertCircle, ChevronDown, ChevronUp, Send } from "lucide-react";
 import { parseTimeToMinutes } from "@/lib/utils";
 
 interface VoiceInputReaderProps {
@@ -14,6 +14,9 @@ interface VoiceInputReaderProps {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySpeechRecognition = any;
 
+// ステータス型
+type Status = "idle" | "listening" | "recognized" | "loading" | "done" | "error";
+
 // 曜日パターン（長いものから先に照合して誤マッチを防ぐ）
 const DAY_PATTERNS: { keywords: string[]; dayChar: string }[] = [
   { keywords: ["月曜日", "月曜", "月"], dayChar: "月" },
@@ -25,34 +28,24 @@ const DAY_PATTERNS: { keywords: string[]; dayChar: string }[] = [
   { keywords: ["日曜日", "日曜", "日"], dayChar: "日" },
 ];
 
-/**
- * 列ラベルが指定の曜日を表しているか判定。
- * "5/7(月)" "(月)" "月曜" "月曜日" "月" など多様な形式に対応。
- */
 function labelMatchesDay(label: string, dayChar: string): boolean {
   return (
-    label.includes(`(${dayChar})`) ||   // "5/7(月)", "(月)"
-    label.includes(`${dayChar}曜`) ||    // "月曜", "月曜日"
-    label === dayChar                    // ラベルがそのまま "月"
+    label.includes(`(${dayChar})`) ||
+    label.includes(`${dayChar}曜`) ||
+    label === dayChar
   );
 }
 
-/**
- * 行ラベルから開始時刻（分）を取得。
- * "10:00" "10時" "10:00〜12:00" "10:00-12:00" などに対応。
- */
 function parseRowMinutes(label: string): number | null {
-  // そのまま試す
   const direct = parseTimeToMinutes(label);
   if (direct !== null) return direct;
-  // 範囲表記から先頭の時刻を取り出す ("10:00〜12:00" → "10:00")
   const rangeStart = label.match(/^(\d{1,2}:\d{2})/);
   if (rangeStart) return parseTimeToMinutes(rangeStart[1]);
   return null;
 }
 
 // ──────────────────────────────────────────────
-// 音声テキストから空きコマを解析するコアロジック
+// 音声テキストから空きコマを解析するコアロジック（フォールバック用）
 // ──────────────────────────────────────────────
 function parseVoiceText(
   text: string,
@@ -62,7 +55,6 @@ function parseVoiceText(
   const debug: string[] = [];
   debug.push(`認識テキスト: 「${text}」`);
 
-  // ── ① 空き or 予定あり を判定 ──
   const busyPhrases = [
     "予定がある", "予定あり", "予定が入", "埋まって", "埋まり",
     "できない", "無理", "NG", "だめ", "ダメ", "行けない", "参加できない",
@@ -70,28 +62,50 @@ function parseVoiceText(
   const isBusy = busyPhrases.some((kw) => text.includes(kw));
   debug.push(`判定: ${isBusy ? "予定あり（busy）" : "空き（available）"}`);
 
-  // ── ② 対象列（曜日・日付）を特定 ──
-  const mentionedColIndices = new Set<number>();
+  // 「X以外」「Xを除く」の除外曜日を先に抽出（文全体から）
+  const excludedColIndices = new Set<number>();
+  for (const { keywords, dayChar } of DAY_PATTERNS) {
+    const hasExclude = keywords.some(
+      (kw) =>
+        text.includes(`${kw}以外`) ||
+        text.includes(`${kw}を除`) ||
+        text.includes(`${kw}除いて`)
+    );
+    if (hasExclude) {
+      colLabels.forEach((label, ci) => {
+        if (labelMatchesDay(label, dayChar)) excludedColIndices.add(ci);
+      });
+    }
+  }
 
-  if (
+  const hasAllKeyword =
     text.includes("全部") ||
     text.includes("全て") ||
     text.includes("すべて") ||
-    text.includes("毎日")
-  ) {
-    colLabels.forEach((_, ci) => mentionedColIndices.add(ci));
-    debug.push("全列を対象");
+    text.includes("毎日");
+
+  const mentionedColIndices = new Set<number>();
+
+  if (hasAllKeyword) {
+    // 全列から除外分を引く
+    colLabels.forEach((_, ci) => {
+      if (!excludedColIndices.has(ci)) mentionedColIndices.add(ci);
+    });
+    debug.push(
+      excludedColIndices.size > 0
+        ? `全列対象（除外: ${Array.from(excludedColIndices).map((ci) => colLabels[ci]).join(", ")}）`
+        : "全列を対象"
+    );
   } else {
-    // 曜日キーワードで照合
     for (const { keywords, dayChar } of DAY_PATTERNS) {
       if (keywords.some((kw) => text.includes(kw))) {
         colLabels.forEach((label, ci) => {
-          if (labelMatchesDay(label, dayChar)) mentionedColIndices.add(ci);
+          if (labelMatchesDay(label, dayChar) && !excludedColIndices.has(ci))
+            mentionedColIndices.add(ci);
         });
       }
     }
 
-    // 日付パターン「5/7」「5月7日」で照合
     for (const m of text.matchAll(/(\d{1,2})[/月](\d{1,2})日?/g)) {
       const dateStr = `${m[1]}/${m[2]}`;
       colLabels.forEach((label, ci) => {
@@ -99,9 +113,10 @@ function parseVoiceText(
       });
     }
 
-    // 曜日・日付の指定がなければ全列対象
     if (mentionedColIndices.size === 0) {
-      colLabels.forEach((_, ci) => mentionedColIndices.add(ci));
+      colLabels.forEach((_, ci) => {
+        if (!excludedColIndices.has(ci)) mentionedColIndices.add(ci);
+      });
       debug.push("曜日指定なし → 全列対象");
     }
   }
@@ -109,11 +124,9 @@ function parseVoiceText(
   const mentionedCols = Array.from(mentionedColIndices);
   debug.push(`対象列: ${mentionedCols.map((ci) => colLabels[ci]).join(", ")}`);
 
-  // ── ③ 時間範囲を解析 ──
   let startMinutes: number | null = null;
   let endMinutes: number | null = null;
 
-  // 「10時から12時」「10:00から12:00まで」
   const rangeMatch = text.match(
     /(\d{1,2}(?::\d{2})?)時?から(\d{1,2}(?::\d{2})?)時?/
   );
@@ -122,34 +135,25 @@ function parseVoiceText(
     endMinutes = parseTimeToMinutes(rangeMatch[2]);
     debug.push(`時間範囲: ${rangeMatch[1]}〜${rangeMatch[2]}`);
   } else {
-    // 時間帯キーワード
     if (text.includes("午前中")) {
       startMinutes = 6 * 60; endMinutes = 12 * 60;
-      debug.push("午前中 → 6:00〜12:00");
     } else if (text.includes("午後")) {
       startMinutes = 12 * 60; endMinutes = 19 * 60;
-      debug.push("午後 → 12:00〜19:00");
     } else if (text.includes("夕方")) {
       startMinutes = 17 * 60; endMinutes = 21 * 60;
-      debug.push("夕方 → 17:00〜21:00");
     } else if (text.includes("夜")) {
       startMinutes = 19 * 60; endMinutes = 24 * 60;
-      debug.push("夜 → 19:00〜24:00");
     } else if (text.includes("朝")) {
       startMinutes = 6 * 60; endMinutes = 10 * 60;
-      debug.push("朝 → 6:00〜10:00");
     } else if (text.includes("昼")) {
       startMinutes = 11 * 60; endMinutes = 14 * 60;
-      debug.push("昼 → 11:00〜14:00");
     }
 
-    // 「〜時」単体（範囲が見つからなかった場合）
     if (startMinutes === null) {
       const singleMatch = text.match(/(\d{1,2}(?::\d{2})?)時/);
       if (singleMatch) {
         startMinutes = parseTimeToMinutes(singleMatch[1]);
         endMinutes = startMinutes !== null ? startMinutes + 60 : null;
-        debug.push(`単一時刻: ${singleMatch[1]}時`);
       }
     }
   }
@@ -158,7 +162,6 @@ function parseVoiceText(
     debug.push("時間指定なし → 全行対象");
   }
 
-  // ── ④ コマを選択 ──
   const available = new Set<string>();
 
   if (!isBusy) {
@@ -181,8 +184,6 @@ function parseVoiceText(
     }
   }
 
-  // 行ラベルのパース結果をデバッグ出力
-  debug.push(`行ラベル解析: ${rowLabels.map((l) => `${l}→${parseRowMinutes(l) ?? "null"}`).join(", ")}`);
   debug.push(`選択されたコマ数: ${available.size}`);
   return { available, debug };
 }
@@ -193,16 +194,8 @@ function parseVoiceText(
 async function parseWithGeminiOrFallback(
   transcript: string,
   rowLabels: string[],
-  colLabels: string[],
-  setStatus: (s: "idle" | "listening" | "loading" | "done" | "error") => void,
-  setMessage: (m: string) => void,
-  setDebugLines: (d: string[]) => void,
-  setPendingCells: (c: Set<string>) => void,
-  setDetectedCount: (n: number) => void
-) {
-  setStatus("loading");
-  setMessage("AIで解析中...");
-
+  colLabels: string[]
+): Promise<{ cells: Set<string>; debugLines: string[]; ok: boolean }> {
   try {
     const res = await fetch("/api/v1/ai/parse-voice", {
       method: "POST",
@@ -225,35 +218,19 @@ async function parseWithGeminiOrFallback(
           `✨ AI解釈: ${interpretation}`,
           ...(reasoning ? [`　推論: ${reasoning}`] : []),
         ];
-        setDebugLines(debugLines);
-        setPendingCells(available);
-        setDetectedCount(available.size);
-        if (available.size === 0) {
-          setStatus("error");
-          setMessage("空き時間を検出できませんでした。もう少し具体的に話してみてください。");
-        } else {
-          setStatus("done");
-          setMessage(`${available.size}コマの空き時間を検出しました`);
-        }
-        return;
+        return { cells: available, debugLines, ok: true };
       }
     }
   } catch {
     // フォールバックへ
   }
 
-  // 正規表現フォールバック
   const { available, debug } = parseVoiceText(transcript, rowLabels, colLabels);
-  setDebugLines(["⚙️ ローカル解析（フォールバック）", ...debug]);
-  setPendingCells(available);
-  setDetectedCount(available.size);
-  if (available.size === 0) {
-    setStatus("error");
-    setMessage("空き時間を検出できませんでした。「月曜の10時から12時は空いてます」のように話してみてください。");
-  } else {
-    setStatus("done");
-    setMessage(`${available.size}コマの空き時間を検出しました`);
-  }
+  return {
+    cells: available,
+    debugLines: ["⚙️ ローカル解析（フォールバック）", ...debug],
+    ok: available.size > 0,
+  };
 }
 
 // ──────────────────────────────────────────────
@@ -268,7 +245,9 @@ export function VoiceInputReader({
   const [supported, setSupported] = useState(true);
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const [status, setStatus] = useState<"idle" | "listening" | "loading" | "done" | "error">("idle");
+  const [editableTranscript, setEditableTranscript] = useState("");
+  const [interimTranscript, setInterimTranscript] = useState("");
+  const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [pendingCells, setPendingCells] = useState<Set<string>>(new Set());
   const [detectedCount, setDetectedCount] = useState(0);
@@ -285,23 +264,30 @@ export function VoiceInputReader({
     setSupported(ok);
   }, []);
 
+  // 確定テキストを蓄積するための ref（continuous=true では onresult が複数回発火する）
+  const finalTranscriptRef = useRef("");
+
   const startListening = useCallback(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const w = window as any;
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!SR) return;
 
+    finalTranscriptRef.current = "";
+
     const recognition = new SR();
     recognition.lang = "ja-JP";
-    recognition.continuous = false;
+    recognition.continuous = true;      // 無音でも自動停止しない
     recognition.interimResults = true;
-    recognition.maxAlternatives = 3; // 複数候補を取得して最善を選ぶ
+    recognition.maxAlternatives = 3;
 
     recognition.onstart = () => {
       setListening(true);
       setStatus("listening");
-      setMessage("話しかけてください...");
+      setMessage("話しかけてください。終わったら停止ボタンを押してください");
       setTranscript("");
+      setEditableTranscript("");
+      setInterimTranscript("");
       setPendingCells(new Set());
       setDebugLines([]);
     };
@@ -309,29 +295,18 @@ export function VoiceInputReader({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
       let interim = "";
-      let finalPrimary = "";
-      // 信頼度の高い複数候補を収集（Gemini に渡して最善を選ばせる）
-      const alternatives: string[] = [];
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const r = event.results[i];
         if (r.isFinal) {
-          finalPrimary += r[0].transcript;
-          for (let a = 0; a < r.length; a++) {
-            if (r[a].transcript.trim()) alternatives.push(r[a].transcript.trim());
-          }
+          // 確定テキストを蓄積
+          finalTranscriptRef.current += r[0].transcript;
+          setTranscript(finalTranscriptRef.current);
         } else {
           interim += r[0].transcript;
         }
       }
-      setTranscript(finalPrimary || interim);
-
-      if (finalPrimary) {
-        // 候補が複数あれば全部渡す（重複除去）
-        const unique = Array.from(new Set(alternatives)).slice(0, 3);
-        const transcriptToSend = unique.length > 1 ? unique.join(" / ") : finalPrimary;
-        parseWithGeminiOrFallback(transcriptToSend, rowLabels, colLabels, setStatus, setMessage, setDebugLines, setPendingCells, setDetectedCount);
-      }
+      setInterimTranscript(interim);
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -362,14 +337,22 @@ export function VoiceInputReader({
 
     recognition.onend = () => {
       setListening(false);
-      // 結果なしで終了した場合（沈黙タイムアウト等）にエラーを表示
-      setStatus((prev) => {
-        if (prev === "listening") {
-          setMessage("音声を認識できませんでした。ボタンを押してからすぐに話してください。");
-          return "error";
-        }
-        return prev;
-      });
+      const accumulated = finalTranscriptRef.current.trim();
+      if (accumulated) {
+        // 蓄積されたテキストがあれば確認ステップへ
+        setEditableTranscript(accumulated);
+        setInterimTranscript("");
+        setStatus("recognized");
+        setMessage("テキストを確認・修正してから「解析する」を押してください");
+      } else {
+        setStatus((prev) => {
+          if (prev === "listening") {
+            setMessage("音声を認識できませんでした。ボタンを押してからすぐに話してください。");
+            return "error";
+          }
+          return prev;
+        });
+      }
     };
 
     recognitionRef.current = recognition;
@@ -379,12 +362,31 @@ export function VoiceInputReader({
       setStatus("error");
       setMessage("音声入力を開始できませんでした。ページを再読み込みしてもう一度お試しください。");
     }
-  }, [rowLabels, colLabels]);
+  }, []);
 
   const stopListening = useCallback(() => {
     recognitionRef.current?.stop();
     setListening(false);
   }, []);
+
+  // 確認ステップ後に AI 解析を実行
+  const handleAnalyze = useCallback(async () => {
+    const text = editableTranscript.trim();
+    if (!text) return;
+    setStatus("loading");
+    setMessage("AIで解析中...");
+    const { cells, debugLines: dl } = await parseWithGeminiOrFallback(text, rowLabels, colLabels);
+    setDebugLines(dl);
+    setPendingCells(cells);
+    setDetectedCount(cells.size);
+    if (cells.size === 0) {
+      setStatus("error");
+      setMessage("空き時間を検出できませんでした。テキストを編集してもう一度試してください。");
+    } else {
+      setStatus("done");
+      setMessage(`${cells.size}コマの空き時間を検出しました`);
+    }
+  }, [editableTranscript, rowLabels, colLabels]);
 
   const handleApply = () => {
     onDetected(pendingCells);
@@ -395,8 +397,11 @@ export function VoiceInputReader({
   const reset = () => {
     recognitionRef.current?.stop();
     recognitionRef.current = null;
+    finalTranscriptRef.current = "";
     setListening(false);
     setTranscript("");
+    setEditableTranscript("");
+    setInterimTranscript("");
     setStatus("idle");
     setMessage("");
     setDetectedCount(0);
@@ -442,118 +447,179 @@ export function VoiceInputReader({
         </div>
       ) : (
         <>
-          <p className="text-xs text-gray-500 leading-relaxed">
-            空いている時間を話してください。<br />
-            例:「月曜の10時から12時は空いてます」「水曜日は全部大丈夫です」
-          </p>
+          {/* ── ステップ1: 録音 ── */}
+          {(status === "idle" || status === "listening" || status === "error") && (
+            <>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                空いている時間を話してください。<br />
+                例:「月曜の10時から12時は空いてます」「水曜日は全部大丈夫です」
+              </p>
 
-          {/* マイクボタン */}
-          <div className="flex flex-col items-center gap-2 py-3">
-            <button
-              type="button"
-              onClick={listening ? stopListening : startListening}
-              disabled={status === "done" || status === "loading"}
-              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-md ${
-                listening
-                  ? "bg-red-500 hover:bg-red-600 animate-pulse shadow-red-200"
-                  : status === "loading"
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : status === "done"
-                  ? "bg-gray-200 cursor-not-allowed"
-                  : "bg-gray-900 hover:bg-gray-700"
-              }`}
-            >
-              {status === "loading" ? (
-                <svg className="animate-spin w-6 h-6 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                </svg>
-              ) : listening ? (
-                <MicOff size={24} className="text-white" />
-              ) : (
-                <Mic size={24} className="text-white" />
+              <div className="flex flex-col items-center gap-2 py-3">
+                <button
+                  type="button"
+                  onClick={listening ? stopListening : startListening}
+                  className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-md ${
+                    listening
+                      ? "bg-red-500 hover:bg-red-600 animate-pulse shadow-red-200"
+                      : "bg-gray-900 hover:bg-gray-700"
+                  }`}
+                >
+                  {listening ? (
+                    <MicOff size={24} className="text-white" />
+                  ) : (
+                    <Mic size={24} className="text-white" />
+                  )}
+                </button>
+                <p className="text-xs text-gray-500">
+                  {listening ? "録音中 — タップして停止" : "タップして録音開始"}
+                </p>
+              </div>
+
+              {/* 録音中の途中テキスト */}
+              {interimTranscript && (
+                <div className="bg-gray-50 rounded-lg px-3 py-2">
+                  <p className="text-[10px] text-gray-400 mb-1">認識中...</p>
+                  <p className="text-sm text-gray-400 italic">{interimTranscript}</p>
+                </div>
               )}
-            </button>
-            <p className="text-xs text-gray-500">
-              {status === "loading"
-                ? "AIで解析中..."
-                : listening
-                ? "録音中 — タップして停止"
-                : status === "done"
-                ? "認識完了"
-                : "タップして録音開始"}
-            </p>
-          </div>
+            </>
+          )}
 
-          {/* 認識テキスト表示 */}
-          {transcript && (
-            <div className="bg-gray-50 rounded-lg px-3 py-2">
-              <p className="text-[10px] text-gray-400 mb-1">認識テキスト</p>
-              <p className="text-sm text-gray-700">{transcript}</p>
+          {/* ── ステップ2: テキスト確認・編集 ── */}
+          {status === "recognized" && (
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-medium text-gray-700 mb-1.5">
+                  認識されたテキスト <span className="text-gray-400 font-normal">— 間違いがあれば修正してください</span>
+                </p>
+                <textarea
+                  value={editableTranscript}
+                  onChange={(e) => setEditableTranscript(e.target.value)}
+                  rows={3}
+                  className="w-full text-sm text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+                  placeholder="例: 月曜の10時から12時は空いてます"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">
+                  ヒント:「月曜の午後は空いてます」「火曜以外は全部OK」のように自然な日本語でもOK
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setStatus("idle"); setEditableTranscript(""); setTranscript(""); }}
+                  className="flex-1 text-sm text-gray-600 border border-gray-200 rounded-lg py-2 hover:bg-gray-50 transition-colors"
+                >
+                  録音し直す
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAnalyze}
+                  disabled={!editableTranscript.trim()}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-sm font-medium text-white bg-gray-900 rounded-lg py-2 hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Send size={13} />
+                  解析する
+                </button>
+              </div>
             </div>
           )}
 
-          {/* ステータス */}
-          {message && (
-            <div
-              className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
-                status === "listening" || status === "loading"
-                  ? "bg-gray-50 text-gray-600"
-                  : status === "done"
-                  ? "bg-green-50 text-green-700"
-                  : status === "error"
-                  ? "bg-red-50 text-red-600"
-                  : "bg-gray-50"
-              }`}
-            >
-              {status === "done"    && <CheckCircle size={14} className="shrink-0" />}
-              {status === "error"   && <AlertCircle size={14} className="shrink-0" />}
+          {/* ── ステップ3: AI解析中 ── */}
+          {status === "loading" && (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <svg className="animate-spin w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+              <p className="text-sm text-gray-600">AIで解析中...</p>
+              {transcript && (
+                <p className="text-xs text-gray-400 text-center">「{editableTranscript}」</p>
+              )}
+            </div>
+          )}
+
+          {/* ── ステップ4: 結果 ── */}
+          {(status === "done" || (status === "error" && debugLines.length > 0)) && (
+            <>
+              {/* ステータス */}
+              {message && (
+                <div
+                  className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
+                    status === "done"
+                      ? "bg-green-50 text-green-700"
+                      : "bg-red-50 text-red-600"
+                  }`}
+                >
+                  {status === "done"  && <CheckCircle size={14} className="shrink-0" />}
+                  {status === "error" && <AlertCircle size={14} className="shrink-0" />}
+                  <span>{message}</span>
+                </div>
+              )}
+
+              {/* デバッグ詳細 */}
+              {debugLines.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDebug(!showDebug)}
+                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+                  >
+                    {showDebug ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    解析の詳細
+                  </button>
+                  {showDebug && (
+                    <div className="mt-1 bg-gray-50 rounded p-2 space-y-0.5">
+                      {debugLines.map((l, i) => (
+                        <p key={i} className="text-[10px] text-gray-500 font-mono">
+                          {l}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* エラー（テキスト確認前）*/}
+          {status === "error" && debugLines.length === 0 && message && (
+            <div className="flex items-start gap-2 text-sm bg-red-50 text-red-600 rounded-lg px-3 py-2">
+              <AlertCircle size={14} className="shrink-0 mt-0.5" />
               <span>{message}</span>
             </div>
           )}
 
-          {/* デバッグ詳細 */}
-          {debugLines.length > 0 && (
-            <div>
+          {/* アクションボタン */}
+          {(status === "done" || status === "error") && (
+            <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setShowDebug(!showDebug)}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+                onClick={reset}
+                className="flex-1 text-sm text-gray-600 border border-gray-200 rounded-lg py-2 hover:bg-gray-50 transition-colors"
               >
-                {showDebug ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                読み取り詳細
+                やり直す
               </button>
-              {showDebug && (
-                <div className="mt-1 bg-gray-50 rounded p-2 space-y-0.5">
-                  {debugLines.map((l, i) => (
-                    <p key={i} className="text-[10px] text-gray-500 font-mono">
-                      {l}
-                    </p>
-                  ))}
-                </div>
+              {status === "done" && (
+                <button
+                  type="button"
+                  onClick={handleApply}
+                  className="flex-1 text-sm font-medium text-white bg-gray-900 rounded-lg py-2 hover:bg-gray-700 transition-colors"
+                >
+                  {detectedCount}コマを適用する
+                </button>
+              )}
+              {status === "error" && editableTranscript && (
+                <button
+                  type="button"
+                  onClick={() => setStatus("recognized")}
+                  className="flex-1 text-sm font-medium text-white bg-gray-700 rounded-lg py-2 hover:bg-gray-600 transition-colors"
+                >
+                  テキストを編集する
+                </button>
               )}
             </div>
           )}
-
-          {/* アクションボタン */}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={reset}
-              className="flex-1 text-sm text-gray-600 border border-gray-200 rounded-lg py-2 hover:bg-gray-50 transition-colors"
-            >
-              やり直す
-            </button>
-            {status === "done" && (
-              <button
-                type="button"
-                onClick={handleApply}
-                className="flex-1 text-sm font-medium text-white bg-gray-900 rounded-lg py-2 hover:bg-gray-700 transition-colors"
-              >
-                {detectedCount}コマを適用する
-              </button>
-            )}
-          </div>
         </>
       )}
 

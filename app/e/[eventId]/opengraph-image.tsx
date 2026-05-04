@@ -6,24 +6,9 @@ import path from "path";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const HEAT: string[] = [
-  "#f3f4f6", "#9ca3af", "#dc2626", "#e5e7eb",
-  "#4b5563", "#e5e7eb", "#9ca3af", "#f3f4f6",
-  "#dc2626", "#4b5563", "#f3f4f6", "#9ca3af",
-  "#e5e7eb", "#dc2626", "#4b5563", "#e5e7eb",
-  "#9ca3af", "#f3f4f6", "#e5e7eb", "#dc2626",
-  "#4b5563", "#9ca3af", "#dc2626", "#f3f4f6",
-  "#e5e7eb", "#4b5563", "#9ca3af", "#dc2626",
-];
-
-function colOpacity(col: number, totalCols: number, fromRight: boolean): number {
-  const pos = fromRight ? col : totalCols - 1 - col;
-  const ratio = pos / (totalCols - 1);
-  return 0.65 - ratio * 0.55;
-}
-
 async function loadFont(extraChars: string): Promise<ArrayBuffer | null> {
-  const base = "コマで見る日程調整登録不要URLを送るだけ参加して回答する人が回答中への招待募集中 KOMARO0123456789/(水木金土月火)年月日:.";
+  const base =
+    "日程調整への招待コマで見るKOMARO人が回答中募集中参加して回答する→ 0123456789/(月火水木金土)年.";
   const text = encodeURIComponent(base + extraChars);
   try {
     const css = await fetch(
@@ -43,6 +28,16 @@ async function loadFont(extraChars: string): Promise<ArrayBuffer | null> {
   }
 }
 
+// 元の配色（赤多め・メリハリあり）
+function getColor(r: number, c: number): string {
+  const v = Math.sin(c * 1.2 + r * 0.8) * Math.cos(c * 0.6 - r * 0.5);
+  if (v > 0.45) return "#111827";
+  if (v > 0.1)  return "#dc2626";
+  if (v > -0.2) return "#374151";
+  if (v > -0.5) return "#9ca3af";
+  return "#e5e7eb";
+}
+
 export default async function OgImage({
   params,
 }: {
@@ -50,29 +45,31 @@ export default async function OgImage({
 }) {
   const { eventId } = await params;
 
-  const event = await prisma.event.findFirst({
-    where: { id: eventId, deletedAt: null },
-    select: { title: true },
-  });
-
-  const participantCount = event
-    ? await prisma.participant.count({ where: { eventId } })
-    : 0;
+  let event: { title: string } | null = null;
+  let participantCount = 0;
+  try {
+    event = await prisma.event.findFirst({
+      where: { id: eventId, deletedAt: null },
+      select: { title: true },
+    });
+    if (event) {
+      participantCount = await prisma.participant.count({ where: { eventId } });
+    }
+  } catch {
+    // DB 未接続時はフォールバック表示
+  }
 
   const title = event?.title ?? "日程調整";
 
-  // タイトルを2行に分割（1行最大13文字）
-  const LINE_MAX = 13;
-  let line1 = title;
-  let line2 = "";
-  if (title.length > LINE_MAX) {
-    line1 = title.slice(0, LINE_MAX);
-    const rest = title.slice(LINE_MAX);
-    line2 = rest.length > LINE_MAX ? rest.slice(0, LINE_MAX - 1) + "…" : rest;
-  }
-  const titleFontSize = line2 ? 52 : 60;
+  // タイトル長に応じてフォントサイズを調整（手動改行なし・自然な折り返し）
+  const titleSize =
+    title.length <= 6  ? 96 :
+    title.length <= 10 ? 82 :
+    title.length <= 15 ? 68 : 56;
 
-  const logoBuffer = fs.readFileSync(path.join(process.cwd(), "public/komaro-logo.png"));
+  const logoBuffer = fs.readFileSync(
+    path.join(process.cwd(), "public/komaro-logo.png")
+  );
   const logoSrc = `data:image/png;base64,${logoBuffer.toString("base64")}`;
 
   const fontData = await loadFont(title);
@@ -81,10 +78,10 @@ export default async function OgImage({
     : [];
   const ff = fontData ? "JP, sans-serif" : "sans-serif";
 
-  const ROWS = 7;
-  const COLS = 4;
-  const CELL = 44;
-  const GAP = 5;
+  const ROWS = 9;
+  const COLS = 6;
+  const CELL = 70;
+  const GAP = 8;
 
   return new ImageResponse(
     (
@@ -94,145 +91,119 @@ export default async function OgImage({
           width: "100%",
           height: "100%",
           display: "flex",
-          flexDirection: "column",
           fontFamily: ff,
+          overflow: "hidden",
         }}
       >
-        {/* 上部アクセントバー */}
-        <div style={{ height: "6px", background: "#111827", display: "flex" }} />
-
-        <div style={{ flex: 1, display: "flex", alignItems: "stretch" }}>
-
-          {/* 左装飾 */}
+        {/* ─── 左: テキスト ─── */}
+        <div
+          style={{
+            width: "650px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            padding: "0 48px 0 60px",
+            borderRight: "1px solid #f3f4f6",
+          }}
+        >
+          {/* ロゴ + ブランド名（両OGP共通スタイル） */}
           <div
             style={{
-              width: "285px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "flex-end",
-              paddingRight: "12px",
-              overflow: "hidden",
+              gap: "12px",
+              marginBottom: "28px",
             }}
           >
-            <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px` }}>
-              {Array.from({ length: ROWS }).map((_, r) => (
-                <div key={r} style={{ display: "flex", gap: `${GAP}px` }}>
-                  {Array.from({ length: COLS }).map((_, c) => (
-                    <div
-                      key={c}
-                      style={{
-                        width: `${CELL}px`,
-                        height: `${CELL}px`,
-                        background: HEAT[(r * COLS + c) % HEAT.length],
-                        borderRadius: "6px",
-                        opacity: colOpacity(c, COLS, true),
-                      }}
-                    />
-                  ))}
-                </div>
-              ))}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logoSrc}
+              width={40}
+              height={40}
+              style={{ objectFit: "contain" }}
+              alt=""
+            />
+            <span
+              style={{
+                fontSize: "34px",
+                fontWeight: 700,
+                color: "#9ca3af",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              KOMARO
+            </span>
+          </div>
+
+          {/* 招待ラベル */}
+          <div style={{ display: "flex", marginBottom: "18px" }}>
+            <div
+              style={{
+                display: "flex",
+                background: "#fef2f2",
+                borderRadius: "8px",
+                padding: "6px 18px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "22px",
+                  fontWeight: 700,
+                  color: "#dc2626",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                日程調整への招待
+              </span>
             </div>
           </div>
 
-          {/* 中央セーフゾーン（630px） */}
+          {/* イベントタイトル — 自然な折り返し・手動分割なし */}
           <div
             style={{
-              width: "630px",
               display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "0 44px",
+              marginBottom: "40px",
+              lineHeight: 1.12,
+              letterSpacing: "-0.03em",
             }}
           >
-            {/* ブランド */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                marginBottom: "28px",
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={logoSrc}
-                width={40}
-                height={40}
-                style={{ objectFit: "contain" }}
-                alt=""
-              />
-              <span
-                style={{
-                  fontSize: "32px",
-                  fontWeight: 700,
-                  color: "#9ca3af",
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                KOMARO
-              </span>
-            </div>
-
-            {/* ラベル */}
             <span
               style={{
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#9ca3af",
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                marginBottom: "16px",
-              }}
-            >
-              日程調整への招待
-            </span>
-
-            {/* タイトル */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                fontSize: `${titleFontSize}px`,
+                fontSize: `${titleSize}px`,
                 fontWeight: 700,
                 color: "#111827",
-                lineHeight: 1.1,
-                letterSpacing: "-0.025em",
-                marginBottom: "28px",
               }}
             >
-              <span>{line1}</span>
-              {line2 && <span>{line2}</span>}
-            </div>
+              {title}
+            </span>
+          </div>
 
-            {/* 参加者バッジ */}
+          {/* 参加者数 + CTA */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 background: "#f3f4f6",
                 borderRadius: "100px",
-                padding: "8px 20px",
-                fontSize: "16px",
+                padding: "10px 22px",
+                fontSize: "20px",
                 fontWeight: 700,
                 color: "#4b5563",
-                marginBottom: "32px",
               }}
             >
               {participantCount > 0
                 ? `${participantCount}人が回答中`
                 : "回答者募集中"}
             </div>
-
-            {/* CTA */}
             <div
               style={{
                 display: "flex",
+                alignItems: "center",
                 background: "#111827",
-                borderRadius: "9px",
-                padding: "15px 32px",
-                fontSize: "18px",
+                borderRadius: "10px",
+                padding: "12px 24px",
+                fontSize: "20px",
                 fontWeight: 700,
                 color: "#ffffff",
               }}
@@ -240,39 +211,37 @@ export default async function OgImage({
               参加して回答する →
             </div>
           </div>
-
-          {/* 右装飾 */}
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              paddingLeft: "12px",
-              overflow: "hidden",
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px` }}>
-              {Array.from({ length: ROWS }).map((_, r) => (
-                <div key={r} style={{ display: "flex", gap: `${GAP}px` }}>
-                  {Array.from({ length: COLS }).map((_, c) => (
-                    <div
-                      key={c}
-                      style={{
-                        width: `${CELL}px`,
-                        height: `${CELL}px`,
-                        background: HEAT[(r * COLS + c + 3) % HEAT.length],
-                        borderRadius: "6px",
-                        opacity: colOpacity(c, COLS, false),
-                      }}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-
         </div>
+
+        {/* ─── 右: グリッド装飾 ─── */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px` }}>
+            {Array.from({ length: ROWS }).map((_, r) => (
+              <div key={r} style={{ display: "flex", gap: `${GAP}px` }}>
+                {Array.from({ length: COLS }).map((_, c) => (
+                  <div
+                    key={c}
+                    style={{
+                      width: `${CELL}px`,
+                      height: `${CELL}px`,
+                      background: getColor(r, c),
+                      borderRadius: "10px",
+                    }}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     ),
     { ...size, fonts }

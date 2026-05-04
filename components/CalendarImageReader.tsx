@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Camera, X, Loader2, CheckCircle, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
-import { parseTimeToMinutes } from "@/lib/utils";
+import { Camera, X, Loader2, CheckCircle, AlertCircle, Send, ChevronDown, ChevronUp } from "lucide-react";
 
 interface CalendarImageReaderProps {
   rowLabels: string[];
@@ -10,35 +9,29 @@ interface CalendarImageReaderProps {
   onDetected: (availableCells: Set<string>) => void;
 }
 
-interface Word {
-  text: string;
-  bbox: { x0: number; y0: number; x1: number; y1: number };
-  confidence: number;
-}
+// ステータス型
+type Status = "idle" | "ocr" | "recognized" | "analyzing" | "done" | "error";
 
 // ──────────────────────────────────────────────
 // 画像をリサイズして base64 に変換（Gemini 用）
 // ──────────────────────────────────────────────
 async function compressImage(
   file: File,
-  maxWidth = 1600   // 解像度を上げて文字を読みやすく
+  maxWidth = 1600
 ): Promise<{ base64: string; mimeType: string }> {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
-      // 元画像が小さければ拡大しない（ぼけるだけ）
       const scale = Math.min(1, maxWidth / img.width);
       const canvas = document.createElement("canvas");
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
       const ctx = canvas.getContext("2d")!;
-      // スムージング有効（縮小時に品質向上）
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
-      // 品質を上げる (0.92)
       const base64 = canvas.toDataURL("image/jpeg", 0.92).split(",")[1];
       resolve({ base64, mimeType: "image/jpeg" });
     };
@@ -47,120 +40,21 @@ async function compressImage(
 }
 
 // ──────────────────────────────────────────────
-// Gemini Vision でカレンダーを解析
-// ──────────────────────────────────────────────
-async function analyzeWithGemini(
-  file: File,
-  rowLabels: string[],
-  colLabels: string[]
-): Promise<Set<string> | null> {
-  try {
-    const { base64, mimeType } = await compressImage(file);
-    const res = await fetch("/api/v1/ai/parse-calendar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageBase64: base64, mimeType, rowLabels, colLabels }),
-    });
-
-    if (res.status === 503) return null; // API キー未設定 → フォールバック
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    if (!Array.isArray(data.freeCells)) return null;
-
-    const available = new Set<string>();
-    for (const { row, col } of data.freeCells as { row: number; col: number }[]) {
-      if (row >= 0 && row < rowLabels.length && col >= 0 && col < colLabels.length) {
-        available.add(`${row}-${col}`);
-      }
-    }
-    (available as Set<string> & { _debug?: string })._debug =
-      `検出した予定: ${data.extractedEvents ?? "?"} 件 / ${data.debug ?? ""}`;
-    return available;
-  } catch {
-    return null;
-  }
-}
-
-// ──────────────────────────────────────────────
-// Tesseract.js フォールバック（従来ロジック）
-// ──────────────────────────────────────────────
-function detectAvailableSlots(
-  words: Word[],
-  rowLabels: string[],
-  colLabels: string[]
-): { available: Set<string>; debug: string[] } {
-  const debug: string[] = [];
-  const filtered = words.filter((w) => w.confidence > 40 && w.text.trim().length > 0);
-
-  if (filtered.length === 0) {
-    return { available: new Set(), debug: ["テキストを検出できませんでした"] };
-  }
-
-  const imgWidth = Math.max(...filtered.map((w) => w.bbox.x1));
-  const imgHeight = Math.max(...filtered.map((w) => w.bbox.y1));
-  const TIME_COL_LIMIT = imgWidth * 0.25;
-
-  const timeLabels: { minutes: number; y0: number; y1: number }[] = [];
-  for (const w of filtered) {
-    if (w.bbox.x0 > TIME_COL_LIMIT) continue;
-    const m = parseTimeToMinutes(w.text);
-    if (m !== null) timeLabels.push({ minutes: m, y0: w.bbox.y0, y1: w.bbox.y1 });
-  }
-  timeLabels.sort((a, b) => a.y0 - b.y0);
-  debug.push(`検出した時刻ラベル: ${timeLabels.map((t) => `${Math.floor(t.minutes / 60)}:${String(t.minutes % 60).padStart(2, "0")}`).join(", ")}`);
-
-  if (timeLabels.length < 2) {
-    debug.push("時刻ラベルが2つ未満 → 判定できません");
-    return { available: new Set(), debug };
-  }
-
-  const slots = timeLabels.map((tl, i) => ({
-    minutes: tl.minutes,
-    y0: tl.y0,
-    y1: i + 1 < timeLabels.length ? timeLabels[i + 1].y0 : imgHeight,
-  }));
-
-  const busyMinutes: number[] = [];
-  for (const slot of slots) {
-    const hasEvent = filtered.some(
-      (w) =>
-        w.bbox.x0 > TIME_COL_LIMIT &&
-        w.bbox.y0 >= slot.y0 - 5 &&
-        w.bbox.y0 < slot.y1 - 5 &&
-        parseTimeToMinutes(w.text) === null
-    );
-    if (hasEvent) busyMinutes.push(slot.minutes);
-  }
-
-  debug.push(`Busy: ${busyMinutes.map((m) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`).join(", ") || "なし"}`);
-
-  const available = new Set<string>();
-  for (let ri = 0; ri < rowLabels.length; ri++) {
-    const rowMinutes = parseTimeToMinutes(rowLabels[ri]);
-    if (rowMinutes === null) continue;
-    const isBusy = busyMinutes.some((bm) => Math.abs(bm - rowMinutes) < 60);
-    if (!isBusy) {
-      for (let ci = 0; ci < colLabels.length; ci++) available.add(`${ri}-${ci}`);
-    }
-  }
-  return { available, debug };
-}
-
-// ──────────────────────────────────────────────
 // メインコンポーネント
 // ──────────────────────────────────────────────
 export function CalendarImageReader({ rowLabels, colLabels, onDetected }: CalendarImageReaderProps) {
   const [open, setOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
+  const [eventText, setEventText] = useState("");         // Gemini が出力したテキスト（編集可能）
   const [detectedCount, setDetectedCount] = useState(0);
   const [pendingCells, setPendingCells] = useState<Set<string>>(new Set());
   const [showDebug, setShowDebug] = useState(false);
   const [debugLines, setDebugLines] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ── STEP 1: 画像 → Gemini Vision → 予定テキスト ──
   const handleFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setStatus("error");
@@ -170,79 +64,99 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
 
     const url = URL.createObjectURL(file);
     setImageUrl(url);
-    setStatus("loading");
-    setMessage("AIでカレンダーを解析中...");
+    setStatus("ocr");
+    setMessage("AIが画像からカレンダーを読み取り中...");
+    setEventText("");
+    setDebugLines([]);
 
-    // ── Gemini Vision を試みる ──
-    const geminiResult = await analyzeWithGemini(file, rowLabels, colLabels);
-
-    if (geminiResult !== null) {
-      setPendingCells(geminiResult);
-      setDetectedCount(geminiResult.size);
-      const debugNote = (geminiResult as Set<string> & { _debug?: string })._debug ?? "";
-      setDebugLines([`✨ Gemini AI で解析しました`, ...(debugNote ? [debugNote] : [])]);
-      if (geminiResult.size === 0) {
-        setStatus("error");
-        setMessage("空き時間を検出できませんでした。別の画像をお試しください。");
-      } else {
-        setStatus("done");
-        setMessage(`${geminiResult.size}コマの空き時間を検出しました`);
-      }
-      return;
-    }
-
-    // ── Tesseract フォールバック ──
-    setMessage("OCRで読み取り中...");
     try {
-      const { createWorker } = await import("tesseract.js");
-      const worker = await createWorker(["jpn", "eng"], 1, {
-        logger: (m) => {
-          if (m.status === "recognizing text") {
-            setMessage(`OCR読み取り中... ${Math.round(m.progress * 100)}%`);
-          }
-        },
+      const { base64, mimeType } = await compressImage(file);
+      const res = await fetch("/api/v1/ai/parse-calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64, mimeType, rowLabels, colLabels }),
       });
 
-      const result = await worker.recognize(file, {}, { blocks: true });
-      await worker.terminate();
-
-      const words: Word[] = [];
-      for (const block of result.data.blocks ?? []) {
-        for (const para of block.paragraphs ?? []) {
-          for (const line of para.lines ?? []) {
-            for (const word of line.words ?? []) {
-              if (word.text.trim()) {
-                words.push({ text: word.text.trim(), bbox: word.bbox, confidence: word.confidence });
-              }
-            }
-          }
-        }
-      }
-
-      if (words.length === 0) {
+      if (res.status === 503) {
         setStatus("error");
-        setMessage("テキストを検出できませんでした。より鮮明な画像をお試しください。");
+        setMessage("AI機能が設定されていません。");
+        return;
+      }
+      if (!res.ok) {
+        setStatus("error");
+        setMessage("画像の読み取りに失敗しました。別の画像をお試しください。");
         return;
       }
 
-      const { available, debug } = detectAvailableSlots(words, rowLabels, colLabels);
-      setDebugLines(["⚙️ OCR（フォールバック）で解析しました", ...debug]);
+      const data = await res.json();
+      const text: string = data.eventText ?? "予定なし";
+
+      setEventText(text);
+      setStatus("recognized");
+      setMessage("読み取り内容を確認・修正してから「この内容でコマを選択」を押してください");
+    } catch {
+      setStatus("error");
+      setMessage("読み取り中にエラーが発生しました。別の画像をお試しください。");
+    }
+  }, [rowLabels, colLabels]);
+
+  // ── STEP 2: テキスト → parse-voice API → セル選択 ──
+  const handleAnalyze = useCallback(async () => {
+    const text = eventText.trim();
+    if (!text) return;
+
+    setStatus("analyzing");
+    setMessage("テキストを解析してコマを選択中...");
+
+    try {
+      const res = await fetch("/api/v1/ai/parse-voice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript: text, rowLabels, colLabels }),
+      });
+
+      if (!res.ok) {
+        setStatus("error");
+        setMessage("解析に失敗しました。テキストを修正してもう一度お試しください。");
+        return;
+      }
+
+      const data = await res.json();
+      if (!Array.isArray(data.availableCells)) {
+        setStatus("error");
+        setMessage("解析結果を取得できませんでした。");
+        return;
+      }
+
+      const available = new Set<string>();
+      for (const { row, col } of data.availableCells as { row: number; col: number }[]) {
+        if (row >= 0 && row < rowLabels.length && col >= 0 && col < colLabels.length) {
+          available.add(`${row}-${col}`);
+        }
+      }
+
+      const interpretation = data.interpretation ?? "";
+      const reasoning = data.reasoning ?? "";
+      setDebugLines([
+        `✨ AI解釈: ${interpretation}`,
+        ...(reasoning ? [`　推論: ${reasoning}`] : []),
+      ]);
+      setShowDebug(true);
       setPendingCells(available);
       setDetectedCount(available.size);
 
       if (available.size === 0) {
         setStatus("error");
-        setMessage("空き時間を検出できませんでした。時間帯ラベルが見えるカレンダーをお試しください。");
+        setMessage("空きコマが見つかりませんでした。読み取りテキストを編集してもう一度お試しください。");
       } else {
         setStatus("done");
         setMessage(`${available.size}コマの空き時間を検出しました`);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       setStatus("error");
-      setMessage("読み取り中にエラーが発生しました。別の画像をお試しください。");
+      setMessage("解析中にエラーが発生しました。");
     }
-  }, [rowLabels, colLabels]);
+  }, [eventText, rowLabels, colLabels]);
 
   const handleApply = () => {
     onDetected(pendingCells);
@@ -254,10 +168,12 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
     setImageUrl(null);
     setStatus("idle");
     setMessage("");
+    setEventText("");
     setDetectedCount(0);
     setPendingCells(new Set());
     setDebugLines([]);
     setShowDebug(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   if (!open) {
@@ -275,58 +191,124 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 space-y-3">
+      {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Camera size={15} className="text-gray-600" />
-          <span className="text-sm font-medium text-gray-800">カレンダーから自動入力（β）</span>
+          <span className="text-sm font-medium text-gray-800">スクショから自動入力（β）</span>
         </div>
         <button type="button" onClick={() => { setOpen(false); reset(); }} className="text-gray-400 hover:text-gray-600">
           <X size={16} />
         </button>
       </div>
 
-      <p className="text-xs text-gray-500 leading-relaxed">
-        カレンダーアプリのスクリーンショットをアップロードすると、空き時間を自動で検出します。
-      </p>
-
-      {!imageUrl ? (
-        <div
-          className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors"
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-        >
-          <Camera size={24} className="mx-auto text-gray-300 mb-2" />
-          <p className="text-sm text-gray-500">タップして画像を選択</p>
-          <p className="text-xs text-gray-400 mt-1">またはドラッグ＆ドロップ</p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-          />
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageUrl} alt="カレンダープレビュー" className="w-full max-h-48 object-contain rounded-lg border border-gray-100" />
-            {status === "idle" && (
-              <button type="button" onClick={reset} className="absolute top-1 right-1 bg-white rounded-full p-0.5 shadow text-gray-500 hover:text-gray-700">
-                <X size={14} />
-              </button>
-            )}
+      {/* ── STEP 1: 画像アップロード ── */}
+      {status === "idle" && (
+        <>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            カレンダーアプリのスクリーンショットをアップロードすると、予定を読み取って空き時間を自動で検出します。
+          </p>
+          <div
+            className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+          >
+            <Camera size={24} className="mx-auto text-gray-300 mb-2" />
+            <p className="text-sm text-gray-500">タップして画像を選択</p>
+            <p className="text-xs text-gray-400 mt-1">またはドラッグ＆ドロップ</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+            />
           </div>
+        </>
+      )}
 
+      {/* ── STEP 1: OCR 処理中 ── */}
+      {status === "ocr" && (
+        <>
+          {imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl} alt="カレンダープレビュー" className="w-full max-h-40 object-contain rounded-lg border border-gray-100" />
+          )}
+          <div className="flex items-center gap-2 text-sm bg-gray-50 text-gray-600 rounded-lg px-3 py-2">
+            <Loader2 size={14} className="animate-spin shrink-0" />
+            <span>{message}</span>
+          </div>
+        </>
+      )}
+
+      {/* ── STEP 2: テキスト確認・編集 ── */}
+      {status === "recognized" && (
+        <>
+          {imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl} alt="カレンダープレビュー" className="w-full max-h-40 object-contain rounded-lg border border-gray-100" />
+          )}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-gray-700">
+              AIが読み取った予定{" "}
+              <span className="text-gray-400 font-normal">— 間違いがあれば修正してください</span>
+            </p>
+            <textarea
+              value={eventText}
+              onChange={(e) => setEventText(e.target.value)}
+              rows={4}
+              className="w-full text-sm text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+              placeholder="例: 月曜日の10時から12時に会議があります。火曜日は終日予定が入っています。"
+            />
+            <p className="text-[10px] text-gray-400">
+              ヒント:「予定なし」と入力すると全コマが空きになります
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={reset}
+              className="flex-1 text-sm text-gray-600 border border-gray-200 rounded-lg py-2 hover:bg-gray-50 transition-colors"
+            >
+              画像を撮り直す
+            </button>
+            <button
+              type="button"
+              onClick={handleAnalyze}
+              disabled={!eventText.trim()}
+              className="flex-1 flex items-center justify-center gap-1.5 text-sm font-medium text-white bg-gray-900 rounded-lg py-2 hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Send size={13} />
+              この内容でコマを選択
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* ── STEP 3: 解析中 ── */}
+      {status === "analyzing" && (
+        <div className="flex flex-col items-center gap-3 py-4">
+          <svg className="animate-spin w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          <p className="text-sm text-gray-600">テキストを解析中...</p>
+        </div>
+      )}
+
+      {/* ── STEP 4: 結果 ── */}
+      {(status === "done" || (status === "error" && debugLines.length > 0)) && (
+        <>
+          {imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl} alt="カレンダープレビュー" className="w-full max-h-40 object-contain rounded-lg border border-gray-100" />
+          )}
           <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
-            status === "loading" ? "bg-gray-50 text-gray-600" :
-            status === "done"    ? "bg-green-50 text-green-700" :
-            status === "error"   ? "bg-red-50 text-red-600" : "bg-gray-50"
+            status === "done" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"
           }`}>
-            {status === "loading" && <Loader2 size={14} className="animate-spin shrink-0" />}
-            {status === "done"    && <CheckCircle size={14} className="shrink-0" />}
-            {status === "error"   && <AlertCircle size={14} className="shrink-0" />}
+            {status === "done"  && <CheckCircle size={14} className="shrink-0" />}
+            {status === "error" && <AlertCircle size={14} className="shrink-0" />}
             <span>{message}</span>
           </div>
 
@@ -334,7 +316,7 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
             <div>
               <button type="button" onClick={() => setShowDebug(!showDebug)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
                 {showDebug ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                読み取り詳細
+                解析の詳細
               </button>
               {showDebug && (
                 <div className="mt-1 bg-gray-50 rounded p-2 space-y-0.5">
@@ -353,8 +335,26 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
                 {detectedCount}コマを適用する
               </button>
             )}
+            {status === "error" && eventText && (
+              <button type="button" onClick={() => setStatus("recognized")} className="flex-1 text-sm font-medium text-white bg-gray-700 rounded-lg py-2 hover:bg-gray-600 transition-colors">
+                テキストを編集する
+              </button>
+            )}
           </div>
-        </div>
+        </>
+      )}
+
+      {/* エラー（テキスト確認前） */}
+      {status === "error" && debugLines.length === 0 && message && (
+        <>
+          <div className="flex items-start gap-2 text-sm bg-red-50 text-red-600 rounded-lg px-3 py-2">
+            <AlertCircle size={14} className="shrink-0 mt-0.5" />
+            <span>{message}</span>
+          </div>
+          <button type="button" onClick={reset} className="w-full text-sm text-gray-600 border border-gray-200 rounded-lg py-2 hover:bg-gray-50 transition-colors">
+            やり直す
+          </button>
+        </>
       )}
 
       <p className="text-[10px] text-gray-400 leading-relaxed">

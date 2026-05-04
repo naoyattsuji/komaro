@@ -5,19 +5,9 @@ import path from "path";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const HEAT: string[] = [
-  "#f3f4f6", "#9ca3af", "#dc2626", "#e5e7eb",
-  "#4b5563", "#e5e7eb", "#9ca3af", "#f3f4f6",
-  "#dc2626", "#4b5563", "#f3f4f6", "#9ca3af",
-  "#e5e7eb", "#dc2626", "#4b5563", "#e5e7eb",
-  "#9ca3af", "#f3f4f6", "#e5e7eb", "#dc2626",
-  "#4b5563", "#9ca3af", "#dc2626", "#f3f4f6",
-  "#e5e7eb", "#4b5563", "#9ca3af", "#dc2626",
-];
-
 async function loadFont(): Promise<ArrayBuffer | null> {
   const text = encodeURIComponent(
-    "コマで見る日程調整登録不要URLを送るだけ全員の空き時間ひと目確認イベントを作成する KOMARO0123456789ScheduleCoordinatin."
+    "コマで見る日程調整誰がいつ空いているか色で確認登録不要URLを送るだけ KOMARO0123456789·"
   );
   try {
     const css = await fetch(
@@ -37,15 +27,20 @@ async function loadFont(): Promise<ArrayBuffer | null> {
   }
 }
 
-// 列インデックスに応じた透明度（中央側ほど濃く）
-function colOpacity(col: number, totalCols: number, fromRight: boolean): number {
-  const pos = fromRight ? col : totalCols - 1 - col;
-  const ratio = pos / (totalCols - 1); // 0=中央側, 1=外側
-  return 0.65 - ratio * 0.55; // 0.65 → 0.10
+// 元の配色（赤多め・メリハリあり）
+function getColor(r: number, c: number): string {
+  const v = Math.sin(c * 1.2 + r * 0.8) * Math.cos(c * 0.6 - r * 0.5);
+  if (v > 0.45) return "#111827";
+  if (v > 0.1)  return "#dc2626";
+  if (v > -0.2) return "#374151";
+  if (v > -0.5) return "#9ca3af";
+  return "#e5e7eb";
 }
 
 export default async function OgImage() {
-  const logoBuffer = fs.readFileSync(path.join(process.cwd(), "public/komaro-logo.png"));
+  const logoBuffer = fs.readFileSync(
+    path.join(process.cwd(), "public/komaro-logo.png")
+  );
   const logoSrc = `data:image/png;base64,${logoBuffer.toString("base64")}`;
 
   const fontData = await loadFont();
@@ -54,10 +49,10 @@ export default async function OgImage() {
     : [];
   const ff = fontData ? "JP, sans-serif" : "sans-serif";
 
-  const ROWS = 7;
-  const COLS = 4;
-  const CELL = 44;
-  const GAP = 5;
+  const ROWS = 9;
+  const COLS = 7;
+  const CELL = 70;
+  const GAP = 8;
 
   return new ImageResponse(
     (
@@ -69,159 +64,90 @@ export default async function OgImage() {
           display: "flex",
           flexDirection: "column",
           fontFamily: ff,
+          overflow: "hidden",
         }}
       >
-        {/* 上部アクセントバー */}
+        {/* 上部アクセントライン */}
         <div style={{ height: "6px", background: "#111827", display: "flex" }} />
 
-        <div style={{ flex: 1, display: "flex", alignItems: "stretch" }}>
+        <div style={{ flex: 1, display: "flex" }}>
 
-          {/* 左装飾（x:0〜285 フル表示のみ） */}
+          {/* ─── 左: テキスト ─── */}
           <div
             style={{
-              width: "285px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              paddingRight: "12px",
-              overflow: "hidden",
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px` }}>
-              {Array.from({ length: ROWS }).map((_, r) => (
-                <div key={r} style={{ display: "flex", gap: `${GAP}px` }}>
-                  {Array.from({ length: COLS }).map((_, c) => (
-                    <div
-                      key={c}
-                      style={{
-                        width: `${CELL}px`,
-                        height: `${CELL}px`,
-                        background: HEAT[(r * COLS + c) % HEAT.length],
-                        borderRadius: "6px",
-                        opacity: colOpacity(c, COLS, true),
-                      }}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 中央セーフゾーン（x:285〜915 = 630px） */}
-          <div
-            style={{
-              width: "630px",
+              width: "570px",
               display: "flex",
               flexDirection: "column",
-              alignItems: "center",
               justifyContent: "center",
-              padding: "0 44px",
-              gap: "0px",
+              padding: "0 0 0 56px",
             }}
           >
-            {/* ロゴ + 名前 */}
+            {/* ロゴ + ブランド名（両OGP共通スタイル） */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "14px",
-                marginBottom: "28px",
+                gap: "12px",
+                marginBottom: "44px",
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={logoSrc}
-                width={52}
-                height={52}
+                width={40}
+                height={40}
                 style={{ objectFit: "contain" }}
                 alt=""
               />
               <span
                 style={{
-                  fontSize: "42px",
+                  fontSize: "34px",
                   fontWeight: 700,
-                  color: "#111827",
-                  letterSpacing: "-0.025em",
+                  color: "#9ca3af",
+                  letterSpacing: "-0.02em",
                 }}
               >
                 KOMARO
               </span>
             </div>
 
-            {/* Eyebrow */}
-            <span
-              style={{
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#9ca3af",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                marginBottom: "18px",
-              }}
-            >
-              Schedule Coordination
-            </span>
-
-            {/* ヘッドライン */}
+            {/* メインコピー */}
             <div
               style={{
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "center",
-                fontSize: "62px",
-                fontWeight: 700,
-                color: "#111827",
+                marginBottom: "32px",
                 lineHeight: 1.08,
-                letterSpacing: "-0.025em",
-                marginBottom: "22px",
+                letterSpacing: "-0.03em",
               }}
             >
-              <span>コマで見る、</span>
-              <span>日程調整。</span>
+              <span style={{ fontSize: "84px", fontWeight: 700, color: "#111827" }}>
+                コマで見る、
+              </span>
+              <span style={{ fontSize: "84px", fontWeight: 700, color: "#dc2626" }}>
+                日程調整。
+              </span>
             </div>
 
-            {/* サブテキスト */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "6px",
-                marginBottom: "36px",
-              }}
-            >
-              <span style={{ fontSize: "18px", color: "#4b5563" }}>
-                誰がいつ空いているか、コマの色で一発確認。
+            {/* サブコピー */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "22px", color: "#374151", letterSpacing: "-0.01em" }}>
+                誰がいつ空いているか、コマの色でひと目確認。
               </span>
-              <span style={{ fontSize: "16px", color: "#9ca3af" }}>
+              <span style={{ fontSize: "20px", color: "#9ca3af" }}>
                 登録不要 · URLを送るだけ
               </span>
             </div>
-
-            {/* CTA */}
-            <div
-              style={{
-                display: "flex",
-                background: "#111827",
-                borderRadius: "9px",
-                padding: "15px 32px",
-                fontSize: "18px",
-                fontWeight: 700,
-                color: "#ffffff",
-              }}
-            >
-              イベントを作成する →
-            </div>
           </div>
 
-          {/* 右装飾（x:915〜1200 フル表示のみ） */}
+          {/* ─── 右: グリッド装飾 ─── */}
           <div
             style={{
               flex: 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "flex-start",
-              paddingLeft: "12px",
+              paddingLeft: "36px",
               overflow: "hidden",
             }}
           >
@@ -234,9 +160,8 @@ export default async function OgImage() {
                       style={{
                         width: `${CELL}px`,
                         height: `${CELL}px`,
-                        background: HEAT[(r * COLS + c + 3) % HEAT.length],
-                        borderRadius: "6px",
-                        opacity: colOpacity(c, COLS, false),
+                        background: getColor(r, c),
+                        borderRadius: "10px",
                       }}
                     />
                   ))}

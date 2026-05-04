@@ -1,10 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { ContactForm } from "@/components/ContactForm";
 import { FadeInSection } from "@/components/FadeInSection";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "ヘルプ / FAQ — KOMARO",
+  description: "KOMARの使い方・よくある質問をまとめています。イベント作成・参加方法・回答の修正方法など。",
 };
 
 const faqs = [
