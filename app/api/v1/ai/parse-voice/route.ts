@@ -109,6 +109,15 @@ async function callGemini(apiKey: string, prompt: string): Promise<string | null
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
 }
 
+/** Gemini が markdown コードブロックで包んで返すことがあるので除去 */
+function extractJSON(text: string): string {
+  const md = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (md) return md[1];
+  const obj = text.match(/\{[\s\S]*\}/);
+  if (obj) return obj[0];
+  return text;
+}
+
 // ─── API ハンドラ ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -184,7 +193,7 @@ ${dateContext}
 
     if (!text) return NextResponse.json({ error: "gemini_error" }, { status: 500 });
 
-    const parsed = JSON.parse(text) as { items?: AvailabilityItem[]; interpretation?: string; reasoning?: string };
+    const parsed = JSON.parse(extractJSON(text)) as { items?: AvailabilityItem[]; interpretation?: string; reasoning?: string };
     const items  = parsed.items ?? [];
     const availableCells = buildCells(items, rowLabels as string[], colLabels as string[]);
 

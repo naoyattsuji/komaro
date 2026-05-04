@@ -89,6 +89,14 @@ function eventsToFreeCells(
 
 // ─── Gemini 呼び出し ────────────────────────────────────────────────────────
 
+function extractJSON(text: string): string {
+  const md = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (md) return md[1];
+  const obj = text.match(/\{[\s\S]*\}/);
+  if (obj) return obj[0];
+  return text;
+}
+
 async function callGeminiVision(
   apiKey: string,
   imageBase64: string,
@@ -156,7 +164,7 @@ ${(rowLabels as string[]).map((l: string) => `  • ${l}`).join("\n")}
     let text = await callGeminiVision(apiKey, imageBase64, mimeType ?? "image/jpeg", prompt1);
     let parsed: { events?: CalendarEvent[] } = {};
 
-    try { if (text) parsed = JSON.parse(text); } catch { parsed = {}; }
+    try { if (text) parsed = JSON.parse(extractJSON(text)); } catch { parsed = {}; }
 
     // ── Pass 2: 0件ならより簡潔なプロンプトで再試行 ─────────────────────────
     if (!parsed.events || parsed.events.length === 0) {
@@ -164,7 +172,7 @@ ${(rowLabels as string[]).map((l: string) => `  • ${l}`).join("\n")}
 あれば {"events":[{"dayHint":"曜日や日付","startTime":"HH:MM","endTime":"HH:MM","isAllDay":false}]} 形式で。なければ {"events":[]} で返してください。JSONのみ。`;
 
       text = await callGeminiVision(apiKey, imageBase64, mimeType ?? "image/jpeg", prompt2);
-      try { if (text) parsed = JSON.parse(text); } catch { parsed = {}; }
+      try { if (text) parsed = JSON.parse(extractJSON(text)); } catch { parsed = {}; }
     }
 
     const events: CalendarEvent[] = parsed.events ?? [];
