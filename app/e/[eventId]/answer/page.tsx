@@ -13,7 +13,6 @@ import { useEffect } from "react";
 import { FadeInSection } from "@/components/FadeInSection";
 import { CalendarImageReader } from "@/components/CalendarImageReader";
 import { VoiceInputReader } from "@/components/VoiceInputReader";
-import { CalendarICSReader } from "@/components/CalendarICSReader";
 
 interface EventInfo {
   id: string;
@@ -184,11 +183,6 @@ export default function AnswerPage({
 
       {/* 自動入力ボタン群 */}
       <div className="anim-hero flex flex-wrap gap-2 mb-2" style={{ animationDelay: "160ms" }}>
-        <CalendarICSReader
-          rowLabels={event.rowLabels}
-          colLabels={event.colLabels}
-          onDetected={(cells) => setSelectedCells(cells)}
-        />
         <CalendarImageReader
           rowLabels={event.rowLabels}
           colLabels={event.colLabels}
