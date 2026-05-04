@@ -220,7 +220,12 @@ async function parseWithGeminiOrFallback(
           }
         }
         const interpretation = data.interpretation ?? "";
-        setDebugLines([`✨ Gemini AI: ${interpretation}`]);
+        const reasoning = data.reasoning ?? "";
+        const debugLines = [
+          `✨ AI解釈: ${interpretation}`,
+          ...(reasoning ? [`　推論: ${reasoning}`] : []),
+        ];
+        setDebugLines(debugLines);
         setPendingCells(available);
         setDetectedCount(available.size);
         if (available.size === 0) {
@@ -290,6 +295,7 @@ export function VoiceInputReader({
     recognition.lang = "ja-JP";
     recognition.continuous = false;
     recognition.interimResults = true;
+    recognition.maxAlternatives = 3; // 複数候補を取得して最善を選ぶ
 
     recognition.onstart = () => {
       setListening(true);
@@ -303,16 +309,28 @@ export function VoiceInputReader({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
       let interim = "";
-      let final = "";
+      let finalPrimary = "";
+      // 信頼度の高い複数候補を収集（Gemini に渡して最善を選ばせる）
+      const alternatives: string[] = [];
+
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const r = event.results[i];
-        (r.isFinal ? (final += r[0].transcript) : (interim += r[0].transcript));
+        if (r.isFinal) {
+          finalPrimary += r[0].transcript;
+          for (let a = 0; a < r.length; a++) {
+            if (r[a].transcript.trim()) alternatives.push(r[a].transcript.trim());
+          }
+        } else {
+          interim += r[0].transcript;
+        }
       }
-      setTranscript(final || interim);
+      setTranscript(finalPrimary || interim);
 
-      if (final) {
-        // Gemini API でパース → フォールバックで正規表現
-        parseWithGeminiOrFallback(final, rowLabels, colLabels, setStatus, setMessage, setDebugLines, setPendingCells, setDetectedCount);
+      if (finalPrimary) {
+        // 候補が複数あれば全部渡す（重複除去）
+        const unique = Array.from(new Set(alternatives)).slice(0, 3);
+        const transcriptToSend = unique.length > 1 ? unique.join(" / ") : finalPrimary;
+        parseWithGeminiOrFallback(transcriptToSend, rowLabels, colLabels, setStatus, setMessage, setDebugLines, setPendingCells, setDetectedCount);
       }
     };
 

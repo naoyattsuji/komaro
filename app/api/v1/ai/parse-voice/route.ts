@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rateLimit";
 
-// ── 型定義 ────────────────────────────────────
 interface AvailabilityItem {
   type: "available" | "busy";
-  days: string[];        // ["月曜", "水曜"] or ["all"]
-  timeStart: string | null; // "HH:MM" or null (= 制限なし)
+  days: string[];           // ["月曜","水曜"] or ["all"]
+  timeStart: string | null; // "HH:MM" or null
   timeEnd: string | null;
 }
 
-// ── セルマッピング用ヘルパー ──────────────────
+// ─── セルマッピング（TypeScript で正確に計算）─────────────────────────────────
 
 const DAY_CHARS = ["月", "火", "水", "木", "金", "土", "日"] as const;
 
-/** Gemini が返した曜日/日付文字列が KOMARO の列ラベルと一致するか判定 */
-function dayHintMatchesLabel(hint: string, colLabel: string): boolean {
+function dayMatchesCol(hint: string, colLabel: string): boolean {
   if (hint === "all") return true;
   for (const dc of DAY_CHARS) {
     if (hint.includes(dc)) {
@@ -27,99 +25,92 @@ function dayHintMatchesLabel(hint: string, colLabel: string): boolean {
       ) return true;
     }
   }
-  // 日付照合: "5/7", "5月7日"
+  // 日付照合: "5/7" "5月7日"
   const dm = hint.match(/(\d{1,2})[/月](\d{1,2})/);
   if (dm) {
     const d = `${parseInt(dm[1])}/${parseInt(dm[2])}`;
-    if (colLabel.startsWith(d) || colLabel.startsWith(`0${d}`)) return true;
+    if (colLabel.startsWith(d)) return true;
   }
   return false;
 }
 
-/** 行ラベルから開始分（0時からの分数）を取得 */
-function rowToMinutes(label: string): number | null {
+function rowToMin(label: string): number | null {
   const m1 = label.match(/^(\d{1,2}):(\d{2})/);
-  if (m1) return parseInt(m1[1]) * 60 + parseInt(m1[2]);
+  if (m1) return +m1[1] * 60 + +m1[2];
   const m2 = label.match(/(午前|午後)?(\d{1,2})時/);
   if (m2) {
-    let h = parseInt(m2[2]);
+    let h = +m2[2];
     if (m2[1] === "午後" && h !== 12) h += 12;
     if (m2[1] === "午前" && h === 12) h = 0;
     return h * 60;
   }
   const m3 = label.match(/^(\d{1,2})$/);
-  if (m3) { const h = parseInt(m3[1]); if (h <= 23) return h * 60; }
+  if (m3 && +m3[1] <= 23) return +m3[1] * 60;
   return null;
 }
 
-/** "HH:MM" → 分数 */
-function hhmmToMinutes(s: string | null): number | null {
+function hhToMin(s: string | null): number | null {
   if (!s) return null;
   const m = s.match(/^(\d{1,2}):(\d{2})$/);
-  return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : null;
+  return m ? +m[1] * 60 + +m[2] : null;
 }
 
-/** 行が指定の時間範囲に含まれるか（rowLabels 全体を渡すことで行の「幅」を計算） */
-function rowInRange(
-  ri: number,
-  rowLabels: string[],
-  timeStart: string | null,
-  timeEnd: string | null
-): boolean {
+/** 行が時間範囲と重なるか（次の行との差から行幅を計算） */
+function rowInRange(ri: number, rowLabels: string[], timeStart: string | null, timeEnd: string | null): boolean {
   if (!timeStart && !timeEnd) return true;
-
-  const rowStart = rowToMinutes(rowLabels[ri]);
-  if (rowStart === null) return true; // パース不能は含める
-
-  // 行の終端 = 次の行の開始、なければ行開始 + 60 分
-  const nextStart = ri + 1 < rowLabels.length ? rowToMinutes(rowLabels[ri + 1]) : null;
-  const rowEnd = nextStart ?? rowStart + 60;
-
-  const evStart = hhmmToMinutes(timeStart) ?? 0;
-  const evEnd   = hhmmToMinutes(timeEnd)   ?? 24 * 60;
-
-  // 重なりあり: 行開始 < イベント終了 AND 行終了 > イベント開始
-  return rowStart < evEnd && rowEnd > evStart;
+  const rs = rowToMin(rowLabels[ri]);
+  if (rs === null) return true;
+  const nextRs = ri + 1 < rowLabels.length ? rowToMin(rowLabels[ri + 1]) : null;
+  const re = nextRs ?? rs + 60;
+  const ts = hhToMin(timeStart) ?? 0;
+  const te = hhToMin(timeEnd)   ?? 24 * 60;
+  return rs < te && re > ts;
 }
 
-/** Gemini の AvailabilityItem 一覧からセットを構築 */
-function buildCellSet(
-  items: AvailabilityItem[],
-  rowLabels: string[],
-  colLabels: string[]
-): Set<string> {
-  // available items がある → それらの和集合
-  // busy items がある → available から差し引く
-  // available items が空で busy だけ → 全セルから busy を除く
-  const hasAvailable = items.some((i) => i.type === "available");
+function buildCells(items: AvailabilityItem[], rowLabels: string[], colLabels: string[]): { row: number; col: number }[] {
+  const hasAvailable = items.some(i => i.type === "available");
+  const set = new Set<string>();
 
-  const available = new Set<string>();
-
+  // available items がなければ全セルから始めて busy を除く
   if (!hasAvailable) {
-    // 全セルを初期値にして busy を除く
-    rowLabels.forEach((_, ri) => colLabels.forEach((_, ci) => available.add(`${ri}-${ci}`)));
+    rowLabels.forEach((_, ri) => colLabels.forEach((_, ci) => set.add(`${ri}-${ci}`)));
   }
 
   for (const item of items) {
     for (let ri = 0; ri < rowLabels.length; ri++) {
       for (let ci = 0; ci < colLabels.length; ci++) {
-        const dayOk = item.days.some((d) => dayHintMatchesLabel(d, colLabels[ci]));
+        const dayOk  = item.days.some(d => dayMatchesCol(d, colLabels[ci]));
         const timeOk = rowInRange(ri, rowLabels, item.timeStart, item.timeEnd);
         if (!dayOk || !timeOk) continue;
-
-        if (item.type === "available") {
-          available.add(`${ri}-${ci}`);
-        } else {
-          available.delete(`${ri}-${ci}`);
-        }
+        item.type === "available" ? set.add(`${ri}-${ci}`) : set.delete(`${ri}-${ci}`);
       }
     }
   }
 
-  return available;
+  return Array.from(set).map(k => { const [row, col] = k.split("-").map(Number); return { row, col }; });
 }
 
-// ── API ハンドラ ────────────────────────────────
+// ─── Gemini 呼び出し ────────────────────────────────────────────────────────
+
+async function callGemini(apiKey: string, prompt: string): Promise<string | null> {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json", temperature: 0 },
+      }),
+    }
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+}
+
+// ─── API ハンドラ ────────────────────────────────────────────────────────────
+
 export async function POST(req: NextRequest) {
   const ip = getIP(req);
   const rl = rateLimit({ key: `ai-voice:${ip}`, limit: 30, windowSec: 3600 });
@@ -130,62 +121,78 @@ export async function POST(req: NextRequest) {
 
   const { transcript, rowLabels, colLabels } = await req.json();
 
-  // Gemini には「構造化データの抽出」だけを頼む
-  const prompt = `ユーザーの空き時間の発言を構造化データに変換してください。
+  // 候補日程を Gemini に渡す（曜日マッチングの精度向上）
+  const dateContext = (colLabels as string[]).map((l: string) => `  • ${l}`).join("\n");
 
-【発言】「${transcript}」
+  const prompt = `あなたはスケジュール調整の空き時間解析専門家です。
+ユーザーの発言から空き・予定情報を正確に構造化してください。
 
-【ルール】
-- type: "available"（空き）または "busy"（予定あり）
-- days: 曜日・日付を配列で。全日なら ["all"]。複数可。
-  例: "月曜と水曜" → ["月曜","水曜"]、"全部" → ["all"]
-- timeStart/timeEnd: "HH:MM" 形式。指定なしは null。
-  "午前中" → timeStart:"06:00" timeEnd:"12:00"
-  "午後" → timeStart:"12:00" timeEnd:"19:00"
-  "夕方" → timeStart:"17:00" timeEnd:"21:00"
-  "夜" → timeStart:"19:00" timeEnd:"24:00"
-  "朝" → timeStart:"06:00" timeEnd:"10:00"
-  "昼" → timeStart:"11:00" timeEnd:"14:00"
-  "〜時以降" → timeStart:"HH:00" timeEnd:null
-  "〜時まで" → timeStart:null timeEnd:"HH:00"
+【このイベントの候補日程】
+${dateContext}
 
-【出力形式】JSON のみ（説明不要）:
-{"items":[{"type":"available","days":["all"],"timeStart":null,"timeEnd":null}],"interpretation":"解釈の説明（日本語）"}`;
+【ユーザーの発言】
+「${transcript}」
+
+【時間キーワード変換表】
+  朝・早朝     → 06:00〜09:00
+  午前・午前中  → 06:00〜12:00
+  昼・お昼     → 11:00〜14:00
+  午後         → 12:00〜18:00
+  夕方         → 17:00〜20:00
+  夜           → 19:00〜24:00
+  終日・丸一日  → null〜null
+  〜時以降     → "HH:00"〜null
+  〜時まで     → null〜"HH:00"
+
+【重要ルール】
+- 「〜以外は空き」パターン: まず全体を available にし、除外部分を busy で追加する
+- 複数の時間帯が列挙される場合は items を複数作る
+- 曖昧な表現は広めに解釈する（「昼頃」→ 11:00〜14:00）
+- 発言に曜日の言及がなければ days: ["all"]
+
+【出力形式】JSONのみ（説明テキスト不要）:
+{"reasoning":"ステップバイステップの解釈","items":[{"type":"available","days":["all"],"timeStart":null,"timeEnd":null}],"interpretation":"解釈の要約（日本語1文）"}
+
+【具体例】
+「月曜の10時から12時は空いてます」
+→ {"items":[{"type":"available","days":["月曜"],"timeStart":"10:00","timeEnd":"12:00"}],"interpretation":"月曜10〜12時が空き"}
+
+「水曜は全部大丈夫です」
+→ {"items":[{"type":"available","days":["水曜"],"timeStart":null,"timeEnd":null}],"interpretation":"水曜終日空き"}
+
+「火曜以外は全部空いてます」
+→ {"items":[{"type":"available","days":["all"],"timeStart":null,"timeEnd":null},{"type":"busy","days":["火曜"],"timeStart":null,"timeEnd":null}],"interpretation":"火曜以外は終日空き"}
+
+「月曜と木曜の午後だけ空いてます」
+→ {"items":[{"type":"available","days":["月曜","木曜"],"timeStart":"12:00","timeEnd":"18:00"}],"interpretation":"月・木の午後が空き"}
+
+「午前中と夕方以降は空いてます」
+→ {"items":[{"type":"available","days":["all"],"timeStart":"06:00","timeEnd":"12:00"},{"type":"available","days":["all"],"timeStart":"17:00","timeEnd":null}],"interpretation":"午前と夕方以降が空き"}
+
+「今週月水金の14時以降しか空いてません」
+→ {"items":[{"type":"available","days":["月曜","水曜","金曜"],"timeStart":"14:00","timeEnd":null}],"interpretation":"月水金14時以降が空き"}`;
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json", temperature: 0 },
-        }),
-      }
-    );
+    let text = await callGemini(apiKey, prompt);
 
-    if (!res.ok) {
-      console.error("Gemini error:", await res.text());
-      return NextResponse.json({ error: "gemini_error" }, { status: 500 });
+    // 1回目が失敗・空なら簡易プロンプトで再試行
+    if (!text) {
+      text = await callGemini(apiKey,
+        `発言「${transcript}」の空き時間情報をJSONで: {"items":[{"type":"available","days":["all"],"timeStart":null,"timeEnd":null}],"interpretation":""}`
+      );
     }
 
-    const data = await res.json();
-    const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
-    const parsed = JSON.parse(text) as { items?: AvailabilityItem[]; interpretation?: string };
+    if (!text) return NextResponse.json({ error: "gemini_error" }, { status: 500 });
 
-    if (!Array.isArray(parsed.items) || parsed.items.length === 0) {
-      return NextResponse.json({ availableCells: [], interpretation: "解析できませんでした" });
-    }
+    const parsed = JSON.parse(text) as { items?: AvailabilityItem[]; interpretation?: string; reasoning?: string };
+    const items  = parsed.items ?? [];
+    const availableCells = buildCells(items, rowLabels as string[], colLabels as string[]);
 
-    // TypeScript 側で正確にセルマッピング
-    const available = buildCellSet(parsed.items, rowLabels as string[], colLabels as string[]);
-    const availableCells = Array.from(available).map((key) => {
-      const [row, col] = key.split("-").map(Number);
-      return { row, col };
+    return NextResponse.json({
+      availableCells,
+      interpretation: parsed.interpretation ?? "",
+      reasoning: parsed.reasoning ?? "",
     });
-
-    return NextResponse.json({ availableCells, interpretation: parsed.interpretation ?? "" });
   } catch (e) {
     console.error("parse-voice error:", e);
     return NextResponse.json({ error: "parse_error" }, { status: 500 });

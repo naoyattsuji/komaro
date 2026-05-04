@@ -21,20 +21,25 @@ interface Word {
 // ──────────────────────────────────────────────
 async function compressImage(
   file: File,
-  maxWidth = 1280
+  maxWidth = 1600   // 解像度を上げて文字を読みやすく
 ): Promise<{ base64: string; mimeType: string }> {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
+      // 元画像が小さければ拡大しない（ぼけるだけ）
       const scale = Math.min(1, maxWidth / img.width);
       const canvas = document.createElement("canvas");
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
       const ctx = canvas.getContext("2d")!;
+      // スムージング有効（縮小時に品質向上）
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
-      const base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+      // 品質を上げる (0.92)
+      const base64 = canvas.toDataURL("image/jpeg", 0.92).split(",")[1];
       resolve({ base64, mimeType: "image/jpeg" });
     };
     img.src = url;
@@ -69,9 +74,8 @@ async function analyzeWithGemini(
         available.add(`${row}-${col}`);
       }
     }
-    // extractedEvents をデバッグ用に添付
     (available as Set<string> & { _debug?: string })._debug =
-      `Gemini が検出した予定数: ${data.extractedEvents ?? "?"} 件`;
+      `検出した予定: ${data.extractedEvents ?? "?"} 件 / ${data.debug ?? ""}`;
     return available;
   } catch {
     return null;
