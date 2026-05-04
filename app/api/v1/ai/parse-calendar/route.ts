@@ -13,30 +13,31 @@ export async function POST(req: NextRequest) {
 
   const { imageBase64, mimeType, rowLabels, colLabels } = await req.json();
 
-  const rowList = (rowLabels as string[])
-    .map((l: string, i: number) => `  row[${i}]: "${l}"`)
-    .join("\n");
-  const colList = (colLabels as string[])
-    .map((l: string, i: number) => `  col[${i}]: "${l}"`)
-    .join("\n");
+  // 全セルを列挙して渡す（インデックスを推測させない）
+  const cellList = (rowLabels as string[]).flatMap((row: string, ri: number) =>
+    (colLabels as string[]).map((col: string, ci: number) =>
+      `  {"row":${ri},"col":${ci}}  →  時間帯:「${row}」 / 日付・曜日:「${col}」`
+    )
+  ).join("\n");
 
-  const prompt = `You are analyzing a calendar/schedule screenshot to identify FREE time slots.
+  const prompt = `あなたはカレンダー解析AIです。
+添付のカレンダースクリーンショットを見て、以下の各セルの時間帯が「空いているか（予定なし）」を判定してください。
 
-The scheduling grid has:
-Rows (time slots):
-${rowList}
+【判定対象セル一覧】
+${cellList}
 
-Columns (dates or days):
-${colList}
+【判定方法】
+1. スクリーンショットのカレンダーで、各セルに対応する時間帯・日付のエリアを探す
+2. そのエリアにイベント・予定・色付きブロック・テキストがあれば「予定あり（busy）」
+3. 何も書かれていない・色がついていない空白であれば「空き（free）」
+4. 判定できない場合は「空き」とみなす
 
-Instructions:
-- A cell is FREE if that time period appears empty in the calendar (no events, no colored blocks, no text indicating an appointment).
-- A cell is BUSY if there is any event, appointment, or colored block visible in that time range.
-- Match the calendar's visible time range to the row labels above.
-- If you cannot determine a cell's status, assume it is FREE.
+【重要】
+- カレンダーの時間軸（縦軸）を上記の時間帯と正確に照合すること
+- 必ず上記セル一覧の row と col の数値をそのまま使うこと
 
-Return ONLY valid JSON with no markdown:
-{"freeCells": [{"row": 0, "col": 0}]}`;
+空いているセルのみを以下のJSON形式で返してください（他のテキスト不要）:
+{"freeCells":[{"row":0,"col":0}]}`;
 
   const body = {
     contents: [
@@ -57,15 +58,13 @@ Return ONLY valid JSON with no markdown:
     );
 
     if (!res.ok) {
-      const err = await res.text();
-      console.error("Gemini error:", err);
+      console.error("Gemini error:", await res.text());
       return NextResponse.json({ error: "gemini_error" }, { status: 500 });
     }
 
     const data = await res.json();
     const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
-    const parsed = JSON.parse(text);
-    return NextResponse.json(parsed);
+    return NextResponse.json(JSON.parse(text));
   } catch (e) {
     console.error("parse-calendar error:", e);
     return NextResponse.json({ error: "parse_error" }, { status: 500 });
