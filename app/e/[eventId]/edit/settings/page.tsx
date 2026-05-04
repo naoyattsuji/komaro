@@ -6,13 +6,18 @@ import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { showToast } from "@/components/ui/Toast";
-import { Trash2, ArrowLeft, UserX } from "lucide-react";
+import { Trash2, ArrowLeft, UserX, Copy } from "lucide-react";
 import Link from "next/link";
 
 interface EventData {
   id: string;
   title: string;
   description?: string | null;
+  tableType: string;
+  rowLabels: string[];
+  colLabels: string[];
+  rowMeta?: { start?: string; end?: string }[] | null;
+  colMeta?: unknown;
   maxParticipants: number;
   currentParticipantCount: number;
   status: string;
@@ -45,6 +50,7 @@ export default function EditSettingsPage({
   const [maxParticipants, setMaxParticipants] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [duplicating, setDuplicating] = useState(false);
 
   useEffect(() => {
     const storedJwt = sessionStorage.getItem(`edit_jwt_${eventId}`);
@@ -148,6 +154,48 @@ export default function EditSettingsPage({
     }
   };
 
+  const handleDuplicate = async () => {
+    if (!event) return;
+    if (!confirm(`「${event.title}」を複製して新しいイベントを作成しますか？`)) return;
+    setDuplicating(true);
+    try {
+      const res = await fetch("/api/v1/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `[コピー] ${event.title}`,
+          description: event.description,
+          tableType: event.tableType,
+          rowLabels: event.rowLabels,
+          colLabels: event.colLabels,
+          rowMeta: event.rowMeta,
+          colMeta: event.colMeta,
+          maxParticipants: event.maxParticipants,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        showToast(data.error?.message ?? "複製に失敗しました", "error");
+        return;
+      }
+      const data = await res.json();
+      const newEventId = data.event.id;
+      const newEditToken = data.event.editToken;
+      // Obtain a JWT for the new event via the edit-auth endpoint
+      const authRes = await fetch(`/api/v1/events/${newEventId}/edit-auth?token=${encodeURIComponent(newEditToken)}`);
+      if (authRes.ok) {
+        const authData = await authRes.json();
+        if (authData.editJwt) {
+          sessionStorage.setItem(`edit_jwt_${newEventId}`, authData.editJwt);
+        }
+      }
+      showToast("イベントを複製しました");
+      router.push(`/create/done?id=${newEventId}&token=${encodeURIComponent(newEditToken)}`);
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -239,6 +287,22 @@ export default function EditSettingsPage({
         <Button className="w-full" size="lg" onClick={handleSave} loading={saving}>
           設定を保存する
         </Button>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="font-semibold text-gray-800 text-sm mb-2">このイベントを複製</h2>
+          <p className="text-xs text-gray-500 mb-3">
+            同じ設定（タイトル・表の形式・ラベル・上限）で新しいイベントを作成します。参加者の回答はコピーされません。
+          </p>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={handleDuplicate}
+            loading={duplicating}
+          >
+            <Copy size={16} className="mr-2" />
+            このイベントを複製する
+          </Button>
+        </div>
 
         <div className="border-t border-gray-200 pt-4">
           <p className="text-xs text-gray-500 mb-3 font-medium">危険な操作</p>

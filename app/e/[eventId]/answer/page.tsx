@@ -108,7 +108,7 @@ export default function AnswerPage({
 
   const handleSubmit = () => {
     if (!name.trim()) { setNameError("名前を入力してください"); return; }
-    if (name.trim().length > 30) { setNameError("30文字以内で入力してください"); return; }
+    if (name.trim().length > 100) { setNameError("100文字以内で入力してください"); return; }
     setNameError("");
     doSubmit(false);
   };
@@ -175,9 +175,9 @@ export default function AnswerPage({
           placeholder="例: 田中太郎"
           value={name}
           onChange={(e) => { setName(e.target.value); setNameError(""); }}
-          maxLength={30}
+          maxLength={100}
           error={nameError}
-          hint={`${name.length}/30文字`}
+          hint={`${name.length}/100文字`}
         />
       </div>
 

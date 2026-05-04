@@ -57,9 +57,9 @@ export async function POST(
       { status: 400 }
     );
   }
-  if (commentBody.trim().length > 200) {
+  if (commentBody.trim().length > 1000) {
     return Response.json(
-      { error: { code: "INVALID_INPUT", message: "コメントは200文字以内です" } },
+      { error: { code: "INVALID_INPUT", message: "コメントは1000文字以内です" } },
       { status: 400 }
     );
   }

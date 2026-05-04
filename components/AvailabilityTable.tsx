@@ -23,6 +23,7 @@ interface AvailabilityTableProps {
   cells?: CellSummary[];
   maxCount?: number;
   highlightedParticipantCells?: { rowIndex: number; colIndex: number }[];
+  bestTimeCells?: { rowIndex: number; colIndex: number }[];
   onCellClick?: (rowIndex: number, colIndex: number) => void;
   selectedCells?: Set<string>;
   onCellToggle?: (rowIndex: number, colIndex: number) => void;
@@ -43,6 +44,7 @@ export function AvailabilityTable({
   cells = [],
   maxCount = 0,
   highlightedParticipantCells,
+  bestTimeCells,
   onCellClick,
   selectedCells,
   onCellToggle,
@@ -52,6 +54,10 @@ export function AvailabilityTable({
 
   const highlightSet = highlightedParticipantCells
     ? new Set(highlightedParticipantCells.map((c) => cellKey(c.rowIndex, c.colIndex)))
+    : null;
+
+  const bestTimeSet = bestTimeCells
+    ? new Set(bestTimeCells.map((c) => cellKey(c.rowIndex, c.colIndex)))
     : null;
 
   // ── always-current mirrors (prevent stale closures in imperative handlers) ──
@@ -212,6 +218,7 @@ export function AvailabilityTable({
                 const isSelected = selectedCells?.has(key) ?? false;
                 const isHighlighted = highlightSet?.has(key) ?? false;
                 const isFiltered = highlightSet !== null && !isHighlighted;
+                const isBestTime = bestTimeSet?.has(key) ?? false;
 
                 if (mode === "edit") {
                   return (
@@ -260,7 +267,8 @@ export function AvailabilityTable({
                         ? getHeatmapColor(summary.count, maxCount)
                         : "bg-white hover:bg-gray-50",
                       summary?.isMax && "ring-2 ring-inset ring-white/40",
-                      isFiltered && "opacity-20"
+                      isFiltered && "opacity-20",
+                      isBestTime && "ring-2 ring-inset ring-yellow-400"
                     )}
                     aria-label={`${row} ${colLabels[ci]} ${summary?.count ?? 0}名参加可能`}
                   >

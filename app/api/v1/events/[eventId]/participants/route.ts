@@ -60,9 +60,9 @@ export async function POST(
       { status: 400 }
     );
   }
-  if (name.trim().length > 30) {
+  if (name.trim().length > 100) {
     return Response.json(
-      { error: { code: "INVALID_INPUT", message: "参加者名は30文字以内です" } },
+      { error: { code: "INVALID_INPUT", message: "参加者名は100文字以内です" } },
       { status: 400 }
     );
   }

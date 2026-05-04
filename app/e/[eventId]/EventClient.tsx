@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AvailabilityTable } from "@/components/AvailabilityTable";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { showToast } from "@/components/ui/Toast";
-import { Users, MessageSquare, Send, Filter, Edit3, CalendarPlus } from "lucide-react";
+import { Users, MessageSquare, Send, Filter, Edit3, CalendarPlus, Download, Star } from "lucide-react";
 import {
   formatDateTime,
   parseColLabelToDate,
@@ -57,18 +58,31 @@ interface Comment {
 }
 
 export function EventClient({ eventId, initialEvent }: EventClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [event] = useState(initialEvent);
   const [summary, setSummary] = useState<{ maxCount: number; cells: CellSummary[] }>({ maxCount: 0, cells: [] });
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [selectedCell, setSelectedCell] = useState<{ r: number; c: number } | null>(null);
   const [cellParticipants, setCellParticipants] = useState<{ available: string[]; unavailable: string[] } | null>(null);
-  const [filterNames, setFilterNames] = useState<Set<string>>(new Set());
+  const [filterNames, setFilterNames] = useState<Set<string>>(() => {
+    // Initialize from URL params if present
+    const filterParam = searchParams.get("filter");
+    if (filterParam) {
+      return new Set(filterParam.split(",").map((n) => decodeURIComponent(n)).filter(Boolean));
+    }
+    return new Set();
+  });
+  const [filterInitializedFromUrl, setFilterInitializedFromUrl] = useState(() => {
+    return !!searchParams.get("filter");
+  });
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [commentAuthor, setCommentAuthor] = useState("");
   const [commentBody, setCommentBody] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [showMobileFilter, setShowMobileFilter] = useState(false);
+  const [showBestTime, setShowBestTime] = useState(false);
 
   const isExpired = event.status === "expired";
 
@@ -94,14 +108,46 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
     return () => clearInterval(interval);
   }, [fetchSummary, fetchComments]);
 
-  // Auto-select all participants (including newly joined ones)
+  // Auto-select all participants (including newly joined ones), unless URL filter was set
   useEffect(() => {
+    if (filterInitializedFromUrl) {
+      // Only add newly joined participants that aren't filtered out yet, keep existing filter
+      // Once loaded, stop treating filter as URL-initialized so new participants get added
+      setFilterInitializedFromUrl(false);
+      return;
+    }
     setFilterNames((prev) => {
       const next = new Set(prev);
       participants.forEach((p) => next.add(p.name));
       return next;
     });
-  }, [participants]);
+  }, [participants]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync filter state to URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (filterNames.size > 0 && participants.length > 0) {
+      const allNames = new Set(participants.map((p) => p.name));
+      const isAllSelected = participants.every((p) => filterNames.has(p.name));
+      if (isAllSelected) {
+        params.delete("filter");
+      } else {
+        const filtered = Array.from(filterNames).filter((n) => allNames.has(n));
+        if (filtered.length > 0) {
+          params.set("filter", filtered.map((n) => encodeURIComponent(n)).join(","));
+        } else {
+          params.delete("filter");
+        }
+      }
+    } else {
+      params.delete("filter");
+    }
+    const newSearch = params.toString();
+    const currentSearch = searchParams.toString();
+    if (newSearch !== currentSearch) {
+      router.replace(`/e/${eventId}${newSearch ? `?${newSearch}` : ""}`, { scroll: false });
+    }
+  }, [filterNames, participants]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // When all deselected, auto-reset to all after 2s
   useEffect(() => {
@@ -154,6 +200,86 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
   };
 
   const { cells: displayCells, maxCount: displayMaxCount } = getFilteredDisplay();
+
+  // Best-time highlight: cells where all filtered participants are available
+  const getBestTimeCells = (): { rowIndex: number; colIndex: number }[] => {
+    if (!showBestTime) return [];
+    const selected = participants.filter((p) => filterNames.has(p.name));
+    if (selected.length === 0) return [];
+
+    // Build a map of available count per cell
+    const countMap = new Map<string, number>();
+    selected.forEach((p) =>
+      p.cells.forEach((cell) => {
+        const key = `${cell.rowIndex}-${cell.colIndex}`;
+        countMap.set(key, (countMap.get(key) ?? 0) + 1);
+      })
+    );
+
+    // Find cells where ALL selected participants can attend
+    const allAvailCells: { rowIndex: number; colIndex: number }[] = [];
+    countMap.forEach((count, key) => {
+      if (count === selected.length) {
+        const [rowIndex, colIndex] = key.split("-").map(Number);
+        allAvailCells.push({ rowIndex, colIndex });
+      }
+    });
+
+    if (allAvailCells.length > 0) return allAvailCells;
+
+    // Fallback: cells with max participant count
+    let maxCnt = 0;
+    countMap.forEach((count) => { if (count > maxCnt) maxCnt = count; });
+    const maxCells: { rowIndex: number; colIndex: number }[] = [];
+    countMap.forEach((count, key) => {
+      if (count === maxCnt) {
+        const [rowIndex, colIndex] = key.split("-").map(Number);
+        maxCells.push({ rowIndex, colIndex });
+      }
+    });
+    return maxCells;
+  };
+
+  const bestTimeCells = getBestTimeCells();
+
+  const downloadCSV = () => {
+    const selected = participants.filter((p) => filterNames.has(p.name));
+    const displayParticipants = selected.length > 0 ? selected : participants;
+
+    // Build header row: "参加者名" + col labels (row × col)
+    const headers: string[] = ["参加者名"];
+    event.rowLabels.forEach((row) => {
+      event.colLabels.forEach((col) => {
+        headers.push(`${col} ${row}`);
+      });
+    });
+
+    const rows: string[][] = [headers];
+
+    displayParticipants.forEach((p) => {
+      const availSet = new Set(p.cells.map((c) => `${c.rowIndex}-${c.colIndex}`));
+      const row: string[] = [p.name];
+      event.rowLabels.forEach((_, ri) => {
+        event.colLabels.forEach((_, ci) => {
+          row.push(availSet.has(`${ri}-${ci}`) ? "○" : "×");
+        });
+      });
+      rows.push(row);
+    });
+
+    const csvContent = rows
+      .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    const bom = "﻿"; // UTF-8 BOM for Excel
+    const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${event.title}_回答一覧.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const submitComment = async () => {
     if (!commentBody.trim()) return;
@@ -265,11 +391,35 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
       <div className="grid lg:grid-cols-[1fr_280px] gap-6">
         {/* Main: Table */}
         <FadeInSection delay={80}>
-          {displayMaxCount > 0 && (
-            <p className="text-xs text-gray-500 mb-2">
-              最多 <span className="font-bold text-red-600">{displayMaxCount}名</span> 参加可能のコマがあります。セルをタップで参加者を確認できます。
-            </p>
-          )}
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+            {displayMaxCount > 0 ? (
+              <p className="text-xs text-gray-500">
+                最多 <span className="font-bold text-red-600">{displayMaxCount}名</span> 参加可能のコマがあります。セルをタップで参加者を確認できます。
+              </p>
+            ) : <span />}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowBestTime((v) => !v)}
+                className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors ${
+                  showBestTime
+                    ? "bg-yellow-400 text-yellow-900 border-yellow-400"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <Star size={12} />
+                ベスト表示
+              </button>
+              {participants.length > 0 && (
+                <button
+                  onClick={downloadCSV}
+                  className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border bg-white text-gray-600 border-gray-200 hover:border-gray-300 transition-colors"
+                >
+                  <Download size={12} />
+                  CSV
+                </button>
+              )}
+            </div>
+          </div>
 
           <AvailabilityTable
             rowLabels={event.rowLabels}
@@ -278,6 +428,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
             mode="view"
             cells={displayCells}
             maxCount={displayMaxCount}
+            bestTimeCells={showBestTime && bestTimeCells.length > 0 ? bestTimeCells : undefined}
             onCellClick={handleCellClick}
           />
         </FadeInSection>
@@ -396,7 +547,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
                 placeholder="コメントを入力..."
                 value={commentBody}
                 onChange={(e) => setCommentBody(e.target.value)}
-                maxLength={200}
+                maxLength={1000}
                 rows={2}
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
               />
@@ -409,7 +560,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
                 <Send size={16} />
               </Button>
             </div>
-            <p className="text-xs text-gray-400 text-right">{commentBody.length}/200</p>
+            <p className="text-xs text-gray-400 text-right">{commentBody.length}/1000</p>
           </div>
         )}
       </div>

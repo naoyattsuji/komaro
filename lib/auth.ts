@@ -8,7 +8,7 @@ export async function createEditJwt(eventId: string): Promise<string> {
   return new SignJWT({ eventId, role: "editor" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("2h")
+    .setExpirationTime("24h")
     .sign(SECRET);
 }
 
