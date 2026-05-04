@@ -5,11 +5,8 @@ import { Camera, X, Loader2, CheckCircle, AlertCircle, ChevronDown, ChevronUp } 
 import { parseTimeToMinutes } from "@/lib/utils";
 
 interface CalendarImageReaderProps {
-  /** KOMARo イベントの行ラベル（時間）例: ["10:00","12:00","14:00"] */
   rowLabels: string[];
-  /** KOMARo イベントの列ラベル（日付）例: ["5/7(水)","5/8(木)"] */
   colLabels: string[];
-  /** 自動入力結果を親に渡す */
   onDetected: (availableCells: Set<string>) => void;
 }
 
@@ -20,97 +17,127 @@ interface Word {
 }
 
 // ──────────────────────────────────────────────
-// OCR 結果から空きコマを検出するコアロジック
+// 画像をリサイズして base64 に変換（Gemini 用）
+// ──────────────────────────────────────────────
+async function compressImage(
+  file: File,
+  maxWidth = 1280
+): Promise<{ base64: string; mimeType: string }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      const base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+      resolve({ base64, mimeType: "image/jpeg" });
+    };
+    img.src = url;
+  });
+}
+
+// ──────────────────────────────────────────────
+// Gemini Vision でカレンダーを解析
+// ──────────────────────────────────────────────
+async function analyzeWithGemini(
+  file: File,
+  rowLabels: string[],
+  colLabels: string[]
+): Promise<Set<string> | null> {
+  try {
+    const { base64, mimeType } = await compressImage(file);
+    const res = await fetch("/api/v1/ai/parse-calendar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageBase64: base64, mimeType, rowLabels, colLabels }),
+    });
+
+    if (res.status === 503) return null; // API キー未設定 → フォールバック
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!Array.isArray(data.freeCells)) return null;
+
+    const available = new Set<string>();
+    for (const { row, col } of data.freeCells as { row: number; col: number }[]) {
+      if (row >= 0 && row < rowLabels.length && col >= 0 && col < colLabels.length) {
+        available.add(`${row}-${col}`);
+      }
+    }
+    return available;
+  } catch {
+    return null;
+  }
+}
+
+// ──────────────────────────────────────────────
+// Tesseract.js フォールバック（従来ロジック）
 // ──────────────────────────────────────────────
 function detectAvailableSlots(
   words: Word[],
   rowLabels: string[],
   colLabels: string[]
-): { available: Set<string>; busyMinutes: number[][]; debug: string[] } {
+): { available: Set<string>; debug: string[] } {
   const debug: string[] = [];
-
-  // 信頼度の低い単語を除外
   const filtered = words.filter((w) => w.confidence > 40 && w.text.trim().length > 0);
 
   if (filtered.length === 0) {
-    return { available: new Set(), busyMinutes: [], debug: ["テキストを検出できませんでした"] };
+    return { available: new Set(), debug: ["テキストを検出できませんでした"] };
   }
 
-  // 画像幅の推定（全単語の最大 x1）
   const imgWidth = Math.max(...filtered.map((w) => w.bbox.x1));
   const imgHeight = Math.max(...filtered.map((w) => w.bbox.y1));
-
-  // ── ① 時間ラベル列を特定する ──
-  // 左端（x0 < 画像幅の 25%）にある時間パターンを行ラベルとみなす
   const TIME_COL_LIMIT = imgWidth * 0.25;
 
   const timeLabels: { minutes: number; y0: number; y1: number }[] = [];
   for (const w of filtered) {
     if (w.bbox.x0 > TIME_COL_LIMIT) continue;
     const m = parseTimeToMinutes(w.text);
-    if (m !== null) {
-      timeLabels.push({ minutes: m, y0: w.bbox.y0, y1: w.bbox.y1 });
-    }
+    if (m !== null) timeLabels.push({ minutes: m, y0: w.bbox.y0, y1: w.bbox.y1 });
   }
-
-  // y座標でソート
   timeLabels.sort((a, b) => a.y0 - b.y0);
-  debug.push(`検出した時刻ラベル: ${timeLabels.map((t) => `${Math.floor(t.minutes / 60)}:${String(t.minutes % 60).padStart(2, "0")}(y=${t.y0})`).join(", ")}`);
+  debug.push(`検出した時刻ラベル: ${timeLabels.map((t) => `${Math.floor(t.minutes / 60)}:${String(t.minutes % 60).padStart(2, "0")}`).join(", ")}`);
 
   if (timeLabels.length < 2) {
     debug.push("時刻ラベルが2つ未満 → 判定できません");
-    return { available: new Set(), busyMinutes: [], debug };
+    return { available: new Set(), debug };
   }
 
-  // ── ② 各時刻スロットの y 範囲を計算 ──
-  const slots: { minutes: number; y0: number; y1: number }[] = [];
-  for (let i = 0; i < timeLabels.length; i++) {
-    const y0 = timeLabels[i].y0;
-    const y1 = i + 1 < timeLabels.length
-      ? timeLabels[i + 1].y0
-      : imgHeight;
-    slots.push({ minutes: timeLabels[i].minutes, y0, y1 });
-  }
+  const slots = timeLabels.map((tl, i) => ({
+    minutes: tl.minutes,
+    y0: tl.y0,
+    y1: i + 1 < timeLabels.length ? timeLabels[i + 1].y0 : imgHeight,
+  }));
 
-  // ── ③ 各スロットに「イベントテキスト」があるか判定 ──
-  // 時刻ラベル列（左 25%）以外の領域にテキストがあれば busy とみなす
-  const busyMinutes: number[] = []; // busy な時間帯の開始分
+  const busyMinutes: number[] = [];
   for (const slot of slots) {
     const hasEvent = filtered.some(
       (w) =>
-        w.bbox.x0 > TIME_COL_LIMIT &&       // 時刻ラベル列より右
-        w.bbox.y0 >= slot.y0 - 5 &&          // スロット内（少し余裕を持つ）
+        w.bbox.x0 > TIME_COL_LIMIT &&
+        w.bbox.y0 >= slot.y0 - 5 &&
         w.bbox.y0 < slot.y1 - 5 &&
-        parseTimeToMinutes(w.text) === null   // 時刻テキスト自体は除外
+        parseTimeToMinutes(w.text) === null
     );
     if (hasEvent) busyMinutes.push(slot.minutes);
   }
 
-  debug.push(`Busy な時間帯: ${busyMinutes.map((m) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`).join(", ") || "なし"}`);
+  debug.push(`Busy: ${busyMinutes.map((m) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`).join(", ") || "なし"}`);
 
-  // ── ④ KOMARo の行ラベルと照合 ──
   const available = new Set<string>();
-
   for (let ri = 0; ri < rowLabels.length; ri++) {
     const rowMinutes = parseTimeToMinutes(rowLabels[ri]);
     if (rowMinutes === null) continue;
-
-    // この時間帯が busy かどうか
-    const isBusy = busyMinutes.some((bm) => {
-      // 30分の余裕を持って判定
-      return Math.abs(bm - rowMinutes) < 60;
-    });
-
+    const isBusy = busyMinutes.some((bm) => Math.abs(bm - rowMinutes) < 60);
     if (!isBusy) {
-      // すべての列で空きとしてマーク
-      for (let ci = 0; ci < colLabels.length; ci++) {
-        available.add(`${ri}-${ci}`);
-      }
+      for (let ci = 0; ci < colLabels.length; ci++) available.add(`${ri}-${ci}`);
     }
   }
-
-  debug.push(`KOMARo で空きマークしたコマ数: ${available.size}`);
-  return { available, busyMinutes: [], debug };
+  return { available, debug };
 }
 
 // ──────────────────────────────────────────────
@@ -137,16 +164,33 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
     const url = URL.createObjectURL(file);
     setImageUrl(url);
     setStatus("loading");
-    setMessage("カレンダーを読み取り中...");
+    setMessage("AIでカレンダーを解析中...");
 
+    // ── Gemini Vision を試みる ──
+    const geminiResult = await analyzeWithGemini(file, rowLabels, colLabels);
+
+    if (geminiResult !== null) {
+      setPendingCells(geminiResult);
+      setDetectedCount(geminiResult.size);
+      setDebugLines(["✨ Gemini AI で解析しました"]);
+      if (geminiResult.size === 0) {
+        setStatus("error");
+        setMessage("空き時間を検出できませんでした。別の画像をお試しください。");
+      } else {
+        setStatus("done");
+        setMessage(`${geminiResult.size}コマの空き時間を検出しました`);
+      }
+      return;
+    }
+
+    // ── Tesseract フォールバック ──
+    setMessage("OCRで読み取り中...");
     try {
-      // Tesseract.js を動的インポート（SSR回避）
       const { createWorker } = await import("tesseract.js");
-
       const worker = await createWorker(["jpn", "eng"], 1, {
         logger: (m) => {
           if (m.status === "recognizing text") {
-            setMessage(`読み取り中... ${Math.round(m.progress * 100)}%`);
+            setMessage(`OCR読み取り中... ${Math.round(m.progress * 100)}%`);
           }
         },
       });
@@ -154,18 +198,13 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
       const result = await worker.recognize(file, {}, { blocks: true });
       await worker.terminate();
 
-      // Word レベルのデータを取得
       const words: Word[] = [];
       for (const block of result.data.blocks ?? []) {
         for (const para of block.paragraphs ?? []) {
           for (const line of para.lines ?? []) {
             for (const word of line.words ?? []) {
               if (word.text.trim()) {
-                words.push({
-                  text: word.text.trim(),
-                  bbox: word.bbox,
-                  confidence: word.confidence,
-                });
+                words.push({ text: word.text.trim(), bbox: word.bbox, confidence: word.confidence });
               }
             }
           }
@@ -174,18 +213,18 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
 
       if (words.length === 0) {
         setStatus("error");
-        setMessage("テキストを検出できませんでした。より鮮明なスクリーンショットをお試しください。");
+        setMessage("テキストを検出できませんでした。より鮮明な画像をお試しください。");
         return;
       }
 
       const { available, debug } = detectAvailableSlots(words, rowLabels, colLabels);
-      setDebugLines(debug);
+      setDebugLines(["⚙️ OCR（フォールバック）で解析しました", ...debug]);
       setPendingCells(available);
       setDetectedCount(available.size);
 
       if (available.size === 0) {
         setStatus("error");
-        setMessage("空き時間を検出できませんでした。時間帯ラベルが見えるカレンダーのスクリーンショットをお試しください。");
+        setMessage("空き時間を検出できませんでした。時間帯ラベルが見えるカレンダーをお試しください。");
       } else {
         setStatus("done");
         setMessage(`${available.size}コマの空き時間を検出しました`);
@@ -228,37 +267,26 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 space-y-3">
-      {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Camera size={15} className="text-gray-600" />
           <span className="text-sm font-medium text-gray-800">カレンダーから自動入力（β）</span>
         </div>
-        <button
-          type="button"
-          onClick={() => { setOpen(false); reset(); }}
-          className="text-gray-400 hover:text-gray-600"
-        >
+        <button type="button" onClick={() => { setOpen(false); reset(); }} className="text-gray-400 hover:text-gray-600">
           <X size={16} />
         </button>
       </div>
 
       <p className="text-xs text-gray-500 leading-relaxed">
-        カレンダーアプリのスクリーンショットをアップロードすると、空き時間を自動で検出してコマを選択します。
-        内容を確認してから送信してください。
+        カレンダーアプリのスクリーンショットをアップロードすると、空き時間を自動で検出します。
       </p>
 
-      {/* アップロードエリア */}
       {!imageUrl ? (
         <div
           className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors"
           onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            const file = e.dataTransfer.files[0];
-            if (file) handleFile(file);
-          }}
+          onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
         >
           <Camera size={24} className="mx-auto text-gray-300 mb-2" />
           <p className="text-sm text-gray-500">タップして画像を選択</p>
@@ -268,34 +296,21 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFile(file);
-            }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
           />
         </div>
       ) : (
         <div className="space-y-3">
-          {/* プレビュー */}
           <div className="relative">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageUrl}
-              alt="カレンダープレビュー"
-              className="w-full max-h-48 object-contain rounded-lg border border-gray-100"
-            />
+            <img src={imageUrl} alt="カレンダープレビュー" className="w-full max-h-48 object-contain rounded-lg border border-gray-100" />
             {status === "idle" && (
-              <button
-                type="button"
-                onClick={reset}
-                className="absolute top-1 right-1 bg-white rounded-full p-0.5 shadow text-gray-500 hover:text-gray-700"
-              >
+              <button type="button" onClick={reset} className="absolute top-1 right-1 bg-white rounded-full p-0.5 shadow text-gray-500 hover:text-gray-700">
                 <X size={14} />
               </button>
             )}
           </div>
 
-          {/* ステータス */}
           <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
             status === "loading" ? "bg-gray-50 text-gray-600" :
             status === "done"    ? "bg-green-50 text-green-700" :
@@ -307,42 +322,26 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
             <span>{message}</span>
           </div>
 
-          {/* デバッグ情報（開発/確認用） */}
           {debugLines.length > 0 && (
             <div>
-              <button
-                type="button"
-                onClick={() => setShowDebug(!showDebug)}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
-              >
+              <button type="button" onClick={() => setShowDebug(!showDebug)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
                 {showDebug ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                 読み取り詳細
               </button>
               {showDebug && (
                 <div className="mt-1 bg-gray-50 rounded p-2 space-y-0.5">
-                  {debugLines.map((l, i) => (
-                    <p key={i} className="text-[10px] text-gray-500 font-mono">{l}</p>
-                  ))}
+                  {debugLines.map((l, i) => <p key={i} className="text-[10px] text-gray-500 font-mono">{l}</p>)}
                 </div>
               )}
             </div>
           )}
 
-          {/* アクションボタン */}
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={reset}
-              className="flex-1 text-sm text-gray-600 border border-gray-200 rounded-lg py-2 hover:bg-gray-50 transition-colors"
-            >
+            <button type="button" onClick={reset} className="flex-1 text-sm text-gray-600 border border-gray-200 rounded-lg py-2 hover:bg-gray-50 transition-colors">
               やり直す
             </button>
             {status === "done" && (
-              <button
-                type="button"
-                onClick={handleApply}
-                className="flex-1 text-sm font-medium text-white bg-gray-900 rounded-lg py-2 hover:bg-gray-700 transition-colors"
-              >
+              <button type="button" onClick={handleApply} className="flex-1 text-sm font-medium text-white bg-gray-900 rounded-lg py-2 hover:bg-gray-700 transition-colors">
                 {detectedCount}コマを適用する
               </button>
             )}
@@ -350,9 +349,8 @@ export function CalendarImageReader({ rowLabels, colLabels, onDetected }: Calend
         </div>
       )}
 
-      {/* 注意書き */}
       <p className="text-[10px] text-gray-400 leading-relaxed">
-        ※ 画像はブラウザ内で処理されサーバーに送信されません。精度は100%ではないため、適用後に内容をご確認ください。
+        ※ 画像はサーバーに送信され AI で解析されます。送信した画像は解析後に破棄されます。
       </p>
     </div>
   );

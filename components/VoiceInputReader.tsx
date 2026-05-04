@@ -188,6 +188,70 @@ function parseVoiceText(
 }
 
 // ──────────────────────────────────────────────
+// Gemini API でパース → フォールバックで正規表現
+// ──────────────────────────────────────────────
+async function parseWithGeminiOrFallback(
+  transcript: string,
+  rowLabels: string[],
+  colLabels: string[],
+  setStatus: (s: "idle" | "listening" | "loading" | "done" | "error") => void,
+  setMessage: (m: string) => void,
+  setDebugLines: (d: string[]) => void,
+  setPendingCells: (c: Set<string>) => void,
+  setDetectedCount: (n: number) => void
+) {
+  setStatus("loading");
+  setMessage("AIで解析中...");
+
+  try {
+    const res = await fetch("/api/v1/ai/parse-voice", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript, rowLabels, colLabels }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.availableCells)) {
+        const available = new Set<string>();
+        for (const { row, col } of data.availableCells as { row: number; col: number }[]) {
+          if (row >= 0 && row < rowLabels.length && col >= 0 && col < colLabels.length) {
+            available.add(`${row}-${col}`);
+          }
+        }
+        const interpretation = data.interpretation ?? "";
+        setDebugLines([`✨ Gemini AI: ${interpretation}`]);
+        setPendingCells(available);
+        setDetectedCount(available.size);
+        if (available.size === 0) {
+          setStatus("error");
+          setMessage("空き時間を検出できませんでした。もう少し具体的に話してみてください。");
+        } else {
+          setStatus("done");
+          setMessage(`${available.size}コマの空き時間を検出しました`);
+        }
+        return;
+      }
+    }
+  } catch {
+    // フォールバックへ
+  }
+
+  // 正規表現フォールバック
+  const { available, debug } = parseVoiceText(transcript, rowLabels, colLabels);
+  setDebugLines(["⚙️ ローカル解析（フォールバック）", ...debug]);
+  setPendingCells(available);
+  setDetectedCount(available.size);
+  if (available.size === 0) {
+    setStatus("error");
+    setMessage("空き時間を検出できませんでした。「月曜の10時から12時は空いてます」のように話してみてください。");
+  } else {
+    setStatus("done");
+    setMessage(`${available.size}コマの空き時間を検出しました`);
+  }
+}
+
+// ──────────────────────────────────────────────
 // メインコンポーネント
 // ──────────────────────────────────────────────
 export function VoiceInputReader({
@@ -199,7 +263,7 @@ export function VoiceInputReader({
   const [supported, setSupported] = useState(true);
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const [status, setStatus] = useState<"idle" | "listening" | "done" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "listening" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
   const [pendingCells, setPendingCells] = useState<Set<string>>(new Set());
   const [detectedCount, setDetectedCount] = useState(0);
@@ -247,19 +311,8 @@ export function VoiceInputReader({
       setTranscript(final || interim);
 
       if (final) {
-        const { available, debug } = parseVoiceText(final, rowLabels, colLabels);
-        setDebugLines(debug);
-        setPendingCells(available);
-        setDetectedCount(available.size);
-        if (available.size === 0) {
-          setStatus("error");
-          setMessage(
-            "空き時間を検出できませんでした。「月曜の10時から12時は空いてます」のように話してみてください。"
-          );
-        } else {
-          setStatus("done");
-          setMessage(`${available.size}コマの空き時間を検出しました`);
-        }
+        // Gemini API でパース → フォールバックで正規表現
+        parseWithGeminiOrFallback(final, rowLabels, colLabels, setStatus, setMessage, setDebugLines, setPendingCells, setDetectedCount);
       }
     };
 
@@ -381,23 +434,32 @@ export function VoiceInputReader({
             <button
               type="button"
               onClick={listening ? stopListening : startListening}
-              disabled={status === "done"}
+              disabled={status === "done" || status === "loading"}
               className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-md ${
                 listening
                   ? "bg-red-500 hover:bg-red-600 animate-pulse shadow-red-200"
+                  : status === "loading"
+                  ? "bg-gray-400 cursor-not-allowed"
                   : status === "done"
                   ? "bg-gray-200 cursor-not-allowed"
                   : "bg-gray-900 hover:bg-gray-700"
               }`}
             >
-              {listening ? (
+              {status === "loading" ? (
+                <svg className="animate-spin w-6 h-6 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+              ) : listening ? (
                 <MicOff size={24} className="text-white" />
               ) : (
                 <Mic size={24} className="text-white" />
               )}
             </button>
             <p className="text-xs text-gray-500">
-              {listening
+              {status === "loading"
+                ? "AIで解析中..."
+                : listening
                 ? "録音中 — タップして停止"
                 : status === "done"
                 ? "認識完了"
@@ -417,7 +479,7 @@ export function VoiceInputReader({
           {message && (
             <div
               className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
-                status === "listening"
+                status === "listening" || status === "loading"
                   ? "bg-gray-50 text-gray-600"
                   : status === "done"
                   ? "bg-green-50 text-green-700"
@@ -426,8 +488,8 @@ export function VoiceInputReader({
                   : "bg-gray-50"
               }`}
             >
-              {status === "done" && <CheckCircle size={14} className="shrink-0" />}
-              {status === "error" && <AlertCircle size={14} className="shrink-0" />}
+              {status === "done"    && <CheckCircle size={14} className="shrink-0" />}
+              {status === "error"   && <AlertCircle size={14} className="shrink-0" />}
               <span>{message}</span>
             </div>
           )}
