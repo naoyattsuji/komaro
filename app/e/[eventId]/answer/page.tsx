@@ -11,8 +11,8 @@ import { ArrowLeft, CheckSquare, Square } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import { FadeInSection } from "@/components/FadeInSection";
-import { CalendarImageReader } from "@/components/CalendarImageReader";
-import { VoiceInputReader } from "@/components/VoiceInputReader";
+// import { CalendarImageReader } from "@/components/CalendarImageReader";
+// import { VoiceInputReader } from "@/components/VoiceInputReader";
 
 interface EventInfo {
   id: string;
@@ -181,7 +181,7 @@ export default function AnswerPage({
         />
       </div>
 
-      {/* 自動入力ボタン群 */}
+      {/* 自動入力ボタン群（精度改善まで非表示）
       <div className="anim-hero flex flex-wrap gap-2 mb-2" style={{ animationDelay: "160ms" }}>
         <CalendarImageReader
           rowLabels={event.rowLabels}
@@ -194,6 +194,7 @@ export default function AnswerPage({
           onDetected={(cells) => setSelectedCells(cells)}
         />
       </div>
+      */}
 
       {/* Controls */}
       <div
