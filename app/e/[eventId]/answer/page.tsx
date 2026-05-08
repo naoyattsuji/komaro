@@ -204,13 +204,13 @@ export default function AnswerPage({
         <span className="text-xs text-gray-400">ドラッグで複数まとめて選択できます</span>
         <button
           onClick={selectAll}
-          className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg px-2.5 py-1"
+          className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1"
         >
           <CheckSquare size={12} /> 全選択
         </button>
         <button
           onClick={deselectAll}
-          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg px-2.5 py-1"
+          className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1"
         >
           <Square size={12} /> 全解除
         </button>
@@ -236,7 +236,7 @@ export default function AnswerPage({
           onClick={handleSubmit}
           loading={submitting}
         >
-          この内容で送信する（{selectedCells.size}コマ選択）
+          この内容で送信する
         </Button>
       </div>
 
