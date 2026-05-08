@@ -23,10 +23,11 @@ export function showToast(message: string, type: ToastType = "success") {
   const id = Math.random().toString(36).slice(2);
   toasts = [...toasts, { id, type, message }];
   emit();
+  const duration = type === "error" ? 7000 : 4000;
   setTimeout(() => {
     toasts = toasts.filter((t) => t.id !== id);
     emit();
-  }, 4000);
+  }, duration);
 }
 
 export function ToastContainer() {

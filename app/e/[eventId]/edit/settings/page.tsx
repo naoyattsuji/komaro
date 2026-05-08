@@ -54,6 +54,8 @@ export default function EditSettingsPage({
   const [colLabels, setColLabels] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [duplicating, setDuplicating] = useState(false);
+  const [participantDeleteTarget, setParticipantDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deletingParticipant, setDeletingParticipant] = useState(false);
 
   useEffect(() => {
     const storedJwt = sessionStorage.getItem(`edit_jwt_${eventId}`);
@@ -133,18 +135,23 @@ export default function EditSettingsPage({
     }
   };
 
-  const handleDeleteParticipant = async (participantId: string, name: string) => {
-    if (!jwt) return;
-    if (!confirm(`「${name}」の回答を削除しますか？`)) return;
-    const res = await fetch(`/api/v1/events/${eventId}/participants/${participantId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${jwt}` },
-    });
-    if (res.ok) {
-      setParticipants((prev) => prev.filter((p) => p.id !== participantId));
-      showToast(`${name} の回答を削除しました`);
-    } else {
-      showToast("削除に失敗しました", "error");
+  const handleDeleteParticipant = async () => {
+    if (!jwt || !participantDeleteTarget) return;
+    setDeletingParticipant(true);
+    try {
+      const res = await fetch(`/api/v1/events/${eventId}/participants/${participantDeleteTarget.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
+      if (res.ok) {
+        setParticipants((prev) => prev.filter((p) => p.id !== participantDeleteTarget.id));
+        showToast(`${participantDeleteTarget.name} の回答を削除しました`);
+      } else {
+        showToast("削除に失敗しました", "error");
+      }
+    } finally {
+      setDeletingParticipant(false);
+      setParticipantDeleteTarget(null);
     }
   };
 
@@ -335,7 +342,7 @@ export default function EditSettingsPage({
                 <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                   <span className="text-sm text-gray-700">{p.name}</span>
                   <button
-                    onClick={() => handleDeleteParticipant(p.id, p.name)}
+                    onClick={() => setParticipantDeleteTarget({ id: p.id, name: p.name })}
                     className="text-gray-300 hover:text-red-500 p-1 transition-colors"
                     aria-label={`${p.name}の回答を削除`}
                   >
@@ -394,6 +401,24 @@ export default function EditSettingsPage({
             キャンセル
           </Button>
           <Button variant="danger" className="flex-1" onClick={handleDeleteEvent} loading={deleting}>
+            削除する
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={!!participantDeleteTarget}
+        onClose={() => setParticipantDeleteTarget(null)}
+        title="回答を削除しますか？"
+      >
+        <p className="text-sm text-gray-600 mb-4">
+          「{participantDeleteTarget?.name}」の回答を削除します。この操作は取り消せません。
+        </p>
+        <div className="flex gap-2">
+          <Button variant="secondary" className="flex-1" onClick={() => setParticipantDeleteTarget(null)}>
+            キャンセル
+          </Button>
+          <Button variant="danger" className="flex-1" onClick={handleDeleteParticipant} loading={deletingParticipant}>
             削除する
           </Button>
         </div>

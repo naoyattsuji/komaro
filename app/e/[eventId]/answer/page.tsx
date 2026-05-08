@@ -201,6 +201,7 @@ export default function AnswerPage({
         <span className="text-sm text-gray-600 font-medium">
           {selectedCells.size}コマ選択中
         </span>
+        <span className="text-xs text-gray-400">ドラッグで複数まとめて選択できます</span>
         <button
           onClick={selectAll}
           className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg px-2.5 py-1"

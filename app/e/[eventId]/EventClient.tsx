@@ -462,6 +462,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowBestTime((v) => !v)}
+                title="全員が参加可能なコマを強調表示します（全員参加可能なコマがない場合は最多参加コマを表示）"
                 className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors ${
                   showBestTime
                     ? "bg-yellow-400 text-yellow-900 border-yellow-400"
@@ -513,7 +514,12 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               )}
             </div>
             {participants.length === 0 ? (
-              <p className="text-sm text-gray-400">まだ回答者がいません</p>
+              <div>
+                <p className="text-sm text-gray-400">まだ回答者がいません</p>
+                {!isExpired && (
+                  <p className="text-xs text-gray-400 mt-1">上のURLを共有して回答を集めましょう</p>
+                )}
+              </div>
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {participants.map((p) => (
@@ -541,6 +547,9 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               >
                 フィルタを解除
               </button>
+            )}
+            {participants.length > 0 && (
+              <p className="text-xs text-gray-300 mt-2">長押しで回答を削除</p>
             )}
           </div>
 

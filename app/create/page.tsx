@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
-import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical, Eye, EyeOff } from "lucide-react";
 import { showToast } from "@/components/ui/Toast";
 
 type TableType = "timetable" | "calendar" | "date";
@@ -918,7 +918,7 @@ export default function CreatePage() {
           <div>
             <Input
               label="編集用パスワード（任意）"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               error={errors.password}
@@ -926,6 +926,16 @@ export default function CreatePage() {
               placeholder="4〜20文字"
               maxLength={20}
             />
+            {password && (
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="mt-1 flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                {showPassword ? "パスワードを隠す" : "パスワードを表示する"}
+              </button>
+            )}
             <p className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-2 mt-2">
               ⚠️ パスワードを忘れると、編集URLを紛失した場合にイベントを編集できなくなります
             </p>
