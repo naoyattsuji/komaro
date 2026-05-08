@@ -3,6 +3,72 @@ import { prisma } from "@/lib/db";
 import { verifyEditJwt } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
+function buildLabelMap(oldLabels: string[], newLabels: string[]): Map<number, number | null> {
+  const map = new Map<number, number | null>();
+  for (let i = 0; i < oldLabels.length; i++) {
+    const ni = newLabels.indexOf(oldLabels[i]);
+    if (ni === -1) map.set(i, null);       // label removed
+    else if (ni !== i) map.set(i, ni);     // label moved
+    // unchanged: omit from map
+  }
+  return map;
+}
+
+async function remapCells(
+  eventId: string,
+  oldRowLabels: string[],
+  newRowLabels: string[],
+  oldColLabels: string[],
+  newColLabels: string[],
+) {
+  const rowMap = buildLabelMap(oldRowLabels, newRowLabels);
+  const colMap = buildLabelMap(oldColLabels, newColLabels);
+  if (rowMap.size === 0 && colMap.size === 0) return;
+
+  const orphanedRows = [...rowMap.entries()].filter(([, v]) => v === null).map(([k]) => k);
+  const orphanedCols = [...colMap.entries()].filter(([, v]) => v === null).map(([k]) => k);
+  const rowMoves = new Map([...rowMap.entries()].filter((e): e is [number, number] => e[1] !== null));
+  const colMoves = new Map([...colMap.entries()].filter((e): e is [number, number] => e[1] !== null));
+
+  await prisma.$transaction(async (tx) => {
+    // Delete cells whose label was removed from the schedule
+    if (orphanedRows.length > 0) {
+      await tx.availabilityCell.deleteMany({ where: { eventId, rowIndex: { in: orphanedRows } } });
+    }
+    if (orphanedCols.length > 0) {
+      await tx.availabilityCell.deleteMany({ where: { eventId, colIndex: { in: orphanedCols } } });
+    }
+
+    // Phase 1: move indices to temp negative space to avoid unique-constraint conflicts during reorder
+    for (const [oldIdx] of rowMoves) {
+      await tx.availabilityCell.updateMany({
+        where: { eventId, rowIndex: oldIdx },
+        data: { rowIndex: -(oldIdx + 1) },
+      });
+    }
+    for (const [oldIdx] of colMoves) {
+      await tx.availabilityCell.updateMany({
+        where: { eventId, colIndex: oldIdx },
+        data: { colIndex: -(oldIdx + 1) },
+      });
+    }
+
+    // Phase 2: move from temp to final positions
+    for (const [oldIdx, newIdx] of rowMoves) {
+      await tx.availabilityCell.updateMany({
+        where: { eventId, rowIndex: -(oldIdx + 1) },
+        data: { rowIndex: newIdx },
+      });
+    }
+    for (const [oldIdx, newIdx] of colMoves) {
+      await tx.availabilityCell.updateMany({
+        where: { eventId, colIndex: -(oldIdx + 1) },
+        data: { colIndex: newIdx },
+      });
+    }
+  });
+}
+
 async function getEvent(eventId: string) {
   return prisma.event.findFirst({
     where: { id: eventId, deletedAt: null },
@@ -112,6 +178,21 @@ export async function PATCH(
     where: { id: eventId },
     data: updateData,
   });
+
+  // Remap cell indices when labels were reordered or removed
+  if (
+    body.oldRowLabels !== undefined && Array.isArray(body.oldRowLabels) &&
+    body.oldColLabels !== undefined && Array.isArray(body.oldColLabels) &&
+    body.rowLabels !== undefined && body.colLabels !== undefined
+  ) {
+    await remapCells(
+      eventId,
+      body.oldRowLabels as string[],
+      body.rowLabels as string[],
+      body.oldColLabels as string[],
+      body.colLabels as string[],
+    );
+  }
 
   return Response.json({ event: { id: updated.id, title: updated.title } });
 }

@@ -114,8 +114,10 @@ export default function EditSettingsPage({
         title: title.trim(),
         description: description.trim() || null,
         maxParticipants: max,
+        oldRowLabels: event.rowLabels,
         rowLabels: axisValue.rowLabels,
         rowMeta: axisValue.rowMeta.length > 0 ? axisValue.rowMeta : null,
+        oldColLabels: event.colLabels,
         colLabels: axisValue.colLabels,
         colMeta: event.colMeta ?? null,
       };

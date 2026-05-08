@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { showToast } from "@/components/ui/Toast";
-import { Users, MessageSquare, Send, Filter, Edit3, CalendarPlus, Download, Star, Trash2 } from "lucide-react";
+import { Users, MessageSquare, Send, Edit3, CalendarPlus, Download, Star, Trash2 } from "lucide-react";
 import {
   formatDateTime,
   parseColLabelToDate,
@@ -87,7 +87,6 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
   const [commentAuthor, setCommentAuthor] = useState("");
   const [commentBody, setCommentBody] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
-  const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [showBestTime, setShowBestTime] = useState(false);
 
   const isExpired = event.status === "expired";
@@ -456,7 +455,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
             {displayMaxCount > 0 ? (
               <p className="text-xs text-gray-500">
-                最多 <span className="font-bold text-red-600">{displayMaxCount}名</span> 参加可能のコマがあります。セルをタップで参加者を確認できます。
+                最多 <span className="font-bold text-red-600">{displayMaxCount}名</span> 参加可能
               </p>
             ) : <span />}
             <div className="flex items-center gap-2">
@@ -503,16 +502,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               <Users size={16} className="text-gray-500" />
               <h2 className="font-semibold text-gray-900 text-sm">参加者一覧</h2>
               <span className="text-xs text-gray-400">({participants.length}名)</span>
-              {participants.length > 0 && (
-                <button
-                  className="ml-auto text-xs text-gray-500 sm:hidden"
-                  onClick={() => setShowMobileFilter(!showMobileFilter)}
-                >
-                  <Filter size={12} className="inline mr-1" />
-                  フィルタ
-                </button>
-              )}
-            </div>
+              </div>
             {participants.length === 0 ? (
               <div>
                 <p className="text-sm text-gray-400">まだ回答者がいません</p>
@@ -548,29 +538,10 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
                 フィルタを解除
               </button>
             )}
-            {participants.length > 0 && (
-              <p className="text-xs text-gray-300 mt-2">長押しで回答を削除</p>
-            )}
-          </div>
-
-          {/* Heatmap legend */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs font-medium text-gray-500 mb-2">ヒートマップ凡例</p>
-            <div className="flex items-center gap-1">
-              <div className="w-6 h-5 bg-white border border-gray-200 rounded" />
-              <div className="w-6 h-5 bg-gray-100 rounded" />
-              <div className="w-6 h-5 bg-gray-200 rounded" />
-              <div className="w-6 h-5 bg-gray-400 rounded" />
-              <div className="w-6 h-5 bg-gray-600 rounded" />
-              <div className="w-6 h-5 bg-red-600 rounded" />
-              <span className="text-xs text-gray-500 ml-1">少 → 多</span>
-            </div>
-            <p className="text-xs text-gray-400 mt-1">赤 = 最多人数のコマ</p>
           </div>
 
           {/* Edit link */}
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 mb-2">作成者の方へ</p>
             <Link href={`/e/${eventId}/edit`}>
               <Button variant="secondary" size="sm" className="w-full text-xs">
                 イベントを編集する
