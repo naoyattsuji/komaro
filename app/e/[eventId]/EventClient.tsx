@@ -538,6 +538,9 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
                 フィルタを解除
               </button>
             )}
+            {participants.length > 0 && (
+              <p className="text-xs text-gray-300 mt-2">長押しで回答を削除</p>
+            )}
           </div>
 
           {/* Edit link */}
