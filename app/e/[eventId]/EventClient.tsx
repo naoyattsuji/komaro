@@ -448,7 +448,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               <h2 className="font-semibold text-gray-900 text-sm">参加者一覧</h2>
               <span className="text-xs text-gray-400">({participants.length}名)</span>
               {participants.length > 0 && (
-                <span className="ml-auto text-xs text-gray-300">長押しで削除</span>
+                <span className="ml-auto text-xs text-gray-300">長押しで回答を削除</span>
               )}
             </div>
             {participants.length === 0 ? (
