@@ -11,6 +11,7 @@ import { ArrowLeft, CheckSquare, Square } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import { FadeInSection } from "@/components/FadeInSection";
+import { KomaroLoader } from "@/components/KomaroLoader";
 // import { CalendarImageReader } from "@/components/CalendarImageReader";
 // import { VoiceInputReader } from "@/components/VoiceInputReader";
 
@@ -114,11 +115,7 @@ export default function AnswerPage({
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <KomaroLoader />;
   }
 
   if (!event) {

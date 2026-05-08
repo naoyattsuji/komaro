@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { showToast } from "@/components/ui/Toast";
-import { Users, MessageSquare, Send, Filter, Edit3, CalendarPlus, Download, Star } from "lucide-react";
+import { Users, MessageSquare, Send, Filter, Edit3, CalendarPlus, Download, Star, Trash2 } from "lucide-react";
 import {
   formatDateTime,
   parseColLabelToDate,
@@ -20,6 +20,7 @@ import { CalendarExport } from "@/components/CalendarExport";
 import { CopyButton } from "@/components/CopyButton";
 import { getParticipantUrl } from "@/lib/utils";
 import { FadeInSection } from "@/components/FadeInSection";
+import { KomaroLoader } from "@/components/KomaroLoader";
 
 interface EventClientProps {
   eventId: string;
@@ -78,6 +79,11 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
     return !!searchParams.get("filter");
   });
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPressRef = useRef(false);
+  const [longPressTarget, setLongPressTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deletingParticipant, setDeletingParticipant] = useState(false);
+  const [summaryLoaded, setSummaryLoaded] = useState(false);
   const [commentAuthor, setCommentAuthor] = useState("");
   const [commentBody, setCommentBody] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
@@ -88,10 +94,11 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
 
   const fetchSummary = useCallback(async () => {
     const res = await fetch(`/api/v1/events/${eventId}/summary`);
-    if (!res.ok) return;
+    if (!res.ok) { setSummaryLoaded(true); return; }
     const data = await res.json();
     setSummary(data.summary);
     setParticipants(data.participants);
+    setSummaryLoaded(true);
   }, [eventId]);
 
   const fetchComments = useCallback(async () => {
@@ -175,6 +182,57 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
       next.has(name) ? next.delete(name) : next.add(name);
       return next;
     });
+  };
+
+  const handleParticipantPointerDown = (id: string, name: string) => {
+    didLongPressRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      didLongPressRef.current = true;
+      setLongPressTarget({ id, name });
+    }, 600);
+  };
+
+  const handleParticipantPointerUp = (name: string) => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    if (!didLongPressRef.current) {
+      toggleFilter(name);
+    }
+    didLongPressRef.current = false;
+  };
+
+  const handleParticipantPointerCancel = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handleDeleteParticipant = async () => {
+    if (!longPressTarget) return;
+    setDeletingParticipant(true);
+    try {
+      const res = await fetch(
+        `/api/v1/events/${eventId}/participants/${longPressTarget.id}`,
+        { method: "DELETE" }
+      );
+      if (res.ok) {
+        setFilterNames((prev) => {
+          const next = new Set(prev);
+          next.delete(longPressTarget.name);
+          return next;
+        });
+        showToast(`${longPressTarget.name} の回答を削除しました`);
+        fetchSummary();
+      } else {
+        showToast("削除に失敗しました", "error");
+      }
+    } finally {
+      setDeletingParticipant(false);
+      setLongPressTarget(null);
+    }
   };
 
   // When filter active: compute per-cell counts for only selected participants
@@ -388,6 +446,10 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
         </div>
       )}
 
+      {!summaryLoaded ? (
+        <KomaroLoader />
+      ) : (
+      <>
       <div className="grid lg:grid-cols-[1fr_280px] gap-6">
         {/* Main: Table */}
         <FadeInSection delay={80}>
@@ -457,8 +519,11 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
                 {participants.map((p) => (
                   <button
                     key={p.id}
-                    onClick={() => toggleFilter(p.name)}
-                    className={`px-2.5 py-1 rounded-full text-sm border transition-colors ${
+                    onPointerDown={() => handleParticipantPointerDown(p.id, p.name)}
+                    onPointerUp={() => handleParticipantPointerUp(p.name)}
+                    onPointerLeave={handleParticipantPointerCancel}
+                    onPointerCancel={handleParticipantPointerCancel}
+                    className={`px-2.5 py-1 rounded-full text-sm border transition-colors select-none ${
                       filterNames.has(p.name)
                         ? "bg-gray-900 text-white border-gray-900"
                         : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
@@ -565,6 +630,39 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
         )}
       </div>
       </FadeInSection>
+      </>
+      )}
+
+      {/* Participant delete confirmation modal */}
+      {longPressTarget && (
+        <Modal
+          open
+          onClose={() => setLongPressTarget(null)}
+          title="回答を削除しますか？"
+        >
+          <p className="text-sm text-gray-600 mb-4">
+            「{longPressTarget.name}」の回答を削除します。この操作は取り消せません。
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setLongPressTarget(null)}
+            >
+              キャンセル
+            </Button>
+            <Button
+              variant="danger"
+              className="flex-1"
+              onClick={handleDeleteParticipant}
+              loading={deletingParticipant}
+            >
+              <Trash2 size={14} className="mr-1" />
+              削除する
+            </Button>
+          </div>
+        </Modal>
+      )}
 
       {/* Cell detail modal */}
       {selectedCell !== null && (() => {

@@ -4,6 +4,16 @@
   --font-sans: var(--font-geist-sans);
 }
 
+@keyframes komaro-letter-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-10px); }
+}
+
+.komaro-letter {
+  display: inline-block;
+  animation: komaro-letter-bounce 1.4s ease-in-out infinite;
+}
+
 @keyframes slide-in-from-bottom-2 {
   from { transform: translateY(8px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { showToast } from "@/components/ui/Toast";
 import { Lock, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { KomaroLoader } from "@/components/KomaroLoader";
 
 export default function EditAuthPage({
   params,
@@ -80,11 +81,7 @@ export default function EditAuthPage({
   };
 
   if (autoAuthLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <KomaroLoader />;
   }
 
   return (

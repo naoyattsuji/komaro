@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { showToast } from "@/components/ui/Toast";
 import { Trash2, ArrowLeft, UserX, Copy } from "lucide-react";
 import Link from "next/link";
+import { KomaroLoader } from "@/components/KomaroLoader";
 
 interface EventData {
   id: string;
@@ -49,6 +50,8 @@ export default function EditSettingsPage({
   const [description, setDescription] = useState("");
   const [maxParticipants, setMaxParticipants] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [rowLabels, setRowLabels] = useState<string[]>([]);
+  const [colLabels, setColLabels] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [duplicating, setDuplicating] = useState(false);
 
@@ -69,6 +72,8 @@ export default function EditSettingsPage({
       setTitle(e.title);
       setDescription(e.description ?? "");
       setMaxParticipants(String(e.maxParticipants));
+      setRowLabels(e.rowLabels);
+      setColLabels(e.colLabels);
       setParticipants(participantsData.participants ?? []);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -86,6 +91,12 @@ export default function EditSettingsPage({
     if (newPassword && (newPassword.length < 4 || newPassword.length > 20)) {
       errs.newPassword = "パスワードは4〜20文字で入力してください";
     }
+    if (rowLabels.some((l) => !l.trim())) {
+      errs.rowLabels = "縦軸ラベルに空の項目があります";
+    }
+    if (colLabels.some((l) => !l.trim())) {
+      errs.colLabels = "横軸ラベルに空の項目があります";
+    }
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
@@ -95,6 +106,10 @@ export default function EditSettingsPage({
         title: title.trim(),
         description: description.trim() || null,
         maxParticipants: max,
+        rowLabels,
+        rowMeta: event.rowMeta ?? null,
+        colLabels,
+        colMeta: event.colMeta ?? null,
       };
       if (newPassword) body.password = newPassword;
 
@@ -197,11 +212,7 @@ export default function EditSettingsPage({
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <KomaroLoader />;
   }
 
   if (!event) {
@@ -257,6 +268,58 @@ export default function EditSettingsPage({
             maxLength={20}
             error={errors.newPassword}
           />
+        </div>
+
+        {/* Matrix labels */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+          <div>
+            <h2 className="font-semibold text-gray-800 text-sm mb-1">マトリクス構造</h2>
+            <p className="text-xs text-gray-400">ラベルの表示名のみ変更されます。既存の回答データには影響しません。</p>
+          </div>
+          {errors.rowLabels && (
+            <p className="text-xs text-red-500">{errors.rowLabels}</p>
+          )}
+          {errors.colLabels && (
+            <p className="text-xs text-red-500">{errors.colLabels}</p>
+          )}
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2">縦軸ラベル（{rowLabels.length}項目）</p>
+            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              {rowLabels.map((label, i) => (
+                <input
+                  key={i}
+                  type="text"
+                  value={label}
+                  onChange={(e) => {
+                    const next = [...rowLabels];
+                    next[i] = e.target.value;
+                    setRowLabels(next);
+                  }}
+                  maxLength={50}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2">横軸ラベル（{colLabels.length}項目）</p>
+            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              {colLabels.map((label, i) => (
+                <input
+                  key={i}
+                  type="text"
+                  value={label}
+                  onChange={(e) => {
+                    const next = [...colLabels];
+                    next[i] = e.target.value;
+                    setColLabels(next);
+                  }}
+                  maxLength={50}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Participants */}
