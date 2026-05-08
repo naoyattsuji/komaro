@@ -447,7 +447,10 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               <Users size={16} className="text-gray-500" />
               <h2 className="font-semibold text-gray-900 text-sm">参加者一覧</h2>
               <span className="text-xs text-gray-400">({participants.length}名)</span>
-              </div>
+              {participants.length > 0 && (
+                <span className="ml-auto text-xs text-gray-300">長押しで削除</span>
+              )}
+            </div>
             {participants.length === 0 ? (
               <div>
                 <p className="text-sm text-gray-400">まだ回答者がいません</p>
@@ -482,9 +485,6 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               >
                 フィルタを解除
               </button>
-            )}
-            {participants.length > 0 && (
-              <p className="text-xs text-gray-300 mt-2">長押しで回答を削除</p>
             )}
           </div>
 
