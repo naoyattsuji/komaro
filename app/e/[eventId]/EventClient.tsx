@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { showToast } from "@/components/ui/Toast";
-import { Users, MessageSquare, Send, Edit3, CalendarPlus, Download, Star, Trash2 } from "lucide-react";
+import { Users, MessageSquare, Send, Edit3, CalendarPlus, Download, Trash2 } from "lucide-react";
 import {
   formatDateTime,
   parseColLabelToDate,
@@ -87,7 +87,6 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
   const [commentAuthor, setCommentAuthor] = useState("");
   const [commentBody, setCommentBody] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
-  const [showBestTime, setShowBestTime] = useState(false);
 
   const isExpired = event.status === "expired";
 
@@ -258,46 +257,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
 
   const { cells: displayCells, maxCount: displayMaxCount } = getFilteredDisplay();
 
-  // Best-time highlight: cells where all filtered participants are available
-  const getBestTimeCells = (): { rowIndex: number; colIndex: number }[] => {
-    if (!showBestTime) return [];
-    const selected = participants.filter((p) => filterNames.has(p.name));
-    if (selected.length === 0) return [];
 
-    // Build a map of available count per cell
-    const countMap = new Map<string, number>();
-    selected.forEach((p) =>
-      p.cells.forEach((cell) => {
-        const key = `${cell.rowIndex}-${cell.colIndex}`;
-        countMap.set(key, (countMap.get(key) ?? 0) + 1);
-      })
-    );
-
-    // Find cells where ALL selected participants can attend
-    const allAvailCells: { rowIndex: number; colIndex: number }[] = [];
-    countMap.forEach((count, key) => {
-      if (count === selected.length) {
-        const [rowIndex, colIndex] = key.split("-").map(Number);
-        allAvailCells.push({ rowIndex, colIndex });
-      }
-    });
-
-    if (allAvailCells.length > 0) return allAvailCells;
-
-    // Fallback: cells with max participant count
-    let maxCnt = 0;
-    countMap.forEach((count) => { if (count > maxCnt) maxCnt = count; });
-    const maxCells: { rowIndex: number; colIndex: number }[] = [];
-    countMap.forEach((count, key) => {
-      if (count === maxCnt) {
-        const [rowIndex, colIndex] = key.split("-").map(Number);
-        maxCells.push({ rowIndex, colIndex });
-      }
-    });
-    return maxCells;
-  };
-
-  const bestTimeCells = getBestTimeCells();
 
   const downloadCSV = () => {
     const selected = participants.filter((p) => filterNames.has(p.name));
@@ -458,29 +418,15 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
                 最多 <span className="font-bold text-red-600">{displayMaxCount}名</span> 参加可能
               </p>
             ) : <span />}
-            <div className="flex items-center gap-2">
+            {participants.length > 0 && (
               <button
-                onClick={() => setShowBestTime((v) => !v)}
-                title="全員が参加可能なコマを強調表示します（全員参加可能なコマがない場合は最多参加コマを表示）"
-                className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors ${
-                  showBestTime
-                    ? "bg-yellow-400 text-yellow-900 border-yellow-400"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                }`}
+                onClick={downloadCSV}
+                className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border bg-white text-gray-600 border-gray-200 hover:border-gray-300 transition-colors"
               >
-                <Star size={12} />
-                ベスト表示
+                <Download size={12} />
+                CSV
               </button>
-              {participants.length > 0 && (
-                <button
-                  onClick={downloadCSV}
-                  className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border bg-white text-gray-600 border-gray-200 hover:border-gray-300 transition-colors"
-                >
-                  <Download size={12} />
-                  CSV
-                </button>
-              )}
-            </div>
+            )}
           </div>
 
           <AvailabilityTable
@@ -490,7 +436,6 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
             mode="view"
             cells={displayCells}
             maxCount={displayMaxCount}
-            bestTimeCells={showBestTime && bestTimeCells.length > 0 ? bestTimeCells : undefined}
             onCellClick={handleCellClick}
           />
         </FadeInSection>
