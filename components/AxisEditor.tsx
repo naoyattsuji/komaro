@@ -1,0 +1,702 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import { Input } from "@/components/ui/Input";
+
+export interface RowMeta { start: string; end: string; }
+
+export interface AxisEditorValue {
+  rowLabels: string[];
+  colLabels: string[];
+  rowMeta: RowMeta[];
+}
+
+interface AxisEditorProps {
+  tableType: "timetable" | "calendar" | "date";
+  initialValue: AxisEditorValue;
+  onChange: (value: AxisEditorValue) => void;
+  errors?: { rowLabels?: string; colLabels?: string };
+  /** true (default) = generators fire on mount; false = generators only fire after user interaction */
+  autoGenerate?: boolean;
+}
+
+function TimeSelect({ value, onChange, maxHour = 23 }: {
+  value: string;
+  onChange: (v: string) => void;
+  maxHour?: number;
+}) {
+  const [h, m] = value.split(":").map(Number);
+  const hours = Array.from({ length: maxHour + 1 }, (_, i) => i);
+  const minutes = [0, 10, 20, 30, 40, 50];
+  const safeM = maxHour === 24 && h === 24 ? 0 : m;
+
+  const setH = (newH: number) => {
+    const newM = newH === 24 ? 0 : safeM;
+    onChange(`${String(newH).padStart(2, "0")}:${String(newM).padStart(2, "0")}`);
+  };
+  const setM = (newM: number) => {
+    onChange(`${String(h).padStart(2, "0")}:${String(newM).padStart(2, "0")}`);
+  };
+
+  const selectCls = "text-sm border border-gray-300 rounded-lg px-2 py-2 bg-white appearance-none text-center";
+  return (
+    <div className="flex items-center gap-1">
+      <select value={h} onChange={(e) => setH(Number(e.target.value))} className={selectCls}>
+        {hours.map((hv) => (
+          <option key={hv} value={hv}>{String(hv).padStart(2, "0")}</option>
+        ))}
+      </select>
+      <span className="text-gray-500 font-medium">:</span>
+      <select
+        value={safeM}
+        onChange={(e) => setM(Number(e.target.value))}
+        disabled={maxHour === 24 && h === 24}
+        className={selectCls}
+      >
+        {minutes.map((mv) => (
+          <option key={mv} value={mv}>{String(mv).padStart(2, "0")}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+export function generateTimeSlots(start: string, end: string, intervalMin: number): string[] {
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const startMins = sh * 60 + sm;
+  const endMins = eh * 60 + em;
+  if (endMins <= startMins) return [];
+  const slots: string[] = [];
+  for (let t = startMins; t < endMins; t += intervalMin) {
+    slots.push(`${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`);
+  }
+  return slots;
+}
+
+export function generateDateLabels(startDate: string, days: number): string[] {
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const labels: string[] = [];
+  const base = new Date(startDate + "T00:00:00");
+  for (let i = 0; i < days; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    labels.push(`${d.getMonth() + 1}/${d.getDate()}(${weekdays[d.getDay()]})`);
+  }
+  return labels;
+}
+
+function detectIntervalFromLabels(labels: string[]): 10 | 30 | 60 {
+  if (labels.length < 2) return 60;
+  const toMins = (s: string) => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
+  const diff = toMins(labels[1]) - toMins(labels[0]);
+  if (diff === 10) return 10;
+  if (diff === 30) return 30;
+  return 60;
+}
+
+function detectEndFromLabels(labels: string[], interval: number): string {
+  if (labels.length === 0) return "18:00";
+  const last = labels[labels.length - 1];
+  const [h, m] = last.split(":").map(Number);
+  const endMins = h * 60 + m + interval;
+  return `${String(Math.floor(endMins / 60)).padStart(2, "0")}:${String(endMins % 60).padStart(2, "0")}`;
+}
+
+function detectDateFromLabel(label: string): string {
+  const match = label?.match(/^(\d+)\/(\d+)/);
+  if (!match) return new Date().toISOString().slice(0, 10);
+  const month = parseInt(match[1]);
+  const day = parseInt(match[2]);
+  const year = new Date().getFullYear();
+  const d = new Date(year, month - 1, day);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export function AxisEditor({
+  tableType,
+  initialValue,
+  onChange,
+  errors = {},
+  autoGenerate = true,
+}: AxisEditorProps) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  const [rowLabels, setRowLabels] = useState(initialValue.rowLabels);
+  const [colLabels, setColLabels] = useState(initialValue.colLabels);
+  const [rowMeta, setRowMeta] = useState<RowMeta[]>(initialValue.rowMeta);
+  const [showTimeMeta, setShowTimeMeta] = useState(false);
+
+  // Calendar row generator state — smart-initialized from existing labels
+  const [calRowStart, setCalRowStart] = useState(() => {
+    if (tableType === "calendar" && /^\d{2}:\d{2}$/.test(initialValue.rowLabels[0] ?? "")) {
+      return initialValue.rowLabels[0];
+    }
+    return "09:00";
+  });
+  const [calRowInterval, setCalRowInterval] = useState<10 | 30 | 60>(() => {
+    if (tableType === "calendar" && initialValue.rowLabels.length >= 2) {
+      return detectIntervalFromLabels(initialValue.rowLabels);
+    }
+    return 60;
+  });
+  const [calRowEnd, setCalRowEnd] = useState(() => {
+    if (tableType === "calendar" && initialValue.rowLabels.length >= 1 && /^\d{2}:\d{2}$/.test(initialValue.rowLabels[0] ?? "")) {
+      const interval = detectIntervalFromLabels(initialValue.rowLabels);
+      return detectEndFromLabels(initialValue.rowLabels, interval);
+    }
+    return "18:00";
+  });
+
+  // Calendar col generator state
+  const [calColStartDate, setCalColStartDate] = useState(() => {
+    if (tableType === "calendar" && initialValue.colLabels.length > 0) {
+      return detectDateFromLabel(initialValue.colLabels[0]);
+    }
+    return todayStr;
+  });
+  const [calColDays, setCalColDays] = useState(() => {
+    if (tableType === "calendar" && initialValue.colLabels.length > 0) {
+      return Math.min(20, initialValue.colLabels.length);
+    }
+    return 5;
+  });
+
+  // Date row generator state
+  const [dateRowStartDate, setDateRowStartDate] = useState(() => {
+    if (tableType === "date" && initialValue.rowLabels.length > 0) {
+      return detectDateFromLabel(initialValue.rowLabels[0]);
+    }
+    return todayStr;
+  });
+  const [dateRowDays, setDateRowDays] = useState(() => {
+    if (tableType === "date" && initialValue.rowLabels.length > 0) {
+      return Math.min(30, initialValue.rowLabels.length);
+    }
+    return 7;
+  });
+
+  // Guard refs: start as autoGenerate; set to true on first user interaction
+  const calRowTouched = useRef(autoGenerate);
+  const calColTouched = useRef(autoGenerate);
+  const dateRowTouched = useRef(autoGenerate);
+
+  // DnD state
+  const dragFrom = useRef<{ which: "row" | "col"; index: number } | null>(null);
+  const [dragInsertAt, setDragInsertAt] = useState<{ which: "row" | "col"; insertAt: number } | null>(null);
+  const touchDragFrom = useRef<{ which: "row" | "col"; index: number } | null>(null);
+  const touchInsertAtRef = useRef<{ which: "row" | "col"; insertAt: number } | null>(null);
+
+  // Notify parent when state changes (skip initial mount)
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return; }
+    onChange({ rowLabels, colLabels, rowMeta });
+  }, [rowLabels, colLabels, rowMeta]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Generators
+  useEffect(() => {
+    if (tableType !== "calendar" || !calRowTouched.current) return;
+    const slots = generateTimeSlots(calRowStart, calRowEnd, calRowInterval);
+    setRowLabels(slots.length > 0 ? slots.slice(0, 30) : [""]);
+  }, [tableType, calRowStart, calRowEnd, calRowInterval]);
+
+  useEffect(() => {
+    if (tableType !== "calendar" || !calColTouched.current) return;
+    setColLabels(generateDateLabels(calColStartDate, calColDays));
+  }, [tableType, calColStartDate, calColDays]);
+
+  useEffect(() => {
+    if (tableType !== "date" || !dateRowTouched.current) return;
+    setRowLabels(generateDateLabels(dateRowStartDate, dateRowDays).slice(0, 30));
+  }, [tableType, dateRowStartDate, dateRowDays]);
+
+  // Touch DnD (non-passive so we can preventDefault)
+  useEffect(() => {
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!touchDragFrom.current) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      let el = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement | null;
+      while (el && !el.dataset.dragIndex) el = el.parentElement;
+      if (!el || el.dataset.dragWhich !== touchDragFrom.current.which) return;
+      const index = parseInt(el.dataset.dragIndex!);
+      const rect = el.getBoundingClientRect();
+      const insertAt = touch.clientY < rect.top + rect.height / 2 ? index : index + 1;
+      const insertInfo = { which: touchDragFrom.current.which as "row" | "col", insertAt };
+      touchInsertAtRef.current = insertInfo;
+      setDragInsertAt(insertInfo);
+    };
+    const handleTouchEnd = () => {
+      if (touchDragFrom.current) {
+        touchDragFrom.current = null;
+        touchInsertAtRef.current = null;
+        setDragInsertAt(null);
+      }
+    };
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", handleTouchEnd);
+    return () => {
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, []);
+
+  // DnD handlers
+  const handleDragStart = (which: "row" | "col", index: number) => {
+    dragFrom.current = { which, index };
+  };
+  const handleDragOver = (e: React.DragEvent, which: "row" | "col", index: number) => {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const insertAt = e.clientY < rect.top + rect.height / 2 ? index : index + 1;
+    setDragInsertAt({ which, insertAt });
+  };
+  const handleDrop = (which: "row" | "col") => {
+    const from = dragFrom.current;
+    if (!from || !dragInsertAt || from.which !== which) {
+      setDragInsertAt(null);
+      dragFrom.current = null;
+      return;
+    }
+    const fromIdx = from.index;
+    let toIdx = dragInsertAt.insertAt;
+    if (toIdx > fromIdx) toIdx -= 1;
+    if (fromIdx !== toIdx) {
+      if (which === "row") {
+        const newLabels = [...rowLabels];
+        const [moved] = newLabels.splice(fromIdx, 1);
+        newLabels.splice(toIdx, 0, moved);
+        setRowLabels(newLabels);
+        const newMeta = [...rowMeta];
+        const [movedMeta] = newMeta.splice(fromIdx, 1);
+        newMeta.splice(toIdx, 0, movedMeta ?? { start: "", end: "" });
+        setRowMeta(newMeta);
+      } else {
+        const newLabels = [...colLabels];
+        const [moved] = newLabels.splice(fromIdx, 1);
+        newLabels.splice(toIdx, 0, moved);
+        setColLabels(newLabels);
+      }
+    }
+    dragFrom.current = null;
+    setDragInsertAt(null);
+  };
+
+  const performTouchDrop = (which: "row" | "col") => {
+    const from = touchDragFrom.current;
+    const target = touchInsertAtRef.current;
+    if (!from || !target || from.which !== which) {
+      touchDragFrom.current = null;
+      touchInsertAtRef.current = null;
+      setDragInsertAt(null);
+      return;
+    }
+    const fromIdx = from.index;
+    let toIdx = target.insertAt;
+    if (toIdx > fromIdx) toIdx -= 1;
+    if (fromIdx !== toIdx) {
+      if (which === "row") {
+        setRowLabels((prev) => {
+          const next = [...prev];
+          const [moved] = next.splice(fromIdx, 1);
+          next.splice(toIdx, 0, moved);
+          return next;
+        });
+        setRowMeta((prev) => {
+          const next = [...prev];
+          const [movedMeta] = next.splice(fromIdx, 1);
+          next.splice(toIdx, 0, movedMeta ?? { start: "", end: "" });
+          return next;
+        });
+      } else {
+        setColLabels((prev) => {
+          const next = [...prev];
+          const [moved] = next.splice(fromIdx, 1);
+          next.splice(toIdx, 0, moved);
+          return next;
+        });
+      }
+    }
+    touchDragFrom.current = null;
+    touchInsertAtRef.current = null;
+    setDragInsertAt(null);
+  };
+
+  const addLabel = (which: "row" | "col") => {
+    if (which === "row") {
+      if (rowLabels.length >= 30) return;
+      setRowLabels([...rowLabels, `項目${rowLabels.length + 1}`]);
+    } else {
+      if (colLabels.length >= 20) return;
+      setColLabels([...colLabels, `項目${colLabels.length + 1}`]);
+    }
+  };
+
+  const removeLabel = (which: "row" | "col", idx: number) => {
+    if (which === "row") {
+      if (rowLabels.length <= 1) return;
+      setRowLabels(rowLabels.filter((_, i) => i !== idx));
+      setRowMeta(rowMeta.filter((_, i) => i !== idx));
+    } else {
+      if (colLabels.length <= 1) return;
+      setColLabels(colLabels.filter((_, i) => i !== idx));
+    }
+  };
+
+  const updateLabel = (which: "row" | "col", idx: number, val: string) => {
+    if (which === "row") {
+      const next = [...rowLabels]; next[idx] = val; setRowLabels(next);
+    } else {
+      const next = [...colLabels]; next[idx] = val; setColLabels(next);
+    }
+  };
+
+  const updateRowMeta = (idx: number, field: "start" | "end", val: string) => {
+    const next = [...rowMeta];
+    if (!next[idx]) next[idx] = { start: "", end: "" };
+    next[idx] = { ...next[idx], [field]: val };
+    setRowMeta(next);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* ── Row section ── */}
+      {tableType === "date" ? (
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-3">縦軸ラベル（行）— 日付</p>
+          {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-500 mb-1">開始日</p>
+                <input
+                  type="date"
+                  value={dateRowStartDate}
+                  onChange={(e) => { dateRowTouched.current = true; setDateRowStartDate(e.target.value); }}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                />
+              </div>
+              <div className="w-28 shrink-0">
+                <p className="text-xs text-gray-500 mb-1">日数</p>
+                <select
+                  value={dateRowDays}
+                  onChange={(e) => { dateRowTouched.current = true; setDateRowDays(Number(e.target.value)); }}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                >
+                  {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>{d}日間</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="text-xs bg-gray-50 rounded-lg px-3 py-2 text-gray-500">
+              {rowLabels.length}日: {rowLabels[0]} 〜 {rowLabels[rowLabels.length - 1]}
+            </div>
+          </div>
+        </div>
+      ) : tableType === "calendar" ? (
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-3">縦軸ラベル（行）— 時間スロット</p>
+          {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 mb-1">開始</p>
+                <TimeSelect
+                  value={calRowStart}
+                  onChange={(v) => { calRowTouched.current = true; setCalRowStart(v); }}
+                  maxHour={23}
+                />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 mb-1">終了</p>
+                <TimeSelect
+                  value={calRowEnd}
+                  onChange={(v) => { calRowTouched.current = true; setCalRowEnd(v); }}
+                  maxHour={24}
+                />
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">間隔</p>
+              <div className="flex gap-2">
+                {([60, 30, 10] as const).map((min) => (
+                  <button
+                    key={min}
+                    type="button"
+                    onClick={() => { calRowTouched.current = true; setCalRowInterval(min); }}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                      calRowInterval === min
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                    }`}
+                  >
+                    {min === 60 ? "1時間" : `${min}分`}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {(() => {
+              const slots = generateTimeSlots(calRowStart, calRowEnd, calRowInterval);
+              const over = slots.length > 30;
+              return (
+                <div className={`text-xs rounded-lg px-3 py-2 ${over ? "bg-yellow-50 text-yellow-600" : "bg-gray-50 text-gray-500"}`}>
+                  {slots.length === 0
+                    ? "開始時間を終了時間より前に設定してください"
+                    : over
+                    ? `${slots.length}スロット（上限30のため最初の30スロットのみ使用）`
+                    : `${slots.length}スロット: ${slots[0]} 〜 ${slots[slots.length - 1]}`}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      ) : (
+        /* timetable */
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-gray-700">
+              縦軸ラベル（行） — {rowLabels.length}/30
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowTimeMeta(!showTimeMeta)}
+              className="text-xs text-gray-600 flex items-center gap-1"
+            >
+              時刻設定 {showTimeMeta ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+          </div>
+          {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
+          <div
+            className="space-y-0"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => handleDrop("row")}
+            onTouchEnd={() => { if (touchDragFrom.current?.which === "row") performTouchDrop("row"); }}
+          >
+            {rowLabels.map((label, i) => (
+              <React.Fragment key={i}>
+                {dragInsertAt?.which === "row" && dragInsertAt.insertAt === i && (
+                  <div className="h-1 bg-blue-500 rounded mx-1 my-0.5" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop("row")} />
+                )}
+                <div
+                  className="flex gap-2 items-center rounded-lg py-1"
+                  data-drag-which="row"
+                  data-drag-index={i}
+                  draggable
+                  onDragStart={() => handleDragStart("row", i)}
+                  onDragOver={(e) => handleDragOver(e, "row", i)}
+                  onDrop={() => handleDrop("row")}
+                  onDragEnd={() => setDragInsertAt(null)}
+                >
+                  <div
+                    className="touch-none flex-shrink-0 p-1 -m-1 cursor-grab"
+                    onTouchStart={() => { touchDragFrom.current = { which: "row", index: i }; }}
+                  >
+                    <GripVertical size={16} className="text-gray-300" />
+                  </div>
+                  <Input
+                    value={label}
+                    onChange={(e) => updateLabel("row", i, e.target.value)}
+                    placeholder={`縦軸${i + 1}`}
+                    maxLength={30}
+                    className="flex-1"
+                  />
+                  {showTimeMeta && (
+                    <div className="flex gap-1">
+                      <input
+                        type="time"
+                        value={rowMeta[i]?.start ?? ""}
+                        onChange={(e) => updateRowMeta(i, "start", e.target.value)}
+                        className="w-24 text-xs border border-gray-300 rounded-lg px-2 bg-white"
+                      />
+                      <input
+                        type="time"
+                        value={rowMeta[i]?.end ?? ""}
+                        onChange={(e) => updateRowMeta(i, "end", e.target.value)}
+                        className="w-24 text-xs border border-gray-300 rounded-lg px-2 bg-white"
+                      />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeLabel("row", i)}
+                    disabled={rowLabels.length <= 1}
+                    className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 flex-shrink-0"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                {dragInsertAt?.which === "row" && dragInsertAt.insertAt === i + 1 && i === rowLabels.length - 1 && (
+                  <div className="h-1 bg-blue-500 rounded mx-1 my-0.5" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop("row")} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => addLabel("row")}
+            disabled={rowLabels.length >= 30}
+            className="mt-2 flex items-center gap-1 text-sm text-gray-700 hover:text-gray-900 disabled:opacity-30"
+          >
+            <Plus size={14} /> 縦軸を追加
+          </button>
+        </div>
+      )}
+
+      {/* ── Col section ── */}
+      {tableType === "date" ? null : tableType === "calendar" ? (
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-3">横軸ラベル（列）— 日付</p>
+          {errors.colLabels && <p className="text-xs text-red-500 mb-2">{errors.colLabels}</p>}
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-500 mb-1">開始日</p>
+                <input
+                  type="date"
+                  value={calColStartDate}
+                  onChange={(e) => { calColTouched.current = true; setCalColStartDate(e.target.value); }}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                />
+              </div>
+              <div className="w-28 shrink-0">
+                <p className="text-xs text-gray-500 mb-1">日数</p>
+                <select
+                  value={calColDays}
+                  onChange={(e) => { calColTouched.current = true; setCalColDays(Number(e.target.value)); }}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                >
+                  {Array.from({ length: 20 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>{d}日間</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="text-xs bg-gray-50 rounded-lg px-3 py-2 text-gray-500">
+              {colLabels.length}日: {colLabels[0]} 〜 {colLabels[colLabels.length - 1]}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* timetable col */
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-2">
+            横軸ラベル（列） — {colLabels.length}/20
+          </p>
+          {errors.colLabels && <p className="text-xs text-red-500 mb-2">{errors.colLabels}</p>}
+          <div
+            className="space-y-0"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => handleDrop("col")}
+            onTouchEnd={() => { if (touchDragFrom.current?.which === "col") performTouchDrop("col"); }}
+          >
+            {colLabels.map((label, i) => (
+              <React.Fragment key={i}>
+                {dragInsertAt?.which === "col" && dragInsertAt.insertAt === i && (
+                  <div className="h-1 bg-blue-500 rounded mx-1 my-0.5" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop("col")} />
+                )}
+                <div
+                  className="flex gap-2 items-center rounded-lg py-1"
+                  data-drag-which="col"
+                  data-drag-index={i}
+                  draggable
+                  onDragStart={() => handleDragStart("col", i)}
+                  onDragOver={(e) => handleDragOver(e, "col", i)}
+                  onDrop={() => handleDrop("col")}
+                  onDragEnd={() => setDragInsertAt(null)}
+                >
+                  <div
+                    className="touch-none flex-shrink-0 p-1 -m-1 cursor-grab"
+                    onTouchStart={() => { touchDragFrom.current = { which: "col", index: i }; }}
+                  >
+                    <GripVertical size={16} className="text-gray-300" />
+                  </div>
+                  <Input
+                    value={label}
+                    onChange={(e) => updateLabel("col", i, e.target.value)}
+                    placeholder={`横軸${i + 1}`}
+                    maxLength={30}
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeLabel("col", i)}
+                    disabled={colLabels.length <= 1}
+                    className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 flex-shrink-0"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                {dragInsertAt?.which === "col" && dragInsertAt.insertAt === i + 1 && i === colLabels.length - 1 && (
+                  <div className="h-1 bg-blue-500 rounded mx-1 my-0.5" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop("col")} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => addLabel("col")}
+            disabled={colLabels.length >= 20}
+            className="mt-2 flex items-center gap-1 text-sm text-gray-700 hover:text-gray-900 disabled:opacity-30"
+          >
+            <Plus size={14} /> 横軸を追加
+          </button>
+        </div>
+      )}
+
+      {/* ── Preview ── */}
+      <div className="bg-gray-50 rounded-xl p-4">
+        <p className="text-xs font-medium text-gray-500 mb-3">プレビュー</p>
+        <div className="overflow-x-auto">
+          <table className="border-collapse text-xs" style={{ tableLayout: "fixed" }}>
+            <thead>
+              <tr>
+                <th style={{ width: 80, minWidth: 80, maxWidth: 80 }} className="bg-gray-100 border border-gray-200 px-2 py-1" />
+                {tableType === "date" ? (
+                  <th style={{ width: 52, minWidth: 52, maxWidth: 52 }} className="bg-gray-100 border border-gray-200 px-1 py-1 text-center overflow-hidden text-gray-400">参加可</th>
+                ) : (
+                  <>
+                    {colLabels.slice(0, 6).map((c, i) => (
+                      <th key={i} style={{ width: 52, minWidth: 52, maxWidth: 52 }} className="bg-gray-100 border border-gray-200 px-1 py-1 text-center overflow-hidden">{c || `列${i + 1}`}</th>
+                    ))}
+                    {colLabels.length > 6 && <th style={{ width: 24, minWidth: 24, maxWidth: 24 }} className="bg-gray-100 border border-gray-200 px-1 py-1 text-gray-400 text-center">…</th>}
+                  </>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {rowLabels.slice(0, tableType === "date" ? 10 : undefined).map((r, i) => (
+                <tr key={i}>
+                  <td style={{ width: 80, minWidth: 80, maxWidth: 80 }} className="bg-gray-100 border border-gray-200 px-2 py-1 overflow-hidden">
+                    <div className="truncate">{r || `行${i + 1}`}</div>
+                    {tableType === "timetable" && rowMeta[i]?.start && (
+                      <div className="text-[9px] text-gray-400 truncate">{rowMeta[i].start}〜{rowMeta[i].end}</div>
+                    )}
+                  </td>
+                  {tableType === "date" ? (
+                    <td style={{ width: 52, minWidth: 52, maxWidth: 52 }} className="border border-gray-200 text-center text-gray-300 bg-white h-8">—</td>
+                  ) : (
+                    <>
+                      {colLabels.slice(0, 6).map((_, ci) => (
+                        <td key={ci} style={{ width: 52, minWidth: 52, maxWidth: 52 }} className="border border-gray-200 text-center text-gray-300 bg-white h-8">—</td>
+                      ))}
+                      {colLabels.length > 6 && <td style={{ width: 24 }} className="border border-gray-200 px-1 py-1 text-gray-300 bg-white">…</td>}
+                    </>
+                  )}
+                </tr>
+              ))}
+              {tableType === "date" && rowLabels.length > 10 && (
+                <tr>
+                  <td className="bg-gray-100 border border-gray-200 px-2 py-1 text-gray-400 text-center">…</td>
+                  <td className="border border-gray-200 bg-white" />
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}

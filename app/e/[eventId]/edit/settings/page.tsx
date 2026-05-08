@@ -9,6 +9,7 @@ import { showToast } from "@/components/ui/Toast";
 import { Trash2, ArrowLeft, UserX, Copy } from "lucide-react";
 import Link from "next/link";
 import { KomaroLoader } from "@/components/KomaroLoader";
+import { AxisEditor, AxisEditorValue } from "@/components/AxisEditor";
 
 interface EventData {
   id: string;
@@ -50,8 +51,7 @@ export default function EditSettingsPage({
   const [description, setDescription] = useState("");
   const [maxParticipants, setMaxParticipants] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [rowLabels, setRowLabels] = useState<string[]>([]);
-  const [colLabels, setColLabels] = useState<string[]>([]);
+  const [axisValue, setAxisValue] = useState<AxisEditorValue>({ rowLabels: [], colLabels: [], rowMeta: [] });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [duplicating, setDuplicating] = useState(false);
   const [participantDeleteTarget, setParticipantDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -74,8 +74,14 @@ export default function EditSettingsPage({
       setTitle(e.title);
       setDescription(e.description ?? "");
       setMaxParticipants(String(e.maxParticipants));
-      setRowLabels(e.rowLabels);
-      setColLabels(e.colLabels);
+      setAxisValue({
+        rowLabels: e.rowLabels,
+        colLabels: e.colLabels,
+        rowMeta: (e.rowMeta ?? []).map((m: { start?: string; end?: string }) => ({
+          start: m.start ?? "",
+          end: m.end ?? "",
+        })),
+      });
       setParticipants(participantsData.participants ?? []);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -93,10 +99,10 @@ export default function EditSettingsPage({
     if (newPassword && (newPassword.length < 4 || newPassword.length > 20)) {
       errs.newPassword = "パスワードは4〜20文字で入力してください";
     }
-    if (rowLabels.some((l) => !l.trim())) {
+    if (axisValue.rowLabels.some((l) => !l.trim())) {
       errs.rowLabels = "縦軸ラベルに空の項目があります";
     }
-    if (colLabels.some((l) => !l.trim())) {
+    if (event.tableType !== "date" && axisValue.colLabels.some((l) => !l.trim())) {
       errs.colLabels = "横軸ラベルに空の項目があります";
     }
     setErrors(errs);
@@ -108,9 +114,9 @@ export default function EditSettingsPage({
         title: title.trim(),
         description: description.trim() || null,
         maxParticipants: max,
-        rowLabels,
-        rowMeta: event.rowMeta ?? null,
-        colLabels,
+        rowLabels: axisValue.rowLabels,
+        rowMeta: axisValue.rowMeta.length > 0 ? axisValue.rowMeta : null,
+        colLabels: axisValue.colLabels,
         colMeta: event.colMeta ?? null,
       };
       if (newPassword) body.password = newPassword;
@@ -203,7 +209,6 @@ export default function EditSettingsPage({
       const data = await res.json();
       const newEventId = data.event.id;
       const newEditToken = data.event.editToken;
-      // Obtain a JWT for the new event via the edit-auth endpoint
       const authRes = await fetch(`/api/v1/events/${newEventId}/edit-auth?token=${encodeURIComponent(newEditToken)}`);
       if (authRes.ok) {
         const authData = await authRes.json();
@@ -277,56 +282,19 @@ export default function EditSettingsPage({
           />
         </div>
 
-        {/* Matrix labels */}
+        {/* Matrix structure */}
         <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
           <div>
             <h2 className="font-semibold text-gray-800 text-sm mb-1">マトリクス構造</h2>
-            <p className="text-xs text-gray-400">ラベルの表示名のみ変更されます。既存の回答データには影響しません。</p>
+            <p className="text-xs text-gray-400">ラベルの変更は既存の回答データに影響しません。削除したラベルを再追加すると回答も復元されます。</p>
           </div>
-          {errors.rowLabels && (
-            <p className="text-xs text-red-500">{errors.rowLabels}</p>
-          )}
-          {errors.colLabels && (
-            <p className="text-xs text-red-500">{errors.colLabels}</p>
-          )}
-          <div>
-            <p className="text-xs font-medium text-gray-500 mb-2">縦軸ラベル（{rowLabels.length}項目）</p>
-            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-              {rowLabels.map((label, i) => (
-                <input
-                  key={i}
-                  type="text"
-                  value={label}
-                  onChange={(e) => {
-                    const next = [...rowLabels];
-                    next[i] = e.target.value;
-                    setRowLabels(next);
-                  }}
-                  maxLength={50}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
-                />
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500 mb-2">横軸ラベル（{colLabels.length}項目）</p>
-            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-              {colLabels.map((label, i) => (
-                <input
-                  key={i}
-                  type="text"
-                  value={label}
-                  onChange={(e) => {
-                    const next = [...colLabels];
-                    next[i] = e.target.value;
-                    setColLabels(next);
-                  }}
-                  maxLength={50}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
-                />
-              ))}
-            </div>
-          </div>
+          <AxisEditor
+            tableType={event.tableType as "timetable" | "calendar" | "date"}
+            initialValue={axisValue}
+            onChange={setAxisValue}
+            errors={{ rowLabels: errors.rowLabels, colLabels: errors.colLabels }}
+            autoGenerate={false}
+          />
         </div>
 
         {/* Participants */}
