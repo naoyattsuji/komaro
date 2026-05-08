@@ -509,58 +509,65 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
         <div className="flex items-center gap-2 mb-4">
           <MessageSquare size={16} className="text-gray-500" />
           <h2 className="font-semibold text-gray-900">コメント</h2>
-          <span className="text-xs text-gray-400">({comments.length}件)</span>
+          {comments.length > 0 && (
+            <span className="text-xs text-gray-400">{comments.length}件</span>
+          )}
         </div>
 
-        <div className="space-y-3 mb-4 max-h-72 overflow-y-auto">
-          {comments.length === 0 && (
-            <p className="text-sm text-gray-400">まだコメントはありません</p>
-          )}
-          {comments.map((c) => (
-            <div key={c.id} className="bg-gray-50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-medium text-gray-700">
-                  {c.authorName ?? "匿名"}
-                </span>
-                <span className="text-xs text-gray-400">{formatDateTime(c.createdAt)}</span>
+        {comments.length > 0 && (
+          <div className="space-y-0 mb-5 max-h-72 overflow-y-auto">
+            {comments.map((c) => (
+              <div key={c.id} className="border-b border-gray-100 py-3 last:border-0 last:pb-0 first:pt-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-semibold text-gray-800">
+                    {c.authorName ?? "匿名"}
+                  </span>
+                  <span className="text-xs text-gray-400">{formatDateTime(c.createdAt)}</span>
+                </div>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{c.body}</p>
               </div>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{c.body}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {comments.length === 0 && !isExpired && (
+          <p className="text-sm text-gray-400 mb-4">まだコメントはありません</p>
+        )}
+        {comments.length === 0 && isExpired && (
+          <p className="text-sm text-gray-400">コメントはありません</p>
+        )}
 
         {!isExpired && (
-          <div className="border-t border-gray-100 pt-4 space-y-2">
-            <input
-              type="text"
-              placeholder="投稿者名（任意）"
-              value={commentAuthor}
-              onChange={(e) => {
-                setCommentAuthor(e.target.value);
-                localStorage.setItem("komaro_comment_author", e.target.value);
-              }}
-              maxLength={30}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+          <div className={comments.length > 0 ? "border-t border-gray-100 pt-4" : ""}>
+            <textarea
+              placeholder="コメントを入力..."
+              value={commentBody}
+              onChange={(e) => setCommentBody(e.target.value)}
+              maxLength={1000}
+              rows={3}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
             />
-            <div className="flex gap-2">
-              <textarea
-                placeholder="コメントを入力..."
-                value={commentBody}
-                onChange={(e) => setCommentBody(e.target.value)}
-                maxLength={1000}
-                rows={2}
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="text"
+                placeholder="名前（任意）"
+                value={commentAuthor}
+                onChange={(e) => {
+                  setCommentAuthor(e.target.value);
+                  localStorage.setItem("komaro_comment_author", e.target.value);
+                }}
+                maxLength={30}
+                className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
               />
               <Button
                 onClick={submitComment}
                 loading={submittingComment}
                 disabled={!commentBody.trim()}
-                className="self-end px-3"
+                className="px-4 shrink-0"
               >
-                <Send size={16} />
+                <Send size={15} />
               </Button>
             </div>
-            <p className="text-xs text-gray-400 text-right">{commentBody.length}/1000</p>
           </div>
         )}
       </div>
