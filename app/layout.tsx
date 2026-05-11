@@ -15,11 +15,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "KOMARO — コマで見る日程調整",
   description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化し、最適な日程がひと目でわかります。",
-  metadataBase: new URL("https://komaro.vercel.app"),
+  metadataBase: new URL("https://komaro.app"),
   openGraph: {
     title: "KOMARO — コマで見る日程調整",
     description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化し、最適な日程がひと目でわかります。",
-    url: "https://komaro.vercel.app",
+    url: "https://komaro.app",
     siteName: "KOMARO",
     locale: "ja_JP",
     type: "website",
@@ -47,11 +47,11 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: "KOMARO",
-  url: "https://komaro.vercel.app",
+  url: "https://komaro.app",
   description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化し、最適な日程がひと目でわかります。",
   potentialAction: {
     "@type": "SearchAction",
-    target: "https://komaro.vercel.app",
+    target: "https://komaro.app",
   },
 };
 
