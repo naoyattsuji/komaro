@@ -157,7 +157,7 @@ function DemoTable() {
     if (r <= 0.5)  return "bg-gray-200 text-gray-700";
     if (r <= 0.75) return "bg-gray-400 text-white";
     if (r < 1)     return "bg-gray-600 text-white";
-    return "bg-gray-900 text-white";
+    return "bg-red-600 text-white";
   }
 
   return (
