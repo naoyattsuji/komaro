@@ -40,7 +40,7 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
       <div className="absolute inset-0 bg-black/50" />
       <div
         className={cn(
-          "relative z-10 w-full bg-white sm:rounded-2xl rounded-t-2xl shadow-xl max-h-[90vh] overflow-y-auto sm:max-w-md",
+          "relative z-10 w-full bg-white sm:rounded-2xl rounded-t-2xl shadow-xl max-h-[90dvh] overflow-y-auto sm:max-w-md pb-safe",
           className
         )}
       >

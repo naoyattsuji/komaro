@@ -62,16 +62,13 @@ export default function CreateDonePage({
           <UrlDisplay url={participantUrl} label="参加者向けURL（共有用）" />
 
           <div className="border-t border-gray-100 pt-4">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle size={14} className="text-gray-500 shrink-0" />
-              <p className="text-xs font-semibold text-gray-700">
-                編集者向けURL — 必ず保管してください
+            <UrlDisplay url={editUrl} label="編集者向けURL（必ず保管）" />
+            <div className="flex items-start gap-1.5 mt-2 bg-gray-50 border border-gray-200 rounded-lg p-2">
+              <AlertTriangle size={13} className="text-gray-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-gray-600">
+                このURLを紛失するとイベントの編集・削除ができなくなります。メモアプリ等に保存してください。
               </p>
             </div>
-            <UrlDisplay url={editUrl} />
-            <p className="text-xs text-gray-600 mt-2 bg-gray-50 border border-gray-200 rounded-lg p-2">
-              このURLを紛失するとイベントの編集・削除ができなくなります。メモアプリ等に保存してください。
-            </p>
           </div>
         </div>
       </FadeInSection>
@@ -115,7 +112,7 @@ export default function CreateDonePage({
 
       {/* ── Action buttons ──────────────────────────────────── */}
       <FadeInSection delay={400}>
-        <div className="mt-5 flex gap-3">
+        <div className="mt-5 flex gap-3 mb-safe">
           <Link href={`/e/${id}`} className="flex-1">
             <Button className="w-full">イベントを確認する</Button>
           </Link>

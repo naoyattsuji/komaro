@@ -7,26 +7,26 @@ export default function HomePage() {
     <div className="flex flex-col">
 
       {/* Hero — 2-column on desktop */}
-      <section className="bg-white py-16 sm:py-24 border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <section className="bg-white py-12 sm:py-24 border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
 
             {/* Left: copy */}
             <div>
               <p
-                className="anim-hero text-xs tracking-[0.2em] text-gray-400 uppercase mb-8"
+                className="anim-hero text-xs tracking-[0.2em] text-gray-400 uppercase mb-6 sm:mb-8"
                 style={{ animationDelay: "0ms" }}
               >
                 Schedule Coordination
               </p>
               <h1
-                className="anim-hero text-5xl sm:text-6xl font-bold text-gray-900 leading-[1.05] tracking-tight mb-8"
+                className="anim-hero text-4xl sm:text-6xl font-bold text-gray-900 leading-[1.05] tracking-tight mb-6 sm:mb-8"
                 style={{ animationDelay: "120ms" }}
               >
                 コマで見る、<br />日程調整。
               </h1>
               <p
-                className="anim-hero text-sm sm:text-lg text-gray-500 mb-12 leading-relaxed"
+                className="anim-hero text-sm sm:text-lg text-gray-500 mb-10 sm:mb-12 leading-relaxed"
                 style={{ animationDelay: "260ms" }}
               >
                 誰がいつ空いているか、コマの色で一発確認。<br />
@@ -38,7 +38,7 @@ export default function HomePage() {
               >
                 <Link
                   href="/create"
-                  className="inline-flex items-center gap-3 bg-gray-900 text-white font-medium px-8 py-4 rounded-md hover:bg-gray-700 transition-colors text-base"
+                  className="inline-flex items-center gap-3 bg-gray-900 text-white font-medium px-6 sm:px-8 py-4 rounded-md hover:bg-gray-700 transition-colors text-base"
                 >
                   イベントを作成する
                   <ArrowRight size={18} />
@@ -157,7 +157,7 @@ function DemoTable() {
     if (r <= 0.5)  return "bg-gray-200 text-gray-700";
     if (r <= 0.75) return "bg-gray-400 text-white";
     if (r < 1)     return "bg-gray-600 text-white";
-    return "bg-red-600 text-white";
+    return "bg-gray-900 text-white";
   }
 
   return (

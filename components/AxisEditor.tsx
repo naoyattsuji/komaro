@@ -481,7 +481,7 @@ export function AxisEditor({
                   <div className="h-1 bg-blue-500 rounded mx-1 my-0.5" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop("row")} />
                 )}
                 <div
-                  className="flex gap-2 items-center rounded-lg py-1"
+                  className="rounded-lg py-1"
                   data-drag-which="row"
                   data-drag-index={i}
                   draggable
@@ -490,43 +490,46 @@ export function AxisEditor({
                   onDrop={() => handleDrop("row")}
                   onDragEnd={() => setDragInsertAt(null)}
                 >
-                  <div
-                    className="touch-none flex-shrink-0 p-1 -m-1 cursor-grab"
-                    onTouchStart={() => { touchDragFrom.current = { which: "row", index: i }; }}
-                  >
-                    <GripVertical size={16} className="text-gray-300" />
+                  <div className="flex gap-2 items-center">
+                    <div
+                      className="touch-none flex-shrink-0 p-1 -m-1 cursor-grab"
+                      onTouchStart={() => { touchDragFrom.current = { which: "row", index: i }; }}
+                    >
+                      <GripVertical size={16} className="text-gray-300" />
+                    </div>
+                    <Input
+                      value={label}
+                      onChange={(e) => updateLabel("row", i, e.target.value)}
+                      placeholder={`縦軸${i + 1}`}
+                      maxLength={30}
+                      className="flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeLabel("row", i)}
+                      disabled={rowLabels.length <= 1}
+                      className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 flex-shrink-0"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
-                  <Input
-                    value={label}
-                    onChange={(e) => updateLabel("row", i, e.target.value)}
-                    placeholder={`縦軸${i + 1}`}
-                    maxLength={30}
-                    className="flex-1"
-                  />
                   {showTimeMeta && (
-                    <div className="flex gap-1">
+                    <div className="ml-6 mt-1 flex items-center gap-1">
                       <input
                         type="time"
                         value={rowMeta[i]?.start ?? ""}
                         onChange={(e) => updateRowMeta(i, "start", e.target.value)}
-                        className="w-24 text-xs border border-gray-300 rounded-lg px-2 bg-white"
+                        className="flex-1 min-w-0 text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white"
                       />
+                      <span className="text-gray-400 text-xs shrink-0">〜</span>
                       <input
                         type="time"
                         value={rowMeta[i]?.end ?? ""}
                         onChange={(e) => updateRowMeta(i, "end", e.target.value)}
-                        className="w-24 text-xs border border-gray-300 rounded-lg px-2 bg-white"
+                        className="flex-1 min-w-0 text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white"
                       />
                     </div>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => removeLabel("row", i)}
-                    disabled={rowLabels.length <= 1}
-                    className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 flex-shrink-0"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </div>
                 {dragInsertAt?.which === "row" && dragInsertAt.insertAt === i + 1 && i === rowLabels.length - 1 && (
                   <div className="h-1 bg-blue-500 rounded mx-1 my-0.5" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop("row")} />

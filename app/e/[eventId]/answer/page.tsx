@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AvailabilityTable } from "@/components/AvailabilityTable";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -34,6 +34,9 @@ export default function AnswerPage({
 }) {
   const { eventId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editParticipantId = searchParams.get("edit");
+  const isEditMode = !!editParticipantId;
 
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +53,20 @@ export default function AnswerPage({
       .then((d) => { setEvent(d.event); setLoading(false); })
       .catch(() => { setLoading(false); });
   }, [eventId]);
+
+  useEffect(() => {
+    if (!editParticipantId) return;
+    fetch(`/api/v1/events/${eventId}/participants/${editParticipantId}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.participant) {
+          setName(d.participant.name);
+          setSelectedCells(new Set(
+            d.participant.cells.map((c: { rowIndex: number; colIndex: number }) => `${c.rowIndex}-${c.colIndex}`)
+          ));
+        }
+      });
+  }, [eventId, editParticipantId]);
 
   const toggleCell = useCallback((r: number, c: number) => {
     const key = `${r}-${c}`;
@@ -80,15 +97,24 @@ export default function AnswerPage({
   const doSubmit = async (overwrite = false) => {
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/v1/events/${eventId}/participants`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          cells: getCellsArray(),
-          overwrite,
-        }),
-      });
+      let res: Response;
+      if (isEditMode && editParticipantId) {
+        res = await fetch(`/api/v1/events/${eventId}/participants/${editParticipantId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim(), cells: getCellsArray() }),
+        });
+      } else {
+        res = await fetch(`/api/v1/events/${eventId}/participants`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            cells: getCellsArray(),
+            overwrite,
+          }),
+        });
+      }
       const data = await res.json();
 
       if (res.status === 409 && data.error?.code === "DUPLICATE_PARTICIPANT_NAME") {
@@ -100,7 +126,7 @@ export default function AnswerPage({
         showToast(data.error?.message ?? "エラーが発生しました", "error");
         return;
       }
-      showToast("回答を送信しました！");
+      showToast(isEditMode ? "回答を修正しました！" : "回答を送信しました！");
       router.push(`/e/${eventId}`);
     } finally {
       setSubmitting(false);
@@ -136,7 +162,7 @@ export default function AnswerPage({
     );
   }
 
-  if (event.currentParticipantCount >= event.maxParticipants) {
+  if (!isEditMode && event.currentParticipantCount >= event.maxParticipants) {
     return (
       <div className="max-w-xl mx-auto px-4 py-16 text-center">
         <p className="text-gray-700 font-medium">
@@ -158,7 +184,9 @@ export default function AnswerPage({
         </Link>
         <div>
           <h1 className="text-lg font-bold text-gray-900">{event.title}</h1>
-          <p className="text-xs text-gray-500">参加できるコマをタップして選択してください</p>
+          <p className="text-xs text-gray-500">
+            {isEditMode ? "回答を修正してください" : "参加できるコマをタップして選択してください"}
+          </p>
         </div>
       </div>
 
@@ -171,10 +199,11 @@ export default function AnswerPage({
           label="あなたの名前 *"
           placeholder="例: 田中太郎"
           value={name}
-          onChange={(e) => { setName(e.target.value); setNameError(""); }}
+          onChange={(e) => { if (!isEditMode) { setName(e.target.value); setNameError(""); } }}
           maxLength={100}
           error={nameError}
-          hint={`${name.length}/100文字`}
+          hint={isEditMode ? "修正モードでは名前を変更できません" : `${name.length}/100文字`}
+          disabled={isEditMode}
         />
       </div>
 
@@ -195,25 +224,29 @@ export default function AnswerPage({
 
       {/* Controls */}
       <div
-        className="anim-hero flex items-center gap-2 mb-3 flex-wrap"
+        className="anim-hero flex items-center justify-between gap-2 mb-3"
         style={{ animationDelay: "180ms" }}
       >
-        <span className="text-sm text-gray-600 font-medium">
-          {selectedCells.size}コマ選択中
-        </span>
-        <span className="text-xs text-gray-400">ドラッグで複数まとめて選択できます</span>
-        <button
-          onClick={selectAll}
-          className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1"
-        >
-          <CheckSquare size={12} /> 全選択
-        </button>
-        <button
-          onClick={deselectAll}
-          className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1"
-        >
-          <Square size={12} /> 全解除
-        </button>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm text-gray-600 font-medium shrink-0">
+            {selectedCells.size}コマ選択中
+          </span>
+          <span className="text-xs text-gray-400 hidden sm:block truncate">ドラッグで複数まとめて選択できます</span>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={selectAll}
+            className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1.5"
+          >
+            <CheckSquare size={12} /> 全選択
+          </button>
+          <button
+            onClick={deselectAll}
+            className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1.5"
+          >
+            <Square size={12} /> 全解除
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -228,15 +261,15 @@ export default function AnswerPage({
         />
       </FadeInSection>
 
-      {/* Submit — sticky keeps it visible while scrolling table, but won't overlap footer */}
-      <div className="sticky bottom-4 z-[60] mt-4">
+      {/* Submit — sticky keeps it visible while scrolling table */}
+      <div className="sticky z-[60] mt-4 pb-safe" style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}>
         <Button
           className="w-full"
           size="lg"
           onClick={handleSubmit}
           loading={submitting}
         >
-          この内容で送信する
+          {isEditMode ? "この内容で修正する" : "この内容で送信する"}
         </Button>
       </div>
 

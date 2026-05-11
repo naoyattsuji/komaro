@@ -58,6 +58,30 @@ interface Comment {
   createdAt: string;
 }
 
+function UnavailableList({ names }: { names: string[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors"
+      >
+        参加不可 ({names.length}名)
+        <span className="text-[10px]">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {names.map((name) => (
+            <span key={name} className="px-2.5 py-1 bg-gray-100 text-gray-500 text-sm rounded-full">
+              {name}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function EventClient({ eventId, initialEvent }: EventClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,6 +106,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPressRef = useRef(false);
   const [longPressTarget, setLongPressTarget] = useState<{ id: string; name: string } | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingParticipant, setDeletingParticipant] = useState(false);
   const [summaryLoaded, setSummaryLoaded] = useState(false);
   const [commentAuthor, setCommentAuthor] = useState(() => {
@@ -232,6 +257,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
       }
     } finally {
       setDeletingParticipant(false);
+      setShowDeleteConfirm(false);
       setLongPressTarget(null);
     }
   };
@@ -365,18 +391,16 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
       {/* Action buttons */}
       {!isExpired && (
         <div
-          className="anim-hero flex flex-col gap-2 mb-5"
+          className="anim-hero flex flex-col sm:flex-row sm:items-start gap-2 mb-5"
           style={{ animationDelay: "200ms" }}
         >
-          <div className="flex gap-2 flex-wrap">
-            <Link href={`/e/${eventId}/answer`}>
-              <Button size="lg" className="gap-2">
-                <Edit3 size={16} />
-                回答する
-              </Button>
-            </Link>
-          </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 space-y-2">
+          <Link href={`/e/${eventId}/answer`} className="sm:shrink-0">
+            <Button size="lg" className="w-full sm:w-auto gap-2">
+              <Edit3 size={16} />
+              回答する
+            </Button>
+          </Link>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 space-y-2 flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] text-gray-400 mb-0.5">参加者向けURL</p>
@@ -413,7 +437,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
         <KomaroLoader />
       ) : (
       <>
-      <div className="grid lg:grid-cols-[1fr_280px] gap-6">
+      <div className="grid md:grid-cols-[1fr_280px] gap-6">
         {/* Main: Table */}
         <FadeInSection delay={80}>
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -452,7 +476,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               <h2 className="font-semibold text-gray-900 text-sm">参加者一覧</h2>
               <span className="text-xs text-gray-400">({participants.length}名)</span>
               {participants.length > 0 && (
-                <span className="ml-auto text-xs text-gray-300">長押しで回答を削除</span>
+                <span className="ml-auto text-xs text-gray-300">長押しで修正/削除</span>
               )}
             </div>
             {participants.length === 0 ? (
@@ -463,7 +487,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
                 )}
               </div>
             ) : (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
                 {participants.map((p) => (
                   <button
                     key={p.id}
@@ -482,7 +506,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
                 ))}
               </div>
             )}
-            {filterNames.size > 0 && (
+            {participants.length > 0 && filterNames.size < participants.length && (
               <button
                 onClick={() => setFilterNames(new Set(participants.map((p) => p.name)))}
                 className="mt-2 text-xs text-gray-500 hover:text-gray-700 underline"
@@ -575,11 +599,48 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
       </>
       )}
 
-      {/* Participant delete confirmation modal */}
-      {longPressTarget && (
+      {/* Participant action modal */}
+      {longPressTarget && !showDeleteConfirm && (
         <Modal
           open
           onClose={() => setLongPressTarget(null)}
+          title={`「${longPressTarget.name}」の回答`}
+        >
+          <div className="flex flex-col gap-2">
+            <Button
+              className="w-full gap-2"
+              onClick={() => {
+                router.push(`/e/${eventId}/answer?edit=${longPressTarget.id}`);
+                setLongPressTarget(null);
+              }}
+            >
+              <Edit3 size={14} />
+              回答を修正する
+            </Button>
+            <Button
+              variant="danger"
+              className="w-full gap-2"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <Trash2 size={14} />
+              回答を削除する
+            </Button>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => setLongPressTarget(null)}
+            >
+              キャンセル
+            </Button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Participant delete confirmation modal */}
+      {longPressTarget && showDeleteConfirm && (
+        <Modal
+          open
+          onClose={() => { setShowDeleteConfirm(false); setLongPressTarget(null); }}
           title="回答を削除しますか？"
         >
           <p className="text-sm text-gray-600 mb-4">
@@ -589,7 +650,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
             <Button
               variant="secondary"
               className="flex-1"
-              onClick={() => setLongPressTarget(null)}
+              onClick={() => { setShowDeleteConfirm(false); setLongPressTarget(null); }}
             >
               キャンセル
             </Button>
@@ -692,18 +753,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
                     })()}
                   </div>
                   {cellParticipants.unavailable.length > 0 && (
-                    <details className="text-sm">
-                      <summary className="text-xs font-semibold text-gray-400 cursor-pointer">
-                        参加不可 ({cellParticipants.unavailable.length}名)
-                      </summary>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {cellParticipants.unavailable.map((name) => (
-                          <span key={name} className="px-2.5 py-1 bg-gray-100 text-gray-500 text-sm rounded-full">
-                            {name}
-                          </span>
-                        ))}
-                      </div>
-                    </details>
+                    <UnavailableList names={cellParticipants.unavailable} />
                   )}
                 </div>
 

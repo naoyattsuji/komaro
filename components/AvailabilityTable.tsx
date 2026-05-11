@@ -181,8 +181,8 @@ export function AvailabilityTable({
     <div className="overflow-auto rounded-xl border border-gray-200 shadow-sm select-none relative z-0">
       <table
         ref={tableRef}
-        className="border-collapse table-fixed"
-        style={{ width: tableWidth, minWidth: tableWidth }}
+        className="border-collapse table-fixed w-full"
+        style={{ minWidth: tableWidth }}
       >
         <colgroup>
           <col style={{ width: ROW_LABEL_W }} />

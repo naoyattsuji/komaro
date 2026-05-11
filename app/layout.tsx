@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -7,6 +7,10 @@ import Image from "next/image";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "KOMARO — コマで見る日程調整",
@@ -53,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/help" className="hidden sm:block text-sm text-gray-500 hover:text-gray-900 transition-colors">
                 ヘルプ
               </Link>
-              <Link href="/create" className="text-sm font-medium text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md transition-colors whitespace-nowrap">
+              <Link href="/create" className="text-sm font-medium text-white bg-gray-900 hover:bg-gray-700 px-4 py-2 rounded-md transition-colors whitespace-nowrap">
                 イベントを作成
               </Link>
             </nav>

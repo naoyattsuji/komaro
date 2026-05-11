@@ -238,7 +238,7 @@ export default function EditSettingsPage({
   }
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-8">
+    <div className="max-w-xl mx-auto px-4 py-6 sm:py-8 pb-safe">
       <Link href={`/e/${eventId}`} className="flex items-center gap-1 text-gray-400 hover:text-gray-600 text-sm mb-6">
         <ArrowLeft size={16} /> 集計に戻る
       </Link>
