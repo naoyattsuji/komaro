@@ -43,6 +43,18 @@ export const metadata: Metadata = {
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "KOMARO",
+  url: "https://komaro.vercel.app",
+  description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化し、最適な日程がひと目でわかります。",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://komaro.vercel.app",
+  },
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja" className={`${geist.variable} h-full overflow-y-scroll`}>
@@ -77,6 +89,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </footer>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <ToastContainer />
         <GoogleAnalytics gaId="G-BM1B0C55N2" />
       </body>
