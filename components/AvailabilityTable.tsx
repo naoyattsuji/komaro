@@ -3,6 +3,22 @@
 import { useRef, useEffect } from "react";
 import { cn, getHeatmapColor, getHeatmapTextColor } from "@/lib/utils";
 
+const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+
+function ColLabel({ col }: { col: string }) {
+  const m = col.match(/^(\d{1,2})\/(\d{1,2})/);
+  if (!m) return <>{col}</>;
+  const dateStr = `${m[1]}/${m[2]}`;
+  const date = new Date(new Date().getFullYear(), parseInt(m[1]) - 1, parseInt(m[2]));
+  const weekday = WEEKDAYS[date.getDay()];
+  return (
+    <>
+      <div>{dateStr}</div>
+      <div className="text-[9px] font-normal text-gray-400">({weekday})</div>
+    </>
+  );
+}
+
 interface CellSummary {
   rowIndex: number;
   colIndex: number;
@@ -196,7 +212,7 @@ export function AvailabilityTable({
                 key={ci}
                 className="bg-gray-50 border-b border-r border-gray-200 px-0.5 py-1.5 text-center text-[10px] font-semibold text-gray-600 leading-tight overflow-hidden"
               >
-                {col}
+                <ColLabel col={col} />
               </th>
             ))}
           </tr>

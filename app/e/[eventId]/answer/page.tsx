@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { showToast } from "@/components/ui/Toast";
-import { ArrowLeft, CheckSquare, Square } from "lucide-react";
+import { ArrowLeft, CheckSquare, Square, CheckCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import { FadeInSection } from "@/components/FadeInSection";
 import { KomaroLoader } from "@/components/KomaroLoader";
+import { trackEvent } from "@/lib/ga";
 // import { CalendarImageReader } from "@/components/CalendarImageReader";
 // import { VoiceInputReader } from "@/components/VoiceInputReader";
 
@@ -44,6 +45,7 @@ export default function AnswerPage({
   const [nameError, setNameError] = useState("");
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateParticipantId, setDuplicateParticipantId] = useState<string | null>(null);
 
@@ -127,7 +129,11 @@ export default function AnswerPage({
         return;
       }
       showToast(isEditMode ? "回答を修正しました！" : "回答を送信しました！");
-      router.push(`/e/${eventId}`);
+      if (isEditMode) {
+        router.push(`/e/${eventId}`);
+      } else {
+        setSubmitted(true);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -139,6 +145,50 @@ export default function AnswerPage({
     setNameError("");
     doSubmit(false);
   };
+
+  if (submitted) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <div className="anim-hero-scale inline-flex mb-4" style={{ animationDelay: "0ms" }}>
+          <CheckCircle size={52} className="text-gray-900 mx-auto" />
+        </div>
+        <h1 className="anim-hero text-2xl font-bold text-gray-900 mb-2" style={{ animationDelay: "80ms" }}>
+          回答を送信しました！
+        </h1>
+        <p className="anim-hero text-sm text-gray-500 mb-8" style={{ animationDelay: "160ms" }}>
+          みんなの集計結果を確認しましょう
+        </p>
+
+        <FadeInSection delay={240}>
+          <Link
+            href={`/e/${eventId}`}
+            className="inline-flex items-center gap-2 bg-gray-900 text-white font-medium px-6 py-3 rounded-md hover:bg-gray-700 transition-colors text-sm mb-8"
+          >
+            集計を見る
+            <ArrowRight size={16} />
+          </Link>
+        </FadeInSection>
+
+        <FadeInSection delay={360}>
+          <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-5 py-5 text-left">
+            <p className="text-sm font-semibold text-gray-800 mb-1">
+              コマを使ってあなたもイベントを作りませんか？
+            </p>
+            <p className="text-xs text-gray-500 mb-4">
+              登録不要・URLを送るだけで日程調整ができます
+            </p>
+            <Link
+              href="/create"
+              onClick={() => trackEvent("create_from_answer_cta", { source_event_id: eventId })}
+              className="flex items-center justify-center gap-2 bg-gray-900 text-white font-medium px-5 py-2.5 rounded-md hover:bg-gray-700 transition-colors text-sm w-full"
+            >
+              イベントを作成する →
+            </Link>
+          </div>
+        </FadeInSection>
+      </div>
+    );
+  }
 
   if (loading) {
     return <KomaroLoader />;

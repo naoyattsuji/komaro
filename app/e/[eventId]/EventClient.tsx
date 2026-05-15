@@ -14,6 +14,7 @@ import {
   parseColLabelToDate,
   buildDateRange,
   buildShortCalendarUrl,
+  ensureWeekday,
   CalendarEventParams,
 } from "@/lib/utils";
 import { CalendarExport } from "@/components/CalendarExport";
@@ -21,6 +22,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { getParticipantUrl } from "@/lib/utils";
 import { FadeInSection } from "@/components/FadeInSection";
 import { KomaroLoader } from "@/components/KomaroLoader";
+import { trackEvent } from "@/lib/ga";
 
 interface EventClientProps {
   eventId: string;
@@ -135,11 +137,12 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
   }, [eventId]);
 
   useEffect(() => {
+    trackEvent("event_view", { event_id: eventId });
     fetchSummary();
     fetchComments();
     const interval = setInterval(fetchSummary, 30000);
     return () => clearInterval(interval);
-  }, [fetchSummary, fetchComments]);
+  }, [fetchSummary, fetchComments, eventId]);
 
   // Auto-select all participants (including newly joined ones), unless URL filter was set
   useEffect(() => {
@@ -420,9 +423,10 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
                 X
               </a>
               <a
-                href={`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(getParticipantUrl(eventId))}`}
+                href={`https://line.me/R/msg/text/?${encodeURIComponent(`「${event.title}」の日程を確認してください →\n空いてるコマをタップするだけ！\n${getParticipantUrl(eventId)}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackEvent("line_share_click", { source: "event_page" })}
                 className="flex items-center gap-1 text-xs font-medium text-white bg-[#06C755] hover:bg-[#05a847] transition-colors rounded-md px-2.5 py-1.5"
               >
                 <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current" aria-hidden="true"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
@@ -596,6 +600,23 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
         )}
       </div>
       </FadeInSection>
+
+      {/* CTA: 参加者→主催者転換バナー */}
+      <FadeInSection delay={200}>
+        <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-gray-800">次は自分でイベントを作ろう</p>
+            <p className="text-xs text-gray-500 mt-0.5">KOMARoで日程調整イベントを無料で作成できます</p>
+          </div>
+          <Link
+            href="/create"
+            onClick={() => trackEvent("create_from_event_cta", { source_event_id: eventId })}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+          >
+            イベントを作成する →
+          </Link>
+        </div>
+      </FadeInSection>
       </>
       )}
 
@@ -671,7 +692,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
       {selectedCell !== null && (() => {
         const r = selectedCell.r;
         const c = selectedCell.c;
-        const colLabel = event.colLabels[c] ?? "";
+        const colLabel = ensureWeekday(event.colLabels[c] ?? "");
         const rowLabel = event.rowLabels[r] ?? "";
         const meta = event.rowMeta?.[r];
         // Try to build calendar date/time
@@ -699,7 +720,9 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
           `Google: ${buildShortCalendarUrl("google", calendarParams)}`,
           `Yahoo:  ${buildShortCalendarUrl("yahoo", calendarParams)}`,
           `Outlook: ${buildShortCalendarUrl("outlook", calendarParams)}`,
-          "Apple・タイムツリー・その他: ページ上の「Apple・その他」ボタンから.icsをダウンロード",
+          `Apple: ${buildShortCalendarUrl("apple", calendarParams)}`,
+          `TimeTree: ${buildShortCalendarUrl("timetree", calendarParams)}`,
+          `その他(.ics): ${buildShortCalendarUrl("other", calendarParams)}`,
         ]
           .filter(Boolean)
           .join("\n");

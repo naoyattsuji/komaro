@@ -113,10 +113,16 @@ export interface CalendarEventParams {
 
 /** /cal/{type}/{eventId}?s=...&e=... 形式の短縮カレンダーURL */
 export function buildShortCalendarUrl(
-  type: "google" | "yahoo" | "outlook",
+  type: "google" | "yahoo" | "outlook" | "mobile" | "apple" | "timetree" | "other",
   p: CalendarEventParams
 ): string {
-  const base = `${getBaseUrl()}/cal/${type}/${p.eventId}`;
+  // apple / timetree / other:
+  //   https:// でサーバーの HTML ランディングページを返す
+  //   → ページの JS が webcal:// へ自動リダイレクト → iOS がカレンダーアプリを起動
+  //   LINE でもタップ可能なリンクになる
+  const origin = getBaseUrl();
+  const pathType = type === "mobile" ? "mobile" : type;
+  const base = `${origin}/cal/${pathType}/${p.eventId}`;
   if (!p.startDate || !p.endDate) return base;
   const s = toIcsDateTime(p.startDate);
   const e = toIcsDateTime(p.endDate);
@@ -137,6 +143,17 @@ export function parseColLabelToDate(colLabel: string): Date | null {
   if (!m) return null;
   const year = new Date().getFullYear();
   return new Date(year, parseInt(m[1]) - 1, parseInt(m[2]));
+}
+
+const WEEKDAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"];
+
+/** Ensure a date label like "5/1" or "5/1(金)" always includes the weekday suffix "(曜)". */
+export function ensureWeekday(label: string): string {
+  const m = label.match(/^(\d{1,2})\/(\d{1,2})(\(.\))?/);
+  if (!m) return label;
+  if (m[3]) return label; // already has weekday
+  const date = new Date(new Date().getFullYear(), parseInt(m[1]) - 1, parseInt(m[2]));
+  return `${m[1]}/${m[2]}(${WEEKDAY_NAMES[date.getDay()]})`;
 }
 
 /** Parse "09:00" → minutes from midnight. Returns null if unparseable. */
@@ -198,23 +215,39 @@ export function buildOutlookUrl(p: CalendarEventParams): string {
   return `https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${subject}${start}${end}${body}`;
 }
 
+function toIcsDateTimeUTC(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}` +
+    `T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`
+  );
+}
+
 export function generateIcsContent(p: CalendarEventParams): string {
-  const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}@routine`;
-  const now = toIcsDateTime(new Date());
+  const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}@komaro`;
+  const now = toIcsDateTimeUTC(new Date());
+  const esc = (s: string) => s.replace(/[\\;,]/g, "\\$&").replace(/\n/g, "\\n");
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Routine//Routine//JA",
+    "PRODID:-//KOMARO//KOMARO//JA",
     "METHOD:PUBLISH",
+    "BEGIN:VTIMEZONE",
+    "TZID:Asia/Tokyo",
+    "BEGIN:STANDARD",
+    "TZOFFSETFROM:+0900",
+    "TZOFFSETTO:+0900",
+    "TZNAME:JST",
+    "DTSTART:19700101T000000",
+    "END:STANDARD",
+    "END:VTIMEZONE",
     "BEGIN:VEVENT",
     `UID:${uid}`,
     `DTSTAMP:${now}`,
-    p.startDate ? `DTSTART:${toIcsDateTime(p.startDate)}` : null,
-    p.endDate ? `DTEND:${toIcsDateTime(p.endDate)}` : null,
-    `SUMMARY:${p.title.replace(/[\\;,]/g, "\\$&").replace(/\n/g, "\\n")}`,
-    p.description
-      ? `DESCRIPTION:${p.description.replace(/[\\;,]/g, "\\$&").replace(/\n/g, "\\n")}`
-      : null,
+    p.startDate ? `DTSTART;TZID=Asia/Tokyo:${toIcsDateTime(p.startDate)}` : null,
+    p.endDate ? `DTEND;TZID=Asia/Tokyo:${toIcsDateTime(p.endDate)}` : null,
+    `SUMMARY:${esc(p.title)}`,
+    p.description ? `DESCRIPTION:${esc(p.description)}` : null,
     "END:VEVENT",
     "END:VCALENDAR",
   ]
