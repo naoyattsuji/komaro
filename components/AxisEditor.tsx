@@ -75,6 +75,8 @@ export function generateTimeSlots(start: string, end: string, intervalMin: numbe
   return slots;
 }
 
+const ALL_DAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
+
 export function generateDateLabels(startDate: string, days: number): string[] {
   const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
   const labels: string[] = [];
@@ -149,15 +151,30 @@ export function AxisEditor({
     return "18:00";
   });
 
-  // Calendar col generator state
+  // Col mode: "date" or "weekday" (shared for calendar & timetable)
+  const [colMode, setColMode] = useState<"date" | "weekday">(() => {
+    if (tableType === "date") return "date";
+    const WEEKDAY_SET = new Set(["日", "月", "火", "水", "木", "金", "土"]);
+    return initialValue.colLabels.length > 0 && initialValue.colLabels.every(l => WEEKDAY_SET.has(l))
+      ? "weekday" : "date";
+  });
+  const [weekdaySelection, setWeekdaySelection] = useState<boolean[]>(() => {
+    const WEEKDAY_SET = new Set(["日", "月", "火", "水", "木", "金", "土"]);
+    if (tableType !== "date" && initialValue.colLabels.length > 0 && initialValue.colLabels.every(l => WEEKDAY_SET.has(l))) {
+      return ALL_DAYS.map(d => initialValue.colLabels.includes(d));
+    }
+    return [false, true, true, true, true, true, false]; // default: 月〜土
+  });
+
+  // Col date generator state (shared for calendar & timetable date mode)
   const [calColStartDate, setCalColStartDate] = useState(() => {
-    if (tableType === "calendar" && initialValue.colLabels.length > 0) {
+    if (tableType !== "date" && initialValue.colLabels.length > 0) {
       return detectDateFromLabel(initialValue.colLabels[0]);
     }
     return todayStr;
   });
   const [calColDays, setCalColDays] = useState(() => {
-    if (tableType === "calendar" && initialValue.colLabels.length > 0) {
+    if (tableType !== "date" && initialValue.colLabels.length > 0) {
       return Math.min(20, initialValue.colLabels.length);
     }
     return 5;
@@ -203,9 +220,15 @@ export function AxisEditor({
   }, [tableType, calRowStart, calRowEnd, calRowInterval]);
 
   useEffect(() => {
-    if (tableType !== "calendar" || !calColTouched.current) return;
+    if (tableType === "date" || colMode !== "date" || !calColTouched.current) return;
     setColLabels(generateDateLabels(calColStartDate, calColDays));
-  }, [tableType, calColStartDate, calColDays]);
+  }, [tableType, colMode, calColStartDate, calColDays]);
+
+  useEffect(() => {
+    if (tableType === "date" || colMode !== "weekday") return;
+    const selected = ALL_DAYS.filter((_, i) => weekdaySelection[i]);
+    setColLabels(selected.length > 0 ? [...selected] : ["月"]);
+  }, [tableType, colMode, weekdaySelection]);
 
   useEffect(() => {
     if (tableType !== "date" || !dateRowTouched.current) return;
@@ -351,6 +374,23 @@ export function AxisEditor({
     } else {
       const next = [...colLabels]; next[idx] = val; setColLabels(next);
     }
+  };
+
+  const switchColMode = (mode: "date" | "weekday") => {
+    setColMode(mode);
+    if (mode === "date") {
+      calColTouched.current = true;
+      setColLabels(generateDateLabels(calColStartDate, calColDays));
+    }
+  };
+
+  const toggleWeekday = (i: number) => {
+    setWeekdaySelection(prev => {
+      if (prev[i] && prev.filter(Boolean).length <= 1) return prev;
+      const next = [...prev];
+      next[i] = !next[i];
+      return next;
+    });
   };
 
   const updateRowMeta = (idx: number, field: "start" | "end", val: string) => {
@@ -549,103 +589,77 @@ export function AxisEditor({
       )}
 
       {/* ── Col section ── */}
-      {tableType === "date" ? null : tableType === "calendar" ? (
+      {tableType === "date" ? null : (
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-3">横軸ラベル（列）— 日付</p>
-          {errors.colLabels && <p className="text-xs text-red-500 mb-2">{errors.colLabels}</p>}
-          <div className="space-y-3">
-            <div className="flex gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-500 mb-1">開始日</p>
-                <input
-                  type="date"
-                  value={calColStartDate}
-                  onChange={(e) => { calColTouched.current = true; setCalColStartDate(e.target.value); }}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
-                />
-              </div>
-              <div className="w-28 shrink-0">
-                <p className="text-xs text-gray-500 mb-1">日数</p>
-                <select
-                  value={calColDays}
-                  onChange={(e) => { calColTouched.current = true; setCalColDays(Number(e.target.value)); }}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+          <div className="flex items-center gap-3 mb-3">
+            <p className="text-sm font-medium text-gray-700">横軸ラベル（列）</p>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+              {(["date", "weekday"] as const).map((mode, idx) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => switchColMode(mode)}
+                  className={`px-3 py-1.5 font-medium transition-colors ${idx > 0 ? "border-l border-gray-200" : ""} ${
+                    colMode === mode ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
-                  {Array.from({ length: 20 }, (_, i) => i + 1).map((d) => (
-                    <option key={d} value={d}>{d}日間</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="text-xs bg-gray-50 rounded-lg px-3 py-2 text-gray-500">
-              {colLabels.length}日: {colLabels[0]} 〜 {colLabels[colLabels.length - 1]}
+                  {mode === "date" ? "日付" : "曜日"}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-      ) : (
-        /* timetable col */
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">
-            横軸ラベル（列） — {colLabels.length}/20
-          </p>
           {errors.colLabels && <p className="text-xs text-red-500 mb-2">{errors.colLabels}</p>}
-          <div
-            className="space-y-0"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => handleDrop("col")}
-            onTouchEnd={() => { if (touchDragFrom.current?.which === "col") performTouchDrop("col"); }}
-          >
-            {colLabels.map((label, i) => (
-              <React.Fragment key={i}>
-                {dragInsertAt?.which === "col" && dragInsertAt.insertAt === i && (
-                  <div className="h-1 bg-blue-500 rounded mx-1 my-0.5" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop("col")} />
-                )}
-                <div
-                  className="flex gap-2 items-center rounded-lg py-1"
-                  data-drag-which="col"
-                  data-drag-index={i}
-                  draggable
-                  onDragStart={() => handleDragStart("col", i)}
-                  onDragOver={(e) => handleDragOver(e, "col", i)}
-                  onDrop={() => handleDrop("col")}
-                  onDragEnd={() => setDragInsertAt(null)}
-                >
-                  <div
-                    className="touch-none flex-shrink-0 p-1 -m-1 cursor-grab"
-                    onTouchStart={() => { touchDragFrom.current = { which: "col", index: i }; }}
-                  >
-                    <GripVertical size={16} className="text-gray-300" />
-                  </div>
-                  <Input
-                    value={label}
-                    onChange={(e) => updateLabel("col", i, e.target.value)}
-                    placeholder={`横軸${i + 1}`}
-                    maxLength={30}
-                    className="flex-1"
+
+          {colMode === "date" ? (
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-500 mb-1">開始日</p>
+                  <input
+                    type="date"
+                    value={calColStartDate}
+                    onChange={(e) => { calColTouched.current = true; setCalColStartDate(e.target.value); }}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeLabel("col", i)}
-                    disabled={colLabels.length <= 1}
-                    className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 flex-shrink-0"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </div>
-                {dragInsertAt?.which === "col" && dragInsertAt.insertAt === i + 1 && i === colLabels.length - 1 && (
-                  <div className="h-1 bg-blue-500 rounded mx-1 my-0.5" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop("col")} />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => addLabel("col")}
-            disabled={colLabels.length >= 20}
-            className="mt-2 flex items-center gap-1 text-sm text-gray-700 hover:text-gray-900 disabled:opacity-30"
-          >
-            <Plus size={14} /> 横軸を追加
-          </button>
+                <div className="w-28 shrink-0">
+                  <p className="text-xs text-gray-500 mb-1">日数</p>
+                  <select
+                    value={calColDays}
+                    onChange={(e) => { calColTouched.current = true; setCalColDays(Number(e.target.value)); }}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  >
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>{d}日間</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="text-xs bg-gray-50 rounded-lg px-3 py-2 text-gray-500">
+                {colLabels.length}日: {colLabels[0]} 〜 {colLabels[colLabels.length - 1]}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex gap-1.5 flex-wrap">
+                {ALL_DAYS.map((day, i) => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleWeekday(i)}
+                    className={`w-9 h-9 rounded-lg text-sm font-medium border transition-colors ${
+                      weekdaySelection[i]
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-gray-400">選択した曜日が列ラベルになります</p>
+            </div>
+          )}
         </div>
       )}
 

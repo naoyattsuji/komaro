@@ -38,7 +38,7 @@ function defaultAxisValue(tableType: TableType): AxisEditorValue {
   if (tableType === "timetable") {
     return {
       rowLabels: ["1限", "2限", "昼休憩", "3限", "4限", "5限", "6限", "7限（Nm）"],
-      colLabels: ["月", "火", "水", "木", "金", "土"],
+      colLabels: generateDateLabels(todayStr, 5),
       rowMeta: DEFAULT_ROW_META.timetable,
     };
   }
@@ -136,8 +136,9 @@ function MiniPreview({ type }: { type: TableType }) {
 
 export default function CreatePage() {
   const router = useRouter();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
 
   // Step 1
   const [title, setTitle] = useState("");
@@ -215,7 +216,7 @@ export default function CreatePage() {
           className="anim-hero text-sm text-gray-500"
           style={{ animationDelay: "80ms" }}
         >
-          3ステップで日程調整表を作成できます
+          2ステップで日程調整表を作成できます
         </p>
       </div>
 
@@ -224,10 +225,10 @@ export default function CreatePage() {
         className="anim-hero flex items-center gap-2 mb-8"
         style={{ animationDelay: "160ms" }}
       >
-        {[1, 2, 3].map((s) => (
+        {[1, 2].map((s) => (
           <div key={s} className="flex items-center gap-2">
             <button
-              onClick={() => step > s && setStep(s as 1 | 2 | 3)}
+              onClick={() => step > s && setStep(s as 1 | 2)}
               className={`w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center transition-colors ${
                 step === s
                   ? "bg-gray-900 text-white"
@@ -238,15 +239,14 @@ export default function CreatePage() {
             >
               {s}
             </button>
-            {s < 3 && (
+            {s < 2 && (
               <div className={`h-0.5 w-8 ${step > s ? "bg-gray-900" : "bg-gray-200"}`} />
             )}
           </div>
         ))}
         <span className="ml-2 text-sm text-gray-500">
           {step === 1 && "基本情報"}
-          {step === 2 && "軸の設定"}
-          {step === 3 && "詳細設定"}
+          {step === 2 && "日程の設定"}
         </span>
       </div>
 
@@ -302,7 +302,7 @@ export default function CreatePage() {
         </div>
       )}
 
-      {/* Step 2: Axis settings */}
+      {/* Step 2: Axis settings + optional password */}
       {step === 2 && (
         <div className="space-y-6">
           <AxisEditor
@@ -314,53 +314,47 @@ export default function CreatePage() {
             autoGenerate={true}
           />
 
+          {/* Password: collapsible section */}
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowPasswordSection(!showPasswordSection)}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <span>🔒 編集用パスワードを設定する（任意）</span>
+              <span className="text-gray-400 text-xs">{showPasswordSection ? "▲" : "▼"}</span>
+            </button>
+            {showPasswordSection && (
+              <div className="px-4 pb-4 space-y-2 border-t border-gray-100">
+                <Input
+                  label=""
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  error={errors.password}
+                  hint="設定しない場合は編集用URLのみでイベントを管理します"
+                  placeholder="4〜20文字"
+                  maxLength={20}
+                />
+                {password && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                    {showPassword ? "パスワードを隠す" : "パスワードを表示する"}
+                  </button>
+                )}
+                <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-2">
+                  ⚠️ パスワードを忘れると、編集URLを紛失した場合にイベントを編集できなくなります
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-3">
             <Button variant="secondary" onClick={() => setStep(1)} className="flex-1">戻る</Button>
-            <Button onClick={() => setStep(3)} className="flex-1">次へ: 詳細設定</Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3: Advanced settings */}
-      {step === 3 && (
-        <div className="space-y-5">
-          <div>
-            <Input
-              label="編集用パスワード（任意）"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={errors.password}
-              hint="設定しない場合は編集用URLのみでイベントを管理します"
-              placeholder="4〜20文字"
-              maxLength={20}
-            />
-            {password && (
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="mt-1 flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
-              >
-                {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
-                {showPassword ? "パスワードを隠す" : "パスワードを表示する"}
-              </button>
-            )}
-            <p className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-2 mt-2">
-              ⚠️ パスワードを忘れると、編集URLを紛失した場合にイベントを編集できなくなります
-            </p>
-          </div>
-
-          <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-2">
-            <p className="font-medium text-gray-700">作成するイベントの確認</p>
-            <div className="text-gray-600 space-y-1">
-              <p>イベント名: <span className="font-medium text-gray-900">{title}</span></p>
-              <p>形式: <span className="font-medium text-gray-900">{TABLE_TYPE_LABELS[tableType]}</span></p>
-              <p>パスワード: <span className="font-medium text-gray-900">{password ? "設定あり" : "なし"}</span></p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => setStep(2)} className="flex-1">戻る</Button>
             <Button onClick={handleSubmit} loading={loading} className="flex-1">
               イベントを作成する
             </Button>
