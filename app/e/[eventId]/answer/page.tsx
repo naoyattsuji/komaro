@@ -11,7 +11,7 @@ import { ArrowLeft, CheckSquare, Square, CheckCircle, ArrowRight } from "lucide-
 import Link from "next/link";
 import { useEffect } from "react";
 import { FadeInSection } from "@/components/FadeInSection";
-import { KomaroLoader } from "@/components/KomaroLoader";
+import { KOMAROLoader } from "@/components/KOMAROLoader";
 import { trackEvent } from "@/lib/ga";
 // import { CalendarImageReader } from "@/components/CalendarImageReader";
 // import { VoiceInputReader } from "@/components/VoiceInputReader";
@@ -47,7 +47,7 @@ export default function AnswerPage({
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-  const [duplicateParticipantId, setDuplicateParticipantId] = useState<string | null>(null);
+  const [, setDuplicateParticipantId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/v1/events/${eventId}`)
@@ -74,7 +74,11 @@ export default function AnswerPage({
     const key = `${r}-${c}`;
     setSelectedCells((prev) => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
       return next;
     });
   }, []);
@@ -191,7 +195,7 @@ export default function AnswerPage({
   }
 
   if (loading) {
-    return <KomaroLoader />;
+    return <KOMAROLoader />;
   }
 
   if (!event) {
@@ -224,7 +228,7 @@ export default function AnswerPage({
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
+    <div className="max-w-3xl mx-auto px-4 py-6 pb-28">
       <div
         className="anim-hero flex items-center gap-2 mb-4"
         style={{ animationDelay: "0ms" }}

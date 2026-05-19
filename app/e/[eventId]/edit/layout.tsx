@@ -15,6 +15,7 @@ export async function generateMetadata({
   return {
     title: `「${title}」の編集 | KOMARO`,
     description: `「${title}」の編集ページです。変更後は必ず保存ボタンを押してください。`,
+    robots: { index: false },
     openGraph: {
       title: `「${title}」の編集 | KOMARO`,
       description: `「${title}」の編集ページです。変更後は必ず保存ボタンを押してください。`,

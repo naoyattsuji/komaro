@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { FadeInSection } from "@/components/FadeInSection";
+import { prisma } from "@/lib/db";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const eventCount = await prisma.event.count({ where: { deletedAt: null } });
   return (
     <div className="flex flex-col">
 
@@ -26,11 +30,17 @@ export default function HomePage() {
                 コマで見る、<br />日程調整。
               </h1>
               <p
-                className="anim-hero text-sm sm:text-lg text-gray-500 mb-10 sm:mb-12 leading-relaxed"
+                className="anim-hero text-sm sm:text-lg text-gray-500 mb-4 sm:mb-5 leading-relaxed"
                 style={{ animationDelay: "260ms" }}
               >
                 誰がいつ空いているか、コマの色で一発確認。<br />
                 登録不要、URLを送るだけで使えます。
+              </p>
+              <p
+                className="anim-hero text-sm text-gray-400 mb-8 sm:mb-10"
+                style={{ animationDelay: "330ms" }}
+              >
+                すでに {eventCount.toLocaleString()}件 のイベントで使われています
               </p>
               <div
                 className="anim-hero"

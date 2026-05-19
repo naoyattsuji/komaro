@@ -4,6 +4,9 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "利用規約 — KOMARO",
   description: "KOMAROの利用規約です。",
+  alternates: {
+    canonical: "https://komaro.app/terms",
+  },
 };
 
 export default function TermsPage() {

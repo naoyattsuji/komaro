@@ -192,8 +192,10 @@ export function AvailabilityTable({
   }, []);
 
   const tableWidth = ROW_LABEL_W + colLabels.length * COL_W;
+  const showScrollHint = colLabels.length > 5;
 
   return (
+    <div>
     <div className="overflow-auto rounded-xl border border-gray-200 shadow-sm select-none relative z-0">
       <table
         ref={tableRef}
@@ -300,6 +302,12 @@ export function AvailabilityTable({
           ))}
         </tbody>
       </table>
+    </div>
+    {showScrollHint && (
+      <p className="mt-1.5 text-[10px] text-gray-400 text-center sm:hidden">
+        ← 左右にスワイプできます →
+      </p>
+    )}
     </div>
   );
 }

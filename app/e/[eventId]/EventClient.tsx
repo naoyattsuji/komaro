@@ -21,7 +21,7 @@ import { CalendarExport } from "@/components/CalendarExport";
 import { CopyButton } from "@/components/CopyButton";
 import { getParticipantUrl } from "@/lib/utils";
 import { FadeInSection } from "@/components/FadeInSection";
-import { KomaroLoader } from "@/components/KomaroLoader";
+import { KOMAROLoader } from "@/components/KOMAROLoader";
 import { trackEvent } from "@/lib/ga";
 
 interface EventClientProps {
@@ -88,7 +88,6 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [event] = useState(initialEvent);
-  const [summary, setSummary] = useState<{ maxCount: number; cells: CellSummary[] }>({ maxCount: 0, cells: [] });
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [selectedCell, setSelectedCell] = useState<{ r: number; c: number } | null>(null);
@@ -124,7 +123,6 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
     const res = await fetch(`/api/v1/events/${eventId}/summary`);
     if (!res.ok) { setSummaryLoaded(true); return; }
     const data = await res.json();
-    setSummary(data.summary);
     setParticipants(data.participants);
     setSummaryLoaded(true);
   }, [eventId]);
@@ -138,6 +136,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
 
   useEffect(() => {
     trackEvent("event_view", { event_id: eventId });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSummary();
     fetchComments();
     const interval = setInterval(fetchSummary, 30000);
@@ -149,6 +148,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
     if (filterInitializedFromUrl) {
       // Only add newly joined participants that aren't filtered out yet, keep existing filter
       // Once loaded, stop treating filter as URL-initialized so new participants get added
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFilterInitializedFromUrl(false);
       return;
     }
@@ -208,7 +208,11 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
   const toggleFilter = (name: string) => {
     setFilterNames((prev) => {
       const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
       return next;
     });
   };
@@ -414,7 +418,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
             <div className="flex items-center gap-2 pt-1 border-t border-gray-200">
               <span className="text-[10px] text-gray-400">シェア</span>
               <a
-                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`「${event.title}」の日程調整をKOMARO で行っています。回答よろしくお願いします！`)}&url=${encodeURIComponent(getParticipantUrl(eventId))}`}
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`「${event.title}」の日程調整をKOMAROで行っています。回答よろしくお願いします！`)}&url=${encodeURIComponent(getParticipantUrl(eventId))}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-xs font-medium text-white bg-black hover:bg-gray-800 transition-colors rounded-md px-2.5 py-1.5"
@@ -438,12 +442,12 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
       )}
 
       {!summaryLoaded ? (
-        <KomaroLoader />
+        <KOMAROLoader />
       ) : (
       <>
       <div className="grid md:grid-cols-[1fr_280px] gap-6">
         {/* Main: Table */}
-        <FadeInSection delay={80}>
+        <FadeInSection delay={80} className="min-w-0">
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
             {displayMaxCount > 0 ? (
               <p className="text-xs text-gray-500">
@@ -606,7 +610,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
         <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-gray-800">次は自分でイベントを作ろう</p>
-            <p className="text-xs text-gray-500 mt-0.5">KOMARoで日程調整イベントを無料で作成できます</p>
+            <p className="text-xs text-gray-500 mt-0.5">KOMAROで日程調整イベントを無料で作成できます</p>
           </div>
           <Link
             href="/create"

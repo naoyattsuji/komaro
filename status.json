@@ -1,14 +1,20 @@
 {
-  "kpis": {
-    "MAU計測基盤": "未着手",
-    "LINE共有導線": "未着手",
-    "SEO改善": "0/3本"
+  "month": "2026-05",
+  "monthly_kpis": {
+    "MAU": { "target": 300, "current": 144, "unit": "人" },
+    "sessions": { "target": 1200, "current": 500, "unit": "セッション" },
+    "event_created": { "target": 25, "current": 10, "unit": "件" },
+    "new_users": { "target": 280, "current": 144, "unit": "人" }
   },
-  "today_work": "なし",
-  "next_actions": [
-    "MAU計測基盤の整備（Googleアナリティクス連携）",
-    "LINE共有ボタンのUI改善",
-    "SEO施策1本目：タイトルとメタ説明文の改修"
-  ],
+  "weekly_checkpoint": {
+    "week": "W3 (5/15-21)",
+    "targets": {
+      "weekly_active": 160,
+      "sessions": 320,
+      "event_created": 6
+    }
+  },
+  "today_work": "KOMAROの正式表記統一を実施。共有文の表記スペース誤り、SHINログ、M-Bridge内の参照表記をKOMAROに修正。",
+  "next_actions": ["SNS拡散開始（OGP確認後）", "event_viewイベントがGA4に届いているか翌日確認"],
   "blockers": "なし"
 }

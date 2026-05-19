@@ -70,6 +70,7 @@
 /* ── Scroll reveal: IntersectionObserver adds .is-visible ────── */
 
 .reveal {
+  min-width: 0;
   opacity: 0;
   transform: translateY(32px);
   transition:
@@ -79,12 +80,14 @@
 }
 
 .reveal-fade {
+  min-width: 0;
   opacity: 0;
   transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity;
 }
 
 .reveal-scale {
+  min-width: 0;
   opacity: 0;
   transform: scale(0.94);
   transition:

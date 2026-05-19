@@ -227,6 +227,7 @@ export function AxisEditor({
   useEffect(() => {
     if (tableType === "date" || colMode !== "weekday") return;
     const selected = ALL_DAYS.filter((_, i) => weekdaySelection[i]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setColLabels(selected.length > 0 ? [...selected] : ["月"]);
   }, [tableType, colMode, weekdaySelection]);
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rateLimit";
+import { notifyIncident } from "@/lib/incident";
 
 // ─── Gemini Vision 呼び出し ────────────────────────────────────────────────
 
@@ -79,6 +80,7 @@ ${(rowLabels as string[]).map((l: string) => `  • ${l}`).join("\n")}
     });
   } catch (e) {
     console.error("parse-calendar error:", e);
+    notifyIncident('warning', 'Gemini API障害（カレンダー画像読み取りが使えない状態）', String(e)).catch(() => {})
     return NextResponse.json({ error: "parse_error" }, { status: 500 });
   }
 }

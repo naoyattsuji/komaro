@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { showToast } from "@/components/ui/Toast";
 import { Lock, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { KomaroLoader } from "@/components/KomaroLoader";
+import { KOMAROLoader } from "@/components/KOMAROLoader";
 
 export default function EditAuthPage({
   params,
@@ -30,6 +30,7 @@ export default function EditAuthPage({
   // Auto-auth with token from URL
   useEffect(() => {
     if (token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAutoAuthLoading(true);
       fetch(`/api/v1/events/${eventId}/edit-auth?token=${token}`)
         .then((r) => r.json())
@@ -81,7 +82,7 @@ export default function EditAuthPage({
   };
 
   if (autoAuthLoading) {
-    return <KomaroLoader />;
+    return <KOMAROLoader />;
   }
 
   return (

@@ -5,8 +5,33 @@ import { ContactForm } from "@/components/ContactForm";
 import { FadeInSection } from "@/components/FadeInSection";
 
 export const metadata: Metadata = {
-  title: "ヘルプ / FAQ — KOMARO",
-  description: "KOMARの使い方・よくある質問をまとめています。イベント作成・参加方法・回答の修正方法など。",
+  title: "ヘルプ / よくある質問 — KOMARO",
+  description: "KOMAROの使い方・よくある質問をまとめています。イベントの作成方法、参加・回答方法、回答の修正・削除、パスワード設定など操作方法を詳しく解説します。",
+  alternates: {
+    canonical: "https://komaro.app/help",
+  },
+  openGraph: {
+    title: "ヘルプ / よくある質問 — KOMARO",
+    description: "KOMAROの使い方・よくある質問。イベント作成から参加・回答まで詳しく解説。",
+    url: "https://komaro.app/help",
+    siteName: "KOMARO",
+    locale: "ja_JP",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "ヘルプ / よくある質問 — KOMARO",
+    description: "KOMAROの使い方・よくある質問。イベント作成から参加・回答まで詳しく解説。",
+  },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "ホーム", item: "https://komaro.app" },
+    { "@type": "ListItem", position: 2, name: "ヘルプ / FAQ", item: "https://komaro.app/help" },
+  ],
 };
 
 const faqs = [
@@ -80,9 +105,24 @@ const faqs = [
   },
 ];
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.slice(0, 8).map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.a,
+    },
+  })),
+};
+
 export default function HelpPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       {/* Page title */}
       <div className="mb-8">
@@ -119,7 +159,7 @@ export default function HelpPage() {
               { n: "2", title: "URLを共有", desc: "作成完了後に表示される「参加者向けURL」をコピーしてメンバーに送ります。" },
               { n: "3", title: "回答を集める", desc: "参加者はURLを開いて名前を入力し、参加できるコマをタップするだけ。" },
               { n: "4", title: "集計を確認", desc: "ヒートマップで全体の空き状況を確認。セルをタップで参加者名も確認できます。" },
-            ].map((step, i) => (
+            ].map((step) => (
               <li key={step.n} className="flex gap-3">
                 <span className="shrink-0 w-6 h-6 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-bold">
                   {step.n}

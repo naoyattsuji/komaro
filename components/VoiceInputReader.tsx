@@ -261,6 +261,7 @@ export function VoiceInputReader({
     const ok =
       typeof window !== "undefined" &&
       !!(w.SpeechRecognition || w.webkitSpeechRecognition);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSupported(ok);
   }, []);
 

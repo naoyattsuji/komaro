@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { createEditJwt, verifyEditJwt } from "@/lib/auth";
+import { createEditJwt } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rateLimit";
 

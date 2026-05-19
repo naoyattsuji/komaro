@@ -40,6 +40,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# service account credentials (never commit)
+ga-credentials.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

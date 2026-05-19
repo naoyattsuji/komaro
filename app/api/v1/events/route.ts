@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { createEditJwt } from "@/lib/auth";
+import { notifyIncident } from "@/lib/incident";
 import bcrypt from "bcryptjs";
 import { customAlphabet } from "nanoid";
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rateLimit";
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    if (!["timetable", "calendar", "custom", "date"].includes(tableType)) {
+    if (!["timetable", "calendar", "date"].includes(tableType)) {
       return Response.json(
         { error: { code: "INVALID_INPUT", message: "表形式が不正です" } },
         { status: 400 }
@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (err) {
     console.error("EVENT CREATE ERROR:", err);
+    notifyIncident('critical', 'イベント作成でサーバーエラー（DB障害の可能性）', String(err)).catch(() => {})
     return Response.json(
       { error: { code: "INTERNAL_ERROR", message: "サーバーエラーが発生しました" } },
       { status: 500 }

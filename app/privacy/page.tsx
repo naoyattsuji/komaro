@@ -4,6 +4,9 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "プライバシーポリシー — KOMARO",
   description: "KOMAROのプライバシーポリシー（個人情報保護方針）です。",
+  alternates: {
+    canonical: "https://komaro.app/privacy",
+  },
 };
 
 export default function PrivacyPage() {

@@ -1,5 +1,5 @@
 const INCIDENT_URL = 'https://shin-jobs-line.vercel.app/api/incident'
-const AUTH_TOKEN = 'shin-cron-secret-2026'
+const AUTH_TOKEN = process.env.SHIN_INCIDENT_TOKEN
 
 type Level = 'critical' | 'warning'
 
@@ -8,6 +8,8 @@ export async function notifyIncident(
   title: string,
   detail?: string
 ): Promise<void> {
+  if (!AUTH_TOKEN) return
+
   // 通知失敗でもアプリを止めない
   try {
     await fetch(INCIDENT_URL, {

@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import { fetchAnalytics } from "@/lib/ga-api";
 import { prisma } from "@/lib/db";
 
-const AUTH_TOKEN = "shin-cron-secret-2026";
+const AUTH_TOKEN = process.env.SHIN_ANALYTICS_TOKEN;
 
 export async function GET(req: Request) {
   const auth = req.headers.get("Authorization");
+  if (!AUTH_TOKEN) {
+    return NextResponse.json({ error: "Analytics token is not configured" }, { status: 503 });
+  }
+
   if (auth !== `Bearer ${AUTH_TOKEN}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

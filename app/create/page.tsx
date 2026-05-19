@@ -11,8 +11,8 @@ import { AxisEditor, AxisEditorValue, generateTimeSlots, generateDateLabels } fr
 type TableType = "timetable" | "calendar" | "date";
 
 const TABLE_TYPE_LABELS: Record<TableType, string> = {
-  timetable: "時間割形式（日付×時限）",
-  calendar: "カレンダー形式（日付×時間帯）",
+  timetable: "時間割形式（日付/曜日×時限）",
+  calendar: "カレンダー形式（日付/曜日×時間帯）",
   date: "日付形式（日付のみ）",
 };
 
@@ -67,7 +67,7 @@ function MiniPreview({ type }: { type: TableType }) {
   );
 
   if (type === "calendar") {
-    const cols = ["1日", "2日", "3日"];
+    const cols = ["5/1", "5/2", "5/3"];
     const rows: { lbl: string; vals: PreviewLevel[] }[] = [
       { lbl: "10:00", vals: [2, 0, 2] },
       { lbl: "14:00", vals: [0, 2, 1] },
@@ -285,7 +285,7 @@ export default function CreatePage() {
                       : "border-gray-200 bg-white hover:border-gray-300"
                   }`}
                 >
-                  <div className="font-medium text-gray-900 text-sm">{TABLE_TYPE_LABELS[t]}</div>
+                  <div className="font-medium text-gray-900 text-sm min-w-0 break-words">{TABLE_TYPE_LABELS[t]}</div>
                   <MiniPreview type={t} />
                 </button>
               ))}

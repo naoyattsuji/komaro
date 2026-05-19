@@ -14,11 +14,14 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "KOMARO — コマで見る日程調整",
-  description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化し、最適な日程がひと目でわかります。",
+  description: "無料で使える日程調整ツール。会員登録不要・URLを共有するだけ。グループ全員の空き時間をコマの色でひと目確認。スケジュール調整に最適な無料サービスです。",
   metadataBase: new URL("https://komaro.app"),
+  alternates: {
+    canonical: "https://komaro.app",
+  },
   openGraph: {
     title: "KOMARO — コマで見る日程調整",
-    description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化し、最適な日程がひと目でわかります。",
+    description: "無料で使える日程調整ツール。会員登録不要・URLを共有するだけ。グループ全員の空き時間をコマの色でひと目確認。スケジュール調整に最適な無料サービスです。",
     url: "https://komaro.app",
     siteName: "KOMARO",
     locale: "ja_JP",
@@ -43,17 +46,52 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "KOMARO",
-  url: "https://komaro.app",
-  description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化し、最適な日程がひと目でわかります。",
-  potentialAction: {
-    "@type": "SearchAction",
-    target: "https://komaro.app",
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": "https://komaro.app/#website",
+    name: "KOMARO",
+    url: "https://komaro.app",
+    description: "会員登録不要・URL共有で使える日程調整サービス。全員の空き時間をコマの色で可視化し、最適な日程がひと目でわかります。",
+    inLanguage: "ja",
+    publisher: { "@id": "https://komaro.app/#organization" },
   },
-};
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "https://komaro.app/#organization",
+    name: "KOMARO",
+    url: "https://komaro.app",
+    logo: {
+      "@type": "ImageObject",
+      url: "https://komaro.app/icon.png",
+    },
+    sameAs: [],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": "https://komaro.app/#webpage",
+    url: "https://komaro.app",
+    name: "KOMARO — コマで見る日程調整",
+    isPartOf: { "@id": "https://komaro.app/#website" },
+    about: { "@id": "https://komaro.app/#organization" },
+    description: "無料で使える日程調整ツール。会員登録不要・URLを共有するだけ。グループ全員の空き時間をコマの色でひと目確認。",
+    inLanguage: "ja",
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "ホーム",
+          item: "https://komaro.app",
+        },
+      ],
+    },
+  },
+];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

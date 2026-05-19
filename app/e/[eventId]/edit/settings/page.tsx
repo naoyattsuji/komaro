@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { showToast } from "@/components/ui/Toast";
 import { Trash2, ArrowLeft, UserX, Copy } from "lucide-react";
 import Link from "next/link";
-import { KomaroLoader } from "@/components/KomaroLoader";
+import { KOMAROLoader } from "@/components/KOMAROLoader";
 import { AxisEditor, AxisEditorValue } from "@/components/AxisEditor";
 
 interface EventData {
@@ -63,6 +63,7 @@ export default function EditSettingsPage({
       router.push(`/e/${eventId}/edit`);
       return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setJwt(storedJwt);
 
     Promise.all([
@@ -226,7 +227,7 @@ export default function EditSettingsPage({
   };
 
   if (loading) {
-    return <KomaroLoader />;
+    return <KOMAROLoader />;
   }
 
   if (!event) {

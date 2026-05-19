@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getIP, rateLimitResponse } from "@/lib/rateLimit";
+import { notifyIncident } from "@/lib/incident";
 
 // ─── Gemini 呼び出し ────────────────────────────────────────────────────────
 
@@ -103,7 +104,10 @@ row0="9:00" row1="10:00" / col0="月" col1="火"
       text = await callGemini(apiKey, simplePrompt);
     }
 
-    if (!text) return NextResponse.json({ error: "gemini_error" }, { status: 500 });
+    if (!text) {
+      notifyIncident('warning', 'Gemini API障害（音声解析が使えない状態）').catch(() => {})
+      return NextResponse.json({ error: "gemini_error" }, { status: 500 })
+    }
 
     const parsed = JSON.parse(extractJSON(text)) as {
       availableCells?: { row: number; col: number }[];
@@ -126,6 +130,7 @@ row0="9:00" row1="10:00" / col0="月" col1="火"
     });
   } catch (e) {
     console.error("parse-voice error:", e);
+    notifyIncident('warning', 'Gemini API障害（音声解析が使えない状態）', String(e)).catch(() => {})
     return NextResponse.json({ error: "parse_error" }, { status: 500 });
   }
 }
