@@ -691,21 +691,21 @@ export function AxisEditor({
       )}
 
       {/* ── Preview ── */}
-      <div className="rounded-xl border border-gray-200 p-3">
-        <p className="text-xs font-medium text-gray-500 mb-3">プレビュー</p>
+      <div className="rounded-xl border border-gray-200 p-2.5 sm:p-3">
+        <p className="text-xs font-medium text-gray-500 mb-2 sm:mb-3">プレビュー</p>
         <div className="overflow-x-auto overscroll-x-contain">
-          <table className="border-collapse text-xs min-w-[360px] sm:min-w-0">
+          <table className="border-collapse text-xs min-w-[336px] sm:min-w-0">
             <thead>
               <tr>
-                <th className="w-20 bg-gray-50 border border-gray-200 px-2 py-2" />
+                <th className="w-[72px] sm:w-20 bg-gray-50 border border-gray-200 px-1.5 py-1.5 sm:px-2 sm:py-2" />
                 {tableType === "date" ? (
-                  <th className="w-16 bg-gray-50 border border-gray-200 px-2 py-2 text-center overflow-hidden text-gray-400">参加可</th>
+                  <th className="w-14 sm:w-16 bg-gray-50 border border-gray-200 px-1.5 py-1.5 sm:px-2 sm:py-2 text-center overflow-hidden text-gray-400">参加可</th>
                 ) : (
                   <>
                     {colLabels.slice(0, previewColLimit).map((c, i) => (
-                      <th key={i} className="w-16 bg-gray-50 border border-gray-200 px-2 py-2 text-center overflow-hidden whitespace-nowrap">{c || `列${i + 1}`}</th>
+                      <th key={i} className="w-14 sm:w-16 bg-gray-50 border border-gray-200 px-1.5 py-1.5 sm:px-2 sm:py-2 text-center overflow-hidden whitespace-nowrap">{c || `列${i + 1}`}</th>
                     ))}
-                    {colLabels.length > previewColLimit && <th className="w-8 bg-gray-50 border border-gray-200 px-1 py-2 text-gray-400 text-center">…</th>}
+                    {colLabels.length > previewColLimit && <th className="w-8 bg-gray-50 border border-gray-200 px-1 py-1.5 sm:py-2 text-gray-400 text-center">…</th>}
                   </>
                 )}
               </tr>
@@ -713,20 +713,20 @@ export function AxisEditor({
             <tbody>
               {rowLabels.slice(0, tableType === "date" ? 10 : undefined).map((r, i) => (
                 <tr key={i}>
-                  <td className="w-20 bg-gray-50 border border-gray-200 px-2 py-2 overflow-hidden">
+                  <td className="w-[72px] sm:w-20 bg-gray-50 border border-gray-200 px-1.5 py-1.5 sm:px-2 sm:py-2 overflow-hidden">
                     <div className="truncate">{r || `行${i + 1}`}</div>
                     {tableType === "timetable" && rowMeta[i]?.start && (
                       <div className="text-[9px] text-gray-400 truncate">{rowMeta[i].start}〜{rowMeta[i].end}</div>
                     )}
                   </td>
                   {tableType === "date" ? (
-                    <td className="w-16 border border-gray-200 text-center text-gray-300 bg-white h-8">—</td>
+                    <td className="w-14 sm:w-16 border border-gray-200 text-center text-gray-300 bg-white h-7 sm:h-8">—</td>
                   ) : (
                     <>
                       {colLabels.slice(0, previewColLimit).map((_, ci) => (
-                        <td key={ci} className="w-16 border border-gray-200 text-center text-gray-300 bg-white h-8">—</td>
+                        <td key={ci} className="w-14 sm:w-16 border border-gray-200 text-center text-gray-300 bg-white h-7 sm:h-8">—</td>
                       ))}
-                      {colLabels.length > previewColLimit && <td className="w-8 border border-gray-200 px-1 py-2 text-gray-300 bg-white">…</td>}
+                      {colLabels.length > previewColLimit && <td className="w-8 border border-gray-200 px-1 py-1.5 sm:py-2 text-gray-300 bg-white">…</td>}
                     </>
                   )}
                 </tr>

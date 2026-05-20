@@ -228,7 +228,7 @@ export default function AnswerPage({
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 pb-28">
+    <div className="max-w-3xl mx-auto px-4 py-5 sm:py-6 pb-28">
       <div
         className="anim-hero flex items-center gap-2 mb-4"
         style={{ animationDelay: "0ms" }}
@@ -246,7 +246,7 @@ export default function AnswerPage({
 
       {/* Name input */}
       <div
-        className="anim-hero bg-white rounded-xl border border-gray-200 p-4 mb-4"
+        className="anim-hero bg-white rounded-xl border border-gray-200 p-3 sm:p-4 mb-3 sm:mb-4"
         style={{ animationDelay: "100ms" }}
       >
         <Input
@@ -278,7 +278,7 @@ export default function AnswerPage({
 
       {/* Controls */}
       <div
-        className="anim-hero flex items-center justify-between gap-2 mb-3"
+        className="anim-hero flex flex-wrap items-center justify-between gap-2 mb-3"
         style={{ animationDelay: "180ms" }}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -287,16 +287,16 @@ export default function AnswerPage({
           </span>
           <span className="text-xs text-gray-400 hidden sm:block truncate">ドラッグで複数まとめて選択できます</span>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="grid grid-cols-2 gap-1.5 shrink-0">
           <button
             onClick={selectAll}
-            className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1.5"
+            className="flex items-center justify-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1.5"
           >
             <CheckSquare size={12} /> 全選択
           </button>
           <button
             onClick={deselectAll}
-            className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1.5"
+            className="flex items-center justify-center gap-1 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1.5"
           >
             <Square size={12} /> 全解除
           </button>
@@ -316,7 +316,7 @@ export default function AnswerPage({
       </FadeInSection>
 
       {/* Submit — sticky keeps it visible while scrolling table */}
-      <div className="sticky z-[60] mt-4 pb-safe" style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}>
+      <div className="sticky z-[60] mt-3 sm:mt-4 pb-safe" style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}>
         <Button
           className="w-full"
           size="lg"

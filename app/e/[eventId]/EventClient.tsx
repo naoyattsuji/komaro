@@ -358,7 +358,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
+    <div className="max-w-5xl mx-auto px-4 py-5 sm:py-6">
       {/* Header */}
       <div className="mb-4">
         <div
@@ -398,7 +398,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
       {/* Action buttons */}
       {!isExpired && (
         <div
-          className="anim-hero flex flex-col sm:flex-row sm:items-start gap-2 mb-5"
+          className="anim-hero flex flex-col sm:flex-row sm:items-start gap-2 mb-4 sm:mb-5"
           style={{ animationDelay: "200ms" }}
         >
           <Link href={`/e/${eventId}/answer`} className="sm:shrink-0">
@@ -407,7 +407,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               回答する
             </Button>
           </Link>
-          <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 space-y-2 flex-1 min-w-0">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 space-y-1.5 sm:space-y-2 flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] text-gray-400 mb-0.5">参加者向けURL</p>
@@ -445,7 +445,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
         <KOMAROLoader />
       ) : (
       <>
-      <div className="grid md:grid-cols-[1fr_280px] gap-6">
+      <div className="grid md:grid-cols-[1fr_280px] gap-5 md:gap-6">
         {/* Main: Table */}
         <FadeInSection delay={80} className="min-w-0">
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -477,8 +477,8 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
         </FadeInSection>
 
         {/* Sidebar: Members */}
-        <FadeInSection delay={160} className="space-y-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <FadeInSection delay={160} className="space-y-3 sm:space-y-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-3">
               <Users size={16} className="text-gray-500" />
               <h2 className="font-semibold text-gray-900 text-sm">参加者一覧</h2>
@@ -495,7 +495,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
                 )}
               </div>
             ) : (
-              <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+              <div className="flex flex-wrap gap-1.5 max-h-36 sm:max-h-48 overflow-y-auto">
                 {participants.map((p) => (
                   <button
                     key={p.id}
@@ -525,7 +525,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
           </div>
 
           {/* Edit link */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
             <Link href={`/e/${eventId}/edit`}>
               <Button variant="secondary" size="sm" className="w-full text-xs">
                 イベントを編集する
@@ -537,8 +537,8 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
 
       {/* Comments */}
       <FadeInSection delay={100}>
-      <div className="mt-8 bg-white rounded-xl border border-gray-200 p-5">
-        <div className="flex items-center gap-2 mb-4">
+      <div className="mt-6 sm:mt-8 bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
           <MessageSquare size={16} className="text-gray-500" />
           <h2 className="font-semibold text-gray-900">コメント</h2>
           {comments.length > 0 && (
@@ -547,7 +547,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
         </div>
 
         {comments.length > 0 && (
-          <div className="space-y-0 mb-5 max-h-72 overflow-y-auto">
+          <div className="space-y-0 mb-4 sm:mb-5 max-h-60 sm:max-h-72 overflow-y-auto">
             {comments.map((c) => (
               <div key={c.id} className="border-b border-gray-100 py-3 last:border-0 last:pb-0 first:pt-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -576,10 +576,10 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               value={commentBody}
               onChange={(e) => setCommentBody(e.target.value)}
               maxLength={1000}
-              rows={3}
+              rows={2}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
             />
-            <div className="flex items-center gap-2 mt-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 mt-2">
               <input
                 type="text"
                 placeholder="名前（任意）"
@@ -607,7 +607,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
 
       {/* CTA: 参加者→主催者転換バナー */}
       <FadeInSection delay={200}>
-        <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="mt-5 sm:mt-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 sm:px-5 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-gray-800">次は自分でイベントを作ろう</p>
             <p className="text-xs text-gray-500 mt-0.5">KOMAROで日程調整イベントを無料で作成できます</p>
@@ -615,7 +615,7 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
           <Link
             href="/create"
             onClick={() => trackEvent("create_from_event_cta", { source_event_id: eventId })}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+            className="w-full shrink-0 inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors sm:w-auto"
           >
             イベントを作成する →
           </Link>
