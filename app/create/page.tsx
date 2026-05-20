@@ -16,12 +16,6 @@ const TABLE_TYPE_LABELS: Record<TableType, string> = {
   date: "日付形式（日付のみ）",
 };
 
-const TABLE_TYPE_SHORT_LABELS: Record<TableType, string> = {
-  calendar: "カレンダー",
-  timetable: "時間割",
-  date: "日付のみ",
-};
-
 interface RowMeta { start: string; end: string; }
 
 const DEFAULT_ROW_META: Record<TableType, RowMeta[]> = {
@@ -210,10 +204,10 @@ export default function CreatePage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-4 sm:py-8">
-      <div className="mb-4 sm:mb-6">
+    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
+      <div className="mb-6">
         <h1
-          className="anim-hero text-[22px] sm:text-2xl font-bold text-gray-900 mb-1"
+          className="anim-hero text-2xl font-bold text-gray-900 mb-1"
           style={{ animationDelay: "0ms" }}
         >
           イベントを作成
@@ -228,7 +222,7 @@ export default function CreatePage() {
 
       {/* Step indicator */}
       <div
-        className="anim-hero flex items-center gap-2 mb-5 sm:mb-8"
+        className="anim-hero flex items-center gap-2 mb-8"
         style={{ animationDelay: "160ms" }}
       >
         {[1, 2].map((s) => (
@@ -258,7 +252,7 @@ export default function CreatePage() {
 
       {/* Step 1: Basic info */}
       {step === 1 && (
-        <div className="space-y-4 sm:space-y-5">
+        <div className="space-y-5">
           <Input
             label="イベント名 *"
             placeholder="例: ミーティング日程調整"
@@ -280,28 +274,19 @@ export default function CreatePage() {
 
           <div>
             <p className="text-sm font-medium text-gray-700 mb-2">表の形式 *</p>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-1 sm:gap-3">
+            <div className="grid gap-3">
               {(["calendar", "timetable", "date"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => handleTableTypeChange(t)}
-                  className={`flex min-h-[58px] w-full items-center justify-center rounded-lg border-2 px-2 py-2 text-center transition-colors sm:min-h-0 sm:items-start sm:justify-between sm:gap-4 sm:rounded-xl sm:p-4 sm:text-left ${
+                  className={`flex items-start justify-between gap-4 text-left p-4 rounded-xl border-2 transition-colors w-full ${
                     tableType === t
                       ? "border-gray-900 bg-gray-50"
                       : "border-gray-200 bg-white hover:border-gray-300"
                   }`}
                 >
-                  <div className="min-w-0">
-                    <div className="text-[13px] font-semibold leading-tight text-gray-900 sm:hidden">
-                      {TABLE_TYPE_SHORT_LABELS[t]}
-                    </div>
-                    <div className="hidden text-sm font-medium text-gray-900 break-words sm:block">
-                      {TABLE_TYPE_LABELS[t]}
-                    </div>
-                  </div>
-                  <div className="hidden sm:block">
-                    <MiniPreview type={t} />
-                  </div>
+                  <div className="font-medium text-gray-900 text-sm min-w-0 break-words">{TABLE_TYPE_LABELS[t]}</div>
+                  <MiniPreview type={t} />
                 </button>
               ))}
             </div>
