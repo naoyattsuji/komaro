@@ -410,7 +410,7 @@ export function AxisEditor({
     setRowMeta(next);
   };
 
-  const previewColLimit = tableType === "date" ? 1 : 8;
+  const previewColLimit = tableType === "date" ? 1 : 5;
 
   return (
     <div className="space-y-6">
@@ -475,7 +475,7 @@ export function AxisEditor({
             )}
             <div>
               <p className="text-xs text-gray-500 mb-1">間隔</p>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 {([
                   { value: "ampm", label: "午前午後" },
                   { value: 120, label: "2時間" },
@@ -487,7 +487,7 @@ export function AxisEditor({
                     key={option.value}
                     type="button"
                     onClick={() => { calRowTouched.current = true; setCalRowInterval(option.value); }}
-                    className={`min-w-0 py-2 rounded-lg text-sm font-medium border transition-colors whitespace-nowrap ${
+                    className={`min-w-0 px-2 py-2 rounded-lg text-sm font-medium border transition-colors whitespace-nowrap ${
                       calRowInterval === option.value
                         ? "bg-gray-900 text-white border-gray-900"
                         : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
@@ -691,21 +691,21 @@ export function AxisEditor({
       )}
 
       {/* ── Preview ── */}
-      <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
+      <div className="rounded-xl border border-gray-200 p-3">
         <p className="text-xs font-medium text-gray-500 mb-3">プレビュー</p>
         <div className="overflow-x-auto overscroll-x-contain">
-          <table className="border-collapse text-xs min-w-max sm:min-w-full table-fixed">
+          <table className="border-collapse text-xs min-w-[360px] sm:min-w-0">
             <thead>
               <tr>
-                <th className="w-24 min-w-24 sm:w-28 bg-gray-100 border border-gray-200 px-2 py-2" />
+                <th className="w-20 bg-gray-50 border border-gray-200 px-2 py-2" />
                 {tableType === "date" ? (
-                  <th className="w-20 min-w-20 bg-gray-100 border border-gray-200 px-2 py-2 text-center overflow-hidden text-gray-400">参加可</th>
+                  <th className="w-16 bg-gray-50 border border-gray-200 px-2 py-2 text-center overflow-hidden text-gray-400">参加可</th>
                 ) : (
                   <>
                     {colLabels.slice(0, previewColLimit).map((c, i) => (
-                      <th key={i} className="w-20 min-w-20 sm:w-auto bg-gray-100 border border-gray-200 px-2 py-2 text-center overflow-hidden whitespace-nowrap">{c || `列${i + 1}`}</th>
+                      <th key={i} className="w-16 bg-gray-50 border border-gray-200 px-2 py-2 text-center overflow-hidden whitespace-nowrap">{c || `列${i + 1}`}</th>
                     ))}
-                    {colLabels.length > previewColLimit && <th className="w-8 min-w-8 bg-gray-100 border border-gray-200 px-1 py-2 text-gray-400 text-center">…</th>}
+                    {colLabels.length > previewColLimit && <th className="w-8 bg-gray-50 border border-gray-200 px-1 py-2 text-gray-400 text-center">…</th>}
                   </>
                 )}
               </tr>
@@ -713,27 +713,27 @@ export function AxisEditor({
             <tbody>
               {rowLabels.slice(0, tableType === "date" ? 10 : undefined).map((r, i) => (
                 <tr key={i}>
-                  <td className="w-24 min-w-24 sm:w-28 bg-gray-100 border border-gray-200 px-2 py-2 overflow-hidden">
+                  <td className="w-20 bg-gray-50 border border-gray-200 px-2 py-2 overflow-hidden">
                     <div className="truncate">{r || `行${i + 1}`}</div>
                     {tableType === "timetable" && rowMeta[i]?.start && (
                       <div className="text-[9px] text-gray-400 truncate">{rowMeta[i].start}〜{rowMeta[i].end}</div>
                     )}
                   </td>
                   {tableType === "date" ? (
-                    <td className="w-20 min-w-20 border border-gray-200 text-center text-gray-300 bg-white h-9">—</td>
+                    <td className="w-16 border border-gray-200 text-center text-gray-300 bg-white h-8">—</td>
                   ) : (
                     <>
                       {colLabels.slice(0, previewColLimit).map((_, ci) => (
-                        <td key={ci} className="w-20 min-w-20 sm:w-auto border border-gray-200 text-center text-gray-300 bg-white h-9">—</td>
+                        <td key={ci} className="w-16 border border-gray-200 text-center text-gray-300 bg-white h-8">—</td>
                       ))}
-                      {colLabels.length > previewColLimit && <td className="w-8 min-w-8 border border-gray-200 px-1 py-2 text-gray-300 bg-white">…</td>}
+                      {colLabels.length > previewColLimit && <td className="w-8 border border-gray-200 px-1 py-2 text-gray-300 bg-white">…</td>}
                     </>
                   )}
                 </tr>
               ))}
               {tableType === "date" && rowLabels.length > 10 && (
                 <tr>
-                  <td className="bg-gray-100 border border-gray-200 px-2 py-1 text-gray-400 text-center">…</td>
+                  <td className="bg-gray-50 border border-gray-200 px-2 py-1 text-gray-400 text-center">…</td>
                   <td className="border border-gray-200 bg-white" />
                 </tr>
               )}

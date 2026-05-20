@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
-import { Eye, EyeOff } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronUp, Eye, EyeOff, Lock } from "lucide-react";
 import { showToast } from "@/components/ui/Toast";
 import { AxisEditor, AxisEditorValue, generateTimeSlots, generateDateLabels } from "@/components/AxisEditor";
 
@@ -204,9 +204,7 @@ export default function CreatePage() {
   };
 
   return (
-    <div className={`mx-auto px-4 py-6 sm:py-8 transition-[max-width] ${
-      step === 2 ? "max-w-4xl" : "max-w-2xl"
-    }`}>
+    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
       <div className="mb-6">
         <h1
           className="anim-hero text-2xl font-bold text-gray-900 mb-1"
@@ -323,8 +321,15 @@ export default function CreatePage() {
               onClick={() => setShowPasswordSection(!showPasswordSection)}
               className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
             >
-              <span className="min-w-0">🔒 編集用パスワードを設定する（任意）</span>
-              <span className="text-gray-400 text-xs shrink-0">{showPasswordSection ? "▲" : "▼"}</span>
+              <span className="min-w-0 flex items-center gap-2">
+                <Lock size={15} className="shrink-0 text-gray-400" />
+                編集用パスワードを設定する（任意）
+              </span>
+              {showPasswordSection ? (
+                <ChevronUp size={16} className="text-gray-400 shrink-0" />
+              ) : (
+                <ChevronDown size={16} className="text-gray-400 shrink-0" />
+              )}
             </button>
             {showPasswordSection && (
               <div className="px-4 pb-4 space-y-2 border-t border-gray-100">
@@ -348,8 +353,9 @@ export default function CreatePage() {
                     {showPassword ? "パスワードを隠す" : "パスワードを表示する"}
                   </button>
                 )}
-                <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-2">
-                  ⚠️ パスワードを忘れると、編集URLを紛失した場合にイベントを編集できなくなります
+                <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-2 flex gap-1.5">
+                  <AlertCircle size={13} className="mt-0.5 shrink-0" />
+                  <span>パスワードを忘れると、編集URLを紛失した場合にイベントを編集できなくなります</span>
                 </p>
               </div>
             )}
