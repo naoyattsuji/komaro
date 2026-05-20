@@ -228,7 +228,7 @@ export default function AnswerPage({
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-5 sm:py-6 pb-28">
+    <div className="max-w-3xl mx-auto px-4 py-6 pb-28">
       <div
         className="anim-hero flex items-center gap-2 mb-4"
         style={{ animationDelay: "0ms" }}
@@ -246,7 +246,7 @@ export default function AnswerPage({
 
       {/* Name input */}
       <div
-        className="anim-hero bg-white rounded-xl border border-gray-200 p-3 sm:p-4 mb-3 sm:mb-4"
+        className="anim-hero bg-white rounded-xl border border-gray-200 p-4 mb-4"
         style={{ animationDelay: "100ms" }}
       >
         <Input
@@ -316,7 +316,7 @@ export default function AnswerPage({
       </FadeInSection>
 
       {/* Submit — sticky keeps it visible while scrolling table */}
-      <div className="sticky z-[60] mt-3 sm:mt-4 pb-safe" style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}>
+      <div className="sticky z-[60] mt-4 pb-safe" style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}>
         <Button
           className="w-full"
           size="lg"

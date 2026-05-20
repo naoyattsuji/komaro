@@ -49,8 +49,8 @@ function cellKey(r: number, c: number) {
   return `${r}-${c}`;
 }
 
-const ROW_LABEL_W = 72;
-const COL_W = 46;
+const ROW_LABEL_W = 76;
+const COL_W = 48;
 
 export function AvailabilityTable({
   rowLabels,
@@ -212,7 +212,7 @@ export function AvailabilityTable({
             {colLabels.map((col, ci) => (
               <th
                 key={ci}
-                className="bg-gray-50 border-b border-r border-gray-200 px-0.5 py-1.5 text-center text-[10px] font-semibold text-gray-600 leading-tight overflow-hidden sm:py-2"
+                className="bg-gray-50 border-b border-r border-gray-200 px-0.5 py-1.5 text-center text-[10px] font-semibold text-gray-600 leading-tight overflow-hidden"
               >
                 <ColLabel col={col} />
               </th>
@@ -222,7 +222,7 @@ export function AvailabilityTable({
         <tbody>
           {rowLabels.map((row, ri) => (
             <tr key={ri}>
-              <td className="sticky left-0 z-10 bg-gray-50 border-b border-r border-gray-200 px-1.5 py-1 text-[11px] font-medium text-gray-600 overflow-hidden sm:px-2">
+              <td className="sticky left-0 z-10 bg-gray-50 border-b border-r border-gray-200 px-2 py-1 text-[11px] font-medium text-gray-600 overflow-hidden">
                 <div className="truncate">{row}</div>
                 {rowMeta?.[ri]?.start && (
                   <div className="text-[9px] text-gray-400 font-normal truncate">
@@ -261,7 +261,7 @@ export function AvailabilityTable({
                         if (mouseDragMode.current === "deselect" &&  isSel) { mouseToggled.current.add(key); onCellToggle(ri, ci); }
                       }}
                       className={cn(
-                        "border-b border-r border-gray-200 text-center cursor-pointer transition-colors h-9 sm:h-10",
+                        "border-b border-r border-gray-200 text-center cursor-pointer transition-colors h-10",
                         isSelected ? "bg-gray-900 hover:bg-gray-700" : "bg-white hover:bg-gray-50"
                       )}
                       role="checkbox"
@@ -280,7 +280,7 @@ export function AvailabilityTable({
                     key={ci}
                     onClick={() => onCellClick?.(ri, ci)}
                     className={cn(
-                      "border-b border-r border-gray-200 text-center cursor-pointer transition-all h-9 sm:h-10",
+                      "border-b border-r border-gray-200 text-center cursor-pointer transition-all h-10",
                       summary && summary.count > 0
                         ? getHeatmapColor(summary.count, maxCount)
                         : "bg-white hover:bg-gray-50",
