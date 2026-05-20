@@ -12,6 +12,8 @@ export interface AxisEditorValue {
   rowMeta: RowMeta[];
 }
 
+type CalendarRowInterval = "ampm" | 10 | 30 | 60 | 120;
+
 interface AxisEditorProps {
   tableType: "timetable" | "calendar" | "date";
   initialValue: AxisEditorValue;
@@ -89,12 +91,14 @@ export function generateDateLabels(startDate: string, days: number): string[] {
   return labels;
 }
 
-function detectIntervalFromLabels(labels: string[]): 10 | 30 | 60 {
+function detectIntervalFromLabels(labels: string[]): CalendarRowInterval {
+  if (labels.length === 2 && labels[0] === "午前" && labels[1] === "午後") return "ampm";
   if (labels.length < 2) return 60;
   const toMins = (s: string) => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
   const diff = toMins(labels[1]) - toMins(labels[0]);
   if (diff === 10) return 10;
   if (diff === 30) return 30;
+  if (diff === 120) return 120;
   return 60;
 }
 
@@ -137,7 +141,7 @@ export function AxisEditor({
     }
     return "09:00";
   });
-  const [calRowInterval, setCalRowInterval] = useState<10 | 30 | 60>(() => {
+  const [calRowInterval, setCalRowInterval] = useState<CalendarRowInterval>(() => {
     if (tableType === "calendar" && initialValue.rowLabels.length >= 2) {
       return detectIntervalFromLabels(initialValue.rowLabels);
     }
@@ -146,7 +150,7 @@ export function AxisEditor({
   const [calRowEnd, setCalRowEnd] = useState(() => {
     if (tableType === "calendar" && initialValue.rowLabels.length >= 1 && /^\d{2}:\d{2}$/.test(initialValue.rowLabels[0] ?? "")) {
       const interval = detectIntervalFromLabels(initialValue.rowLabels);
-      return detectEndFromLabels(initialValue.rowLabels, interval);
+      return typeof interval === "number" ? detectEndFromLabels(initialValue.rowLabels, interval) : "18:00";
     }
     return "18:00";
   });
@@ -215,6 +219,11 @@ export function AxisEditor({
   // Generators
   useEffect(() => {
     if (tableType !== "calendar" || !calRowTouched.current) return;
+    if (calRowInterval === "ampm") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRowLabels(["午前", "午後"]);
+      return;
+    }
     const slots = generateTimeSlots(calRowStart, calRowEnd, calRowInterval);
     setRowLabels(slots.length > 0 ? slots.slice(0, 30) : [""]);
   }, [tableType, calRowStart, calRowEnd, calRowInterval]);
@@ -442,44 +451,59 @@ export function AxisEditor({
           <p className="text-sm font-medium text-gray-700 mb-3">縦軸ラベル（行）— 時間スロット</p>
           {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
           <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1">
-                <p className="text-xs text-gray-500 mb-1">開始</p>
-                <TimeSelect
-                  value={calRowStart}
-                  onChange={(v) => { calRowTouched.current = true; setCalRowStart(v); }}
-                  maxHour={23}
-                />
+            {calRowInterval !== "ampm" && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500 mb-1">開始</p>
+                  <TimeSelect
+                    value={calRowStart}
+                    onChange={(v) => { calRowTouched.current = true; setCalRowStart(v); }}
+                    maxHour={23}
+                  />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500 mb-1">終了</p>
+                  <TimeSelect
+                    value={calRowEnd}
+                    onChange={(v) => { calRowTouched.current = true; setCalRowEnd(v); }}
+                    maxHour={24}
+                  />
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-xs text-gray-500 mb-1">終了</p>
-                <TimeSelect
-                  value={calRowEnd}
-                  onChange={(v) => { calRowTouched.current = true; setCalRowEnd(v); }}
-                  maxHour={24}
-                />
-              </div>
-            </div>
+            )}
             <div>
               <p className="text-xs text-gray-500 mb-1">間隔</p>
-              <div className="flex gap-2">
-                {([60, 30, 10] as const).map((min) => (
+              <div className="grid grid-cols-5 gap-1.5 sm:flex sm:gap-2">
+                {([
+                  { value: "ampm", label: "午前午後" },
+                  { value: 120, label: "2時間" },
+                  { value: 60, label: "1時間" },
+                  { value: 30, label: "30分" },
+                  { value: 10, label: "10分" },
+                ] as const).map((option) => (
                   <button
-                    key={min}
+                    key={option.value}
                     type="button"
-                    onClick={() => { calRowTouched.current = true; setCalRowInterval(min); }}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                      calRowInterval === min
+                    onClick={() => { calRowTouched.current = true; setCalRowInterval(option.value); }}
+                    className={`min-w-0 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-colors ${
+                      calRowInterval === option.value
                         ? "bg-gray-900 text-white border-gray-900"
                         : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
                     }`}
                   >
-                    {min === 60 ? "1時間" : `${min}分`}
+                    {option.label}
                   </button>
                 ))}
               </div>
             </div>
             {(() => {
+              if (calRowInterval === "ampm") {
+                return (
+                  <div className="text-xs rounded-lg px-3 py-2 bg-gray-50 text-gray-500">
+                    2スロット: 午前 / 午後
+                  </div>
+                );
+              }
               const slots = generateTimeSlots(calRowStart, calRowEnd, calRowInterval);
               const over = slots.length > 30;
               return (
