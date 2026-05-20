@@ -16,6 +16,12 @@ const TABLE_TYPE_LABELS: Record<TableType, string> = {
   date: "日付形式（日付のみ）",
 };
 
+const TABLE_TYPE_SHORT_LABELS: Record<TableType, string> = {
+  timetable: "時間割形式",
+  calendar: "カレンダー形式",
+  date: "日付形式",
+};
+
 interface RowMeta { start: string; end: string; }
 
 const DEFAULT_ROW_META: Record<TableType, RowMeta[]> = {
@@ -204,16 +210,16 @@ export default function CreatePage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
-      <div className="mb-6">
+    <div className="max-w-2xl mx-auto px-4 py-4 sm:py-8">
+      <div className="mb-4 sm:mb-6">
         <h1
-          className="anim-hero text-2xl font-bold text-gray-900 mb-1"
+          className="anim-hero text-xl sm:text-2xl font-bold text-gray-900 mb-1"
           style={{ animationDelay: "0ms" }}
         >
           イベントを作成
         </h1>
         <p
-          className="anim-hero text-sm text-gray-500"
+          className="anim-hero hidden sm:block text-sm text-gray-500"
           style={{ animationDelay: "80ms" }}
         >
           2ステップで日程調整表を作成できます
@@ -222,14 +228,14 @@ export default function CreatePage() {
 
       {/* Step indicator */}
       <div
-        className="anim-hero flex items-center gap-2 mb-8"
+        className="anim-hero flex items-center gap-2 mb-5 sm:mb-8"
         style={{ animationDelay: "160ms" }}
       >
         {[1, 2].map((s) => (
           <div key={s} className="flex items-center gap-2">
             <button
               onClick={() => step > s && setStep(s as 1 | 2)}
-              className={`w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center transition-colors ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full text-sm font-bold flex items-center justify-center transition-colors ${
                 step === s
                   ? "bg-gray-900 text-white"
                   : step > s
@@ -240,7 +246,7 @@ export default function CreatePage() {
               {s}
             </button>
             {s < 2 && (
-              <div className={`h-0.5 w-8 ${step > s ? "bg-gray-900" : "bg-gray-200"}`} />
+              <div className={`h-0.5 w-6 sm:w-8 ${step > s ? "bg-gray-900" : "bg-gray-200"}`} />
             )}
           </div>
         ))}
@@ -252,7 +258,7 @@ export default function CreatePage() {
 
       {/* Step 1: Basic info */}
       {step === 1 && (
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           <Input
             label="イベント名 *"
             placeholder="例: ミーティング日程調整"
@@ -268,25 +274,30 @@ export default function CreatePage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={500}
-            rows={3}
+            rows={2}
             hint={`${description.length}/500文字`}
           />
 
           <div>
             <p className="text-sm font-medium text-gray-700 mb-2">表の形式 *</p>
-            <div className="grid gap-3">
+            <div className="grid gap-2 sm:gap-3">
               {(["calendar", "timetable", "date"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => handleTableTypeChange(t)}
-                  className={`flex items-start justify-between gap-4 text-left p-4 rounded-xl border-2 transition-colors w-full ${
+                  className={`flex items-center sm:items-start justify-between gap-3 sm:gap-4 text-left px-3 py-3 sm:p-4 rounded-xl border-2 transition-colors w-full ${
                     tableType === t
                       ? "border-gray-900 bg-gray-50"
                       : "border-gray-200 bg-white hover:border-gray-300"
                   }`}
                 >
-                  <div className="font-medium text-gray-900 text-sm min-w-0 break-words">{TABLE_TYPE_LABELS[t]}</div>
-                  <MiniPreview type={t} />
+                  <div className="font-medium text-gray-900 text-sm min-w-0 break-words">
+                    <span className="sm:hidden">{TABLE_TYPE_SHORT_LABELS[t]}</span>
+                    <span className="hidden sm:inline">{TABLE_TYPE_LABELS[t]}</span>
+                  </div>
+                  <div className="hidden sm:block">
+                    <MiniPreview type={t} />
+                  </div>
                 </button>
               ))}
             </div>
@@ -304,7 +315,7 @@ export default function CreatePage() {
 
       {/* Step 2: Axis settings + optional password */}
       {step === 2 && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <AxisEditor
             key={tableType}
             tableType={tableType}
