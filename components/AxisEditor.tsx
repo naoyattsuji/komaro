@@ -41,9 +41,9 @@ function TimeSelect({ value, onChange, maxHour = 23 }: {
     onChange(`${String(h).padStart(2, "0")}:${String(newM).padStart(2, "0")}`);
   };
 
-  const selectCls = "text-sm border border-gray-300 rounded-lg px-2 py-2 bg-white appearance-none text-center";
+  const selectCls = "w-full text-sm border border-gray-300 rounded-lg px-2 py-2 bg-white appearance-none text-center";
   return (
-    <div className="flex items-center gap-1">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1">
       <select value={h} onChange={(e) => setH(Number(e.target.value))} className={selectCls}>
         {hours.map((hv) => (
           <option key={hv} value={hv}>{String(hv).padStart(2, "0")}</option>
@@ -410,6 +410,8 @@ export function AxisEditor({
     setRowMeta(next);
   };
 
+  const previewColLimit = tableType === "date" ? 1 : 8;
+
   return (
     <div className="space-y-6">
       {/* ── Row section ── */}
@@ -418,8 +420,8 @@ export function AxisEditor({
           <p className="text-sm font-medium text-gray-700 mb-3">縦軸ラベル（行）— 日付</p>
           {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
           <div className="space-y-3">
-            <div className="flex gap-3">
-              <div className="flex-1 min-w-0">
+            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_9rem] gap-3">
+              <div className="min-w-0">
                 <p className="text-xs text-gray-500 mb-1">開始日</p>
                 <input
                   type="date"
@@ -428,7 +430,7 @@ export function AxisEditor({
                   className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
                 />
               </div>
-              <div className="w-28 shrink-0">
+              <div className="min-w-0">
                 <p className="text-xs text-gray-500 mb-1">日数</p>
                 <select
                   value={dateRowDays}
@@ -452,8 +454,8 @@ export function AxisEditor({
           {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
           <div className="space-y-3">
             {calRowInterval !== "ampm" && (
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="min-w-0">
                   <p className="text-xs text-gray-500 mb-1">開始</p>
                   <TimeSelect
                     value={calRowStart}
@@ -461,7 +463,7 @@ export function AxisEditor({
                     maxHour={23}
                   />
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0">
                   <p className="text-xs text-gray-500 mb-1">終了</p>
                   <TimeSelect
                     value={calRowEnd}
@@ -473,7 +475,7 @@ export function AxisEditor({
             )}
             <div>
               <p className="text-xs text-gray-500 mb-1">間隔</p>
-              <div className="grid grid-cols-5 gap-1.5 sm:flex sm:gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2">
                 {([
                   { value: "ampm", label: "午前午後" },
                   { value: 120, label: "2時間" },
@@ -485,11 +487,11 @@ export function AxisEditor({
                     key={option.value}
                     type="button"
                     onClick={() => { calRowTouched.current = true; setCalRowInterval(option.value); }}
-                    className={`min-w-0 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-colors ${
+                    className={`min-w-0 py-2 rounded-lg text-sm font-medium border transition-colors whitespace-nowrap ${
                       calRowInterval === option.value
                         ? "bg-gray-900 text-white border-gray-900"
                         : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-                    }`}
+                    } ${option.value === "ampm" ? "col-span-2 sm:col-span-1" : ""}`}
                   >
                     {option.label}
                   </button>
@@ -616,15 +618,15 @@ export function AxisEditor({
       {/* ── Col section ── */}
       {tableType === "date" ? null : (
         <div>
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
             <p className="text-sm font-medium text-gray-700">横軸ラベル（列）</p>
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+            <div className="grid grid-cols-2 rounded-lg border border-gray-200 overflow-hidden text-xs w-full sm:w-auto">
               {(["date", "weekday"] as const).map((mode, idx) => (
                 <button
                   key={mode}
                   type="button"
                   onClick={() => switchColMode(mode)}
-                  className={`px-3 py-1.5 font-medium transition-colors ${idx > 0 ? "border-l border-gray-200" : ""} ${
+                  className={`px-4 py-2 sm:py-1.5 font-medium transition-colors ${idx > 0 ? "border-l border-gray-200" : ""} ${
                     colMode === mode ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
                   }`}
                 >
@@ -637,8 +639,8 @@ export function AxisEditor({
 
           {colMode === "date" ? (
             <div className="space-y-3">
-              <div className="flex gap-3">
-                <div className="flex-1 min-w-0">
+              <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_9rem] gap-3">
+                <div className="min-w-0">
                   <p className="text-xs text-gray-500 mb-1">開始日</p>
                   <input
                     type="date"
@@ -647,7 +649,7 @@ export function AxisEditor({
                     className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
                   />
                 </div>
-                <div className="w-28 shrink-0">
+                <div className="min-w-0">
                   <p className="text-xs text-gray-500 mb-1">日数</p>
                   <select
                     value={calColDays}
@@ -689,21 +691,21 @@ export function AxisEditor({
       )}
 
       {/* ── Preview ── */}
-      <div className="bg-gray-50 rounded-xl p-4">
+      <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
         <p className="text-xs font-medium text-gray-500 mb-3">プレビュー</p>
-        <div className="overflow-x-auto">
-          <table className="border-collapse text-xs" style={{ tableLayout: "fixed" }}>
+        <div className="overflow-x-auto overscroll-x-contain">
+          <table className="border-collapse text-xs min-w-max sm:min-w-full table-fixed">
             <thead>
               <tr>
-                <th style={{ width: 80, minWidth: 80, maxWidth: 80 }} className="bg-gray-100 border border-gray-200 px-2 py-1" />
+                <th className="w-24 min-w-24 sm:w-28 bg-gray-100 border border-gray-200 px-2 py-2" />
                 {tableType === "date" ? (
-                  <th style={{ width: 52, minWidth: 52, maxWidth: 52 }} className="bg-gray-100 border border-gray-200 px-1 py-1 text-center overflow-hidden text-gray-400">参加可</th>
+                  <th className="w-20 min-w-20 bg-gray-100 border border-gray-200 px-2 py-2 text-center overflow-hidden text-gray-400">参加可</th>
                 ) : (
                   <>
-                    {colLabels.slice(0, 6).map((c, i) => (
-                      <th key={i} style={{ width: 52, minWidth: 52, maxWidth: 52 }} className="bg-gray-100 border border-gray-200 px-1 py-1 text-center overflow-hidden">{c || `列${i + 1}`}</th>
+                    {colLabels.slice(0, previewColLimit).map((c, i) => (
+                      <th key={i} className="w-20 min-w-20 sm:w-auto bg-gray-100 border border-gray-200 px-2 py-2 text-center overflow-hidden whitespace-nowrap">{c || `列${i + 1}`}</th>
                     ))}
-                    {colLabels.length > 6 && <th style={{ width: 24, minWidth: 24, maxWidth: 24 }} className="bg-gray-100 border border-gray-200 px-1 py-1 text-gray-400 text-center">…</th>}
+                    {colLabels.length > previewColLimit && <th className="w-8 min-w-8 bg-gray-100 border border-gray-200 px-1 py-2 text-gray-400 text-center">…</th>}
                   </>
                 )}
               </tr>
@@ -711,20 +713,20 @@ export function AxisEditor({
             <tbody>
               {rowLabels.slice(0, tableType === "date" ? 10 : undefined).map((r, i) => (
                 <tr key={i}>
-                  <td style={{ width: 80, minWidth: 80, maxWidth: 80 }} className="bg-gray-100 border border-gray-200 px-2 py-1 overflow-hidden">
+                  <td className="w-24 min-w-24 sm:w-28 bg-gray-100 border border-gray-200 px-2 py-2 overflow-hidden">
                     <div className="truncate">{r || `行${i + 1}`}</div>
                     {tableType === "timetable" && rowMeta[i]?.start && (
                       <div className="text-[9px] text-gray-400 truncate">{rowMeta[i].start}〜{rowMeta[i].end}</div>
                     )}
                   </td>
                   {tableType === "date" ? (
-                    <td style={{ width: 52, minWidth: 52, maxWidth: 52 }} className="border border-gray-200 text-center text-gray-300 bg-white h-8">—</td>
+                    <td className="w-20 min-w-20 border border-gray-200 text-center text-gray-300 bg-white h-9">—</td>
                   ) : (
                     <>
-                      {colLabels.slice(0, 6).map((_, ci) => (
-                        <td key={ci} style={{ width: 52, minWidth: 52, maxWidth: 52 }} className="border border-gray-200 text-center text-gray-300 bg-white h-8">—</td>
+                      {colLabels.slice(0, previewColLimit).map((_, ci) => (
+                        <td key={ci} className="w-20 min-w-20 sm:w-auto border border-gray-200 text-center text-gray-300 bg-white h-9">—</td>
                       ))}
-                      {colLabels.length > 6 && <td style={{ width: 24 }} className="border border-gray-200 px-1 py-1 text-gray-300 bg-white">…</td>}
+                      {colLabels.length > previewColLimit && <td className="w-8 min-w-8 border border-gray-200 px-1 py-2 text-gray-300 bg-white">…</td>}
                     </>
                   )}
                 </tr>

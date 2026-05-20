@@ -204,7 +204,9 @@ export default function CreatePage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
+    <div className={`mx-auto px-4 py-6 sm:py-8 transition-[max-width] ${
+      step === 2 ? "max-w-4xl" : "max-w-2xl"
+    }`}>
       <div className="mb-6">
         <h1
           className="anim-hero text-2xl font-bold text-gray-900 mb-1"
@@ -319,10 +321,10 @@ export default function CreatePage() {
             <button
               type="button"
               onClick={() => setShowPasswordSection(!showPasswordSection)}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
             >
-              <span>🔒 編集用パスワードを設定する（任意）</span>
-              <span className="text-gray-400 text-xs">{showPasswordSection ? "▲" : "▼"}</span>
+              <span className="min-w-0">🔒 編集用パスワードを設定する（任意）</span>
+              <span className="text-gray-400 text-xs shrink-0">{showPasswordSection ? "▲" : "▼"}</span>
             </button>
             {showPasswordSection && (
               <div className="px-4 pb-4 space-y-2 border-t border-gray-100">
@@ -353,9 +355,9 @@ export default function CreatePage() {
             )}
           </div>
 
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={() => setStep(1)} className="flex-1">戻る</Button>
-            <Button onClick={handleSubmit} loading={loading} className="flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Button variant="secondary" onClick={() => setStep(1)} className="w-full">戻る</Button>
+            <Button onClick={handleSubmit} loading={loading} className="w-full">
               イベントを作成する
             </Button>
           </div>
