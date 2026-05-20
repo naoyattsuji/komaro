@@ -41,7 +41,7 @@ function TimeSelect({ value, onChange, maxHour = 23 }: {
     onChange(`${String(h).padStart(2, "0")}:${String(newM).padStart(2, "0")}`);
   };
 
-  const selectCls = "w-full text-sm border border-gray-300 rounded-lg px-2 py-2 bg-white appearance-none text-center";
+  const selectCls = "w-full text-sm border border-gray-300 rounded-lg px-1.5 py-2 bg-white appearance-none text-center sm:px-2";
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1">
       <select value={h} onChange={(e) => setH(Number(e.target.value))} className={selectCls}>
@@ -413,21 +413,21 @@ export function AxisEditor({
   const previewColLimit = tableType === "date" ? 1 : 5;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* ── Row section ── */}
       {tableType === "date" ? (
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-3">縦軸ラベル（行）— 日付</p>
+          <p className="text-sm font-medium text-gray-700 mb-2 sm:mb-3">縦軸ラベル（行）— 日付</p>
           {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_9rem] gap-3">
+          <div className="space-y-2.5 sm:space-y-3">
+            <div className="grid grid-cols-[minmax(0,1fr)_6rem] gap-2 sm:grid-cols-[minmax(0,1fr)_9rem] sm:gap-3">
               <div className="min-w-0">
                 <p className="text-xs text-gray-500 mb-1">開始日</p>
                 <input
                   type="date"
                   value={dateRowStartDate}
                   onChange={(e) => { dateRowTouched.current = true; setDateRowStartDate(e.target.value); }}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-2.5 py-2 bg-white sm:px-3"
                 />
               </div>
               <div className="min-w-0">
@@ -435,7 +435,7 @@ export function AxisEditor({
                 <select
                   value={dateRowDays}
                   onChange={(e) => { dateRowTouched.current = true; setDateRowDays(Number(e.target.value)); }}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-2 py-2 bg-white sm:px-3"
                 >
                   {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
                     <option key={d} value={d}>{d}日間</option>
@@ -450,11 +450,11 @@ export function AxisEditor({
         </div>
       ) : tableType === "calendar" ? (
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-3">縦軸ラベル（行）— 時間スロット</p>
+          <p className="text-sm font-medium text-gray-700 mb-2 sm:mb-3">縦軸ラベル（行）— 時間スロット</p>
           {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             {calRowInterval !== "ampm" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <div className="min-w-0">
                   <p className="text-xs text-gray-500 mb-1">開始</p>
                   <TimeSelect
@@ -475,7 +475,7 @@ export function AxisEditor({
             )}
             <div>
               <p className="text-xs text-gray-500 mb-1">間隔</p>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                 {([
                   { value: "ampm", label: "午前午後" },
                   { value: 120, label: "2時間" },
@@ -487,11 +487,11 @@ export function AxisEditor({
                     key={option.value}
                     type="button"
                     onClick={() => { calRowTouched.current = true; setCalRowInterval(option.value); }}
-                    className={`min-w-0 px-2 py-2 rounded-lg text-sm font-medium border transition-colors whitespace-nowrap ${
+                    className={`min-w-0 px-1 py-2 rounded-lg text-[12px] font-medium border transition-colors whitespace-nowrap sm:px-2 sm:text-sm ${
                       calRowInterval === option.value
                         ? "bg-gray-900 text-white border-gray-900"
                         : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-                    } ${option.value === "ampm" ? "col-span-2 sm:col-span-1" : ""}`}
+                    }`}
                   >
                     {option.label}
                   </button>
@@ -618,15 +618,15 @@ export function AxisEditor({
       {/* ── Col section ── */}
       {tableType === "date" ? null : (
         <div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
+          <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-3">
             <p className="text-sm font-medium text-gray-700">横軸ラベル（列）</p>
-            <div className="grid grid-cols-2 rounded-lg border border-gray-200 overflow-hidden text-xs w-full sm:w-auto">
+            <div className="grid w-[8.5rem] grid-cols-2 rounded-lg border border-gray-200 overflow-hidden text-xs sm:w-auto">
               {(["date", "weekday"] as const).map((mode, idx) => (
                 <button
                   key={mode}
                   type="button"
                   onClick={() => switchColMode(mode)}
-                  className={`px-4 py-2 sm:py-1.5 font-medium transition-colors ${idx > 0 ? "border-l border-gray-200" : ""} ${
+                  className={`px-3 py-1.5 font-medium transition-colors sm:px-4 ${idx > 0 ? "border-l border-gray-200" : ""} ${
                     colMode === mode ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
                   }`}
                 >
@@ -638,15 +638,15 @@ export function AxisEditor({
           {errors.colLabels && <p className="text-xs text-red-500 mb-2">{errors.colLabels}</p>}
 
           {colMode === "date" ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_9rem] gap-3">
+            <div className="space-y-2.5 sm:space-y-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_6rem] gap-2 sm:grid-cols-[minmax(0,1fr)_9rem] sm:gap-3">
                 <div className="min-w-0">
                   <p className="text-xs text-gray-500 mb-1">開始日</p>
                   <input
                     type="date"
                     value={calColStartDate}
                     onChange={(e) => { calColTouched.current = true; setCalColStartDate(e.target.value); }}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                    className="w-full text-sm border border-gray-300 rounded-lg px-2.5 py-2 bg-white sm:px-3"
                   />
                 </div>
                 <div className="min-w-0">
@@ -654,7 +654,7 @@ export function AxisEditor({
                   <select
                     value={calColDays}
                     onChange={(e) => { calColTouched.current = true; setCalColDays(Number(e.target.value)); }}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                    className="w-full text-sm border border-gray-300 rounded-lg px-2 py-2 bg-white sm:px-3"
                   >
                     {Array.from({ length: 20 }, (_, i) => i + 1).map((d) => (
                       <option key={d} value={d}>{d}日間</option>
@@ -668,13 +668,13 @@ export function AxisEditor({
             </div>
           ) : (
             <div>
-              <div className="flex gap-1.5 flex-wrap">
+              <div className="grid grid-cols-7 gap-1.5 sm:flex sm:flex-wrap">
                 {ALL_DAYS.map((day, i) => (
                   <button
                     key={day}
                     type="button"
                     onClick={() => toggleWeekday(i)}
-                    className={`w-9 h-9 rounded-lg text-sm font-medium border transition-colors ${
+                    className={`h-9 w-full rounded-lg text-sm font-medium border transition-colors sm:w-9 ${
                       weekdaySelection[i]
                         ? "bg-gray-900 text-white border-gray-900"
                         : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
