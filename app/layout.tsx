@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/components/ui/Toast";
+import { NativeAppChrome, NativeBackButton } from "@/components/NativeAppChrome";
 import Link from "next/link";
 import Image from "next/image";
 import { GoogleAnalytics } from "@next/third-parties/google";
@@ -97,12 +98,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja" className={`${geist.variable} h-full overflow-y-scroll`}>
       <body className="min-h-full flex flex-col bg-white antialiased font-sans">
+        <NativeAppChrome />
         <header className="sticky top-0 z-30 bg-white border-b border-gray-100 pt-safe">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5">
-              <Image src="/komaro-logo.png" alt="" width={36} height={36} className="h-9 w-9 object-contain" priority />
-              <Image src="/komaro-word.png" alt="KOMARO" width={110} height={30} className="h-7 w-auto object-contain" priority />
-            </Link>
+            <div className="flex min-w-0 items-center">
+              <NativeBackButton />
+              <Link href="/" className="flex min-w-0 items-center gap-2.5">
+                <Image src="/komaro-logo.png" alt="" width={36} height={36} className="h-9 w-9 shrink-0 object-contain" priority />
+                <Image src="/komaro-word.png" alt="KOMARO" width={110} height={30} className="h-7 w-auto min-w-0 object-contain" priority />
+              </Link>
+            </div>
             <nav className="flex items-center gap-5">
               <Link href="/help" className="hidden sm:block text-sm text-gray-500 hover:text-gray-900 transition-colors">
                 ヘルプ
@@ -114,7 +119,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-gray-100 bg-white">
+        <footer className="native-app-hidden border-t border-gray-100 bg-white">
           <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Image src="/komaro-logo.png" alt="" width={20} height={20} className="h-5 w-5 object-contain opacity-40" />

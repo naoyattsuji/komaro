@@ -14,6 +14,10 @@
   }
 }
 
+body[data-native-app="true"] .native-app-hidden {
+  display: none;
+}
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
 }

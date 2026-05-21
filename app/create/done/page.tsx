@@ -6,6 +6,7 @@ import { CheckCircle, AlertTriangle, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { UrlDisplay } from "@/components/CopyButton";
 import { FadeInSection } from "@/components/FadeInSection";
+import { showToast } from "@/components/ui/Toast";
 import { getParticipantUrl, getEditUrl } from "@/lib/utils";
 import { trackEvent } from "@/lib/ga";
 
@@ -35,7 +36,6 @@ export default function CreateDonePage({
   const editUrl = getEditUrl(id, token);
 
   const lineShareUrl = `https://line.me/R/msg/text/?${encodeURIComponent(`【コマを使った日程調整】みんなの空き時間をコマの色で確認してね！\n空いてるコマをタップするだけ👇\n${participantUrl}`)}`;
-  const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`日程調整に参加してください！`)}&url=${encodeURIComponent(participantUrl)}`;
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10">
@@ -96,7 +96,7 @@ export default function CreateDonePage({
           </a>
           <button
             onClick={async () => {
-              trackEvent("share_click", { source: "create_done", method: "native_or_x" });
+              trackEvent("share_click", { source: "create_done", method: "native_or_copy" });
               if (typeof navigator !== "undefined" && navigator.share) {
                 try {
                   await navigator.share({
@@ -106,7 +106,19 @@ export default function CreateDonePage({
                   });
                 } catch { /* user cancelled */ }
               } else {
-                window.open(xShareUrl, "_blank");
+                try {
+                  await navigator.clipboard.writeText(participantUrl);
+                } catch {
+                  const textarea = document.createElement("textarea");
+                  textarea.value = participantUrl;
+                  textarea.style.cssText = "position:fixed;opacity:0;pointer-events:none";
+                  document.body.appendChild(textarea);
+                  textarea.focus();
+                  textarea.select();
+                  document.execCommand("copy");
+                  document.body.removeChild(textarea);
+                }
+                showToast("共有リンクをコピーしました");
               }
             }}
             className="flex items-center justify-center gap-1.5 w-full mt-2 py-2 rounded-xl text-gray-400 text-xs hover:text-gray-600 transition-colors"
