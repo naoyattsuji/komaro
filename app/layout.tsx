@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/components/ui/Toast";
-import { NativeAppChrome, NativeBackButton } from "@/components/NativeAppChrome";
+import { NativeAppChrome } from "@/components/NativeAppChrome";
 import Link from "next/link";
 import Image from "next/image";
 import { GoogleAnalytics } from "@next/third-parties/google";
@@ -102,7 +102,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="sticky top-0 z-30 bg-white border-b border-gray-100 pt-safe">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <div className="flex min-w-0 items-center">
-              <NativeBackButton />
               <Link href="/" className="flex min-w-0 items-center gap-2.5">
                 <Image src="/komaro-logo.png" alt="" width={36} height={36} className="h-9 w-9 shrink-0 object-contain" priority />
                 <Image src="/komaro-word.png" alt="KOMARO" width={110} height={30} className="h-7 w-auto min-w-0 object-contain" priority />
