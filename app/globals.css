@@ -5,6 +5,15 @@
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
 .mb-safe  { margin-bottom:  env(safe-area-inset-bottom, 0px); }
 
+/* Prevent iOS Safari/WebView from zooming when form fields receive focus. */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
 }
