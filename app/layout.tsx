@@ -97,7 +97,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja" className={`${geist.variable} h-full overflow-y-scroll`}>
       <body className="min-h-full flex flex-col bg-white antialiased font-sans">
-        <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
+        <header className="sticky top-0 z-30 bg-white border-b border-gray-100 pt-safe">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5">
               <Image src="/komaro-logo.png" alt="" width={36} height={36} className="h-9 w-9 object-contain" priority />
