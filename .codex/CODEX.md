@@ -22,6 +22,9 @@ npm run dev
 npm run lint
 npm run build
 npm run db:push
+npm run cap:sync
+npm run cap:open:ios
+npm run cap:open:android
 ```
 
 日本語:
@@ -30,6 +33,18 @@ npm run db:push
 - `npm run lint`: コードの静的チェックをします。
 - `npm run build`: 本番用ビルドを作ります。`prisma generate` も実行されます。
 - `npm run db:push`: Prisma のスキーマをデータベースへ反映します。実行前に接続先を確認してください。
+- `npm run cap:sync`: Capacitor の iOS / Android プロジェクトへ設定を同期します。
+- `npm run cap:open:ios`: Xcode で iOS プロジェクトを開きます。
+- `npm run cap:open:android`: Android Studio で Android プロジェクトを開きます。
+
+## Native App
+
+- Native app notes: `.codex/native-app.md`
+  - 日本語: iOS / Android アプリ版のCapacitor構成メモです。
+- App wrapper: Capacitor.
+  - 日本語: 既存の Next.js アプリを活かし、`https://komaro.app` をアプリ内で読み込む方式です。
+- Native project folders: `ios/`, `android/`
+  - 日本語: Xcode / Android Studio 用の生成済みプロジェクトです。
 
 ## Launch
 
@@ -60,4 +75,3 @@ npm run dev
   - 日本語: `.env` の中身はドキュメントやメモリにコピーしません。
 - Deployment and database changes require explicit approval.
   - 日本語: デプロイ（本番公開）や DB 変更は、実行前に明示的な承認が必要です。
-
