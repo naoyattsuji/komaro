@@ -13,6 +13,7 @@ import { useEffect } from "react";
 import { FadeInSection } from "@/components/FadeInSection";
 import { KOMAROLoader } from "@/components/KOMAROLoader";
 import { trackEvent } from "@/lib/ga";
+import { rememberRecentEvent } from "@/lib/recentEvents";
 // import { CalendarImageReader } from "@/components/CalendarImageReader";
 // import { VoiceInputReader } from "@/components/VoiceInputReader";
 
@@ -133,6 +134,7 @@ export default function AnswerPage({
         return;
       }
       showToast(isEditMode ? "回答を修正しました！" : "回答を送信しました！");
+      rememberRecentEvent({ id: eventId, title: event?.title, kind: "joined" });
       if (isEditMode) {
         router.push(`/e/${eventId}`);
       } else {

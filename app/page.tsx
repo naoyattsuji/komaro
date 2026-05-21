@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { FadeInSection } from "@/components/FadeInSection";
+import { NativeRecentEvents } from "@/components/NativeRecentEvents";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -79,6 +80,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <NativeRecentEvents />
 
       {/* Demo — mobile only (desktop sees it in the hero) */}
       <section className="lg:hidden bg-white py-16 border-b border-gray-100">

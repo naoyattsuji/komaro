@@ -9,6 +9,7 @@ import { FadeInSection } from "@/components/FadeInSection";
 import { showToast } from "@/components/ui/Toast";
 import { getParticipantUrl, getEditUrl } from "@/lib/utils";
 import { trackEvent } from "@/lib/ga";
+import { rememberRecentEvent } from "@/lib/recentEvents";
 
 export default function CreateDonePage({
   searchParams,
@@ -18,7 +19,9 @@ export default function CreateDonePage({
   const { id, token } = use(searchParams);
 
   useEffect(() => {
-    if (id) trackEvent("event_created", { event_id: id });
+    if (!id) return;
+    trackEvent("event_created", { event_id: id });
+    rememberRecentEvent({ id, kind: "created" });
   }, [id]);
 
   if (!id || !token) {

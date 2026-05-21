@@ -77,6 +77,9 @@ export default function PrivacyPage() {
                 プライバシーポリシー
               </a>
             </li>
+            <li>
+              <strong>Google Analytics</strong>（アクセス解析）— サービス改善のため、閲覧状況や利用状況を統計的に分析します。
+            </li>
           </ul>
         </section>
 
@@ -91,8 +94,8 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-base font-bold text-gray-900 mb-3">7. Cookie・トラッキング</h2>
           <p>
-            本サービスは現在、マーケティング目的のCookieやトラッキングツールを使用していません。
-            将来的にアクセス解析ツールを導入する場合は、本ポリシーを更新のうえお知らせします。
+            本サービスでは、サービス改善や利用状況の把握のためにGoogle Analyticsを使用する場合があります。
+            取得される情報は統計的な分析に利用し、広告配信や第三者サービスを横断した個人の追跡を目的として使用しません。
           </p>
         </section>
 

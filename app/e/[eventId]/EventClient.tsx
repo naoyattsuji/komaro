@@ -23,6 +23,7 @@ import { getParticipantUrl } from "@/lib/utils";
 import { FadeInSection } from "@/components/FadeInSection";
 import { KOMAROLoader } from "@/components/KOMAROLoader";
 import { trackEvent } from "@/lib/ga";
+import { rememberRecentEvent } from "@/lib/recentEvents";
 
 interface EventClientProps {
   eventId: string;
@@ -136,12 +137,13 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
 
   useEffect(() => {
     trackEvent("event_view", { event_id: eventId });
+    rememberRecentEvent({ id: eventId, title: event.title, kind: "viewed" });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSummary();
     fetchComments();
     const interval = setInterval(fetchSummary, 30000);
     return () => clearInterval(interval);
-  }, [fetchSummary, fetchComments, eventId]);
+  }, [fetchSummary, fetchComments, event.title, eventId]);
 
   // Auto-select all participants (including newly joined ones), unless URL filter was set
   useEffect(() => {
