@@ -365,16 +365,16 @@ export function AvailabilityTable({
       </table>
     </div>
     {isScrollable && (
-      <div className="mt-2 px-0.5 py-1.5">
-        <div className="relative h-1 rounded-full bg-gray-100">
+      <div className="mt-1 px-1 py-4">
+        <div className="relative h-0.5 rounded-full bg-gray-100">
           <div
             ref={thumbRef}
             onPointerDown={onThumbPointerDown}
             onPointerMove={onThumbPointerMove}
             onPointerUp={onThumbPointerUp}
             onPointerCancel={onThumbPointerUp}
-            className="absolute top-0 h-full rounded-full bg-gray-300 hover:bg-gray-400 active:bg-gray-500 cursor-grab active:cursor-grabbing transition-colors touch-none"
-            style={{ left: 0, width: 32 }}
+            className="absolute top-1/2 -translate-y-1/2 h-3 rounded-full bg-gray-300 hover:bg-gray-400 active:bg-gray-500 cursor-grab active:cursor-grabbing transition-colors touch-none"
+            style={{ left: 0, width: 40 }}
           />
         </div>
       </div>
