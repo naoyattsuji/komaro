@@ -226,6 +226,11 @@ export function AvailabilityTable({
     };
   }, [updateThumb]);
 
+  // thumb が DOM に現れた直後に正しい幅を反映する
+  useEffect(() => {
+    if (isScrollable) requestAnimationFrame(updateThumb);
+  }, [isScrollable, updateThumb]);
+
   const dragging = useRef(false);
   const dragStartX = useRef(0);
   const dragStartSL = useRef(0);
