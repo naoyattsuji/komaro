@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { cn, getHeatmapColor, getHeatmapTextColor } from "@/lib/utils";
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -192,11 +192,72 @@ export function AvailabilityTable({
   }, []);
 
   const tableWidth = ROW_LABEL_W + colLabels.length * COL_W;
-  const showScrollHint = colLabels.length > 5;
+
+  // ── Custom scrollbar ─────────────────────────────────────────────
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const [isScrollable, setIsScrollable] = useState(false);
+
+  const updateThumb = useCallback(() => {
+    const container = scrollContainerRef.current;
+    const thumb = thumbRef.current;
+    if (!container || !thumb) return;
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    const scrollable = scrollWidth - clientWidth;
+    const trackW = thumb.parentElement?.clientWidth ?? clientWidth;
+    if (scrollable <= 0 || trackW <= 0) return;
+    const thumbW = Math.max(32, (clientWidth / scrollWidth) * trackW);
+    thumb.style.width = `${thumbW}px`;
+    thumb.style.left = `${(scrollLeft / scrollable) * (trackW - thumbW)}px`;
+  }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const ro = new ResizeObserver(() => {
+      setIsScrollable(container.scrollWidth > container.clientWidth + 1);
+      updateThumb();
+    });
+    ro.observe(container);
+    container.addEventListener("scroll", updateThumb, { passive: true });
+    return () => {
+      ro.disconnect();
+      container.removeEventListener("scroll", updateThumb);
+    };
+  }, [updateThumb]);
+
+  const dragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartSL = useRef(0);
+
+  const onThumbPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    dragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartSL.current = scrollContainerRef.current?.scrollLeft ?? 0;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onThumbPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
+    const container = scrollContainerRef.current;
+    const thumb = thumbRef.current;
+    if (!container || !thumb) return;
+    const { scrollWidth, clientWidth } = container;
+    const trackW = thumb.parentElement?.clientWidth ?? clientWidth;
+    const thumbW = thumb.clientWidth;
+    const ratio = (scrollWidth - clientWidth) / Math.max(1, trackW - thumbW);
+    container.scrollLeft = dragStartSL.current + (e.clientX - dragStartX.current) * ratio;
+  };
+
+  const onThumbPointerUp = () => { dragging.current = false; };
 
   return (
     <div>
-    <div className="overflow-auto rounded-xl border border-gray-200 shadow-sm select-none relative z-0">
+    <div
+      ref={scrollContainerRef}
+      className="overflow-auto rounded-xl border border-gray-200 shadow-sm select-none relative z-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
       <table
         ref={tableRef}
         className="border-collapse table-fixed w-full"
@@ -303,10 +364,20 @@ export function AvailabilityTable({
         </tbody>
       </table>
     </div>
-    {showScrollHint && (
-      <p className="mt-1.5 text-[10px] text-gray-400 text-center sm:hidden">
-        ← 左右にスワイプできます →
-      </p>
+    {isScrollable && (
+      <div className="mt-2 px-0.5 py-1.5">
+        <div className="relative h-1 rounded-full bg-gray-100">
+          <div
+            ref={thumbRef}
+            onPointerDown={onThumbPointerDown}
+            onPointerMove={onThumbPointerMove}
+            onPointerUp={onThumbPointerUp}
+            onPointerCancel={onThumbPointerUp}
+            className="absolute top-0 h-full rounded-full bg-gray-300 hover:bg-gray-400 active:bg-gray-500 cursor-grab active:cursor-grabbing transition-colors touch-none"
+            style={{ left: 0, width: 32 }}
+          />
+        </div>
+      </div>
     )}
     </div>
   );
