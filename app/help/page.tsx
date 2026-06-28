@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { ContactForm } from "@/components/ContactForm";
 import { FadeInSection } from "@/components/FadeInSection";
 
 export const metadata: Metadata = {
@@ -140,12 +139,20 @@ export default function HelpPage() {
         </p>
       </div>
 
-      {/* Contact form */}
+      {/* Contact — HP に集約 */}
       <FadeInSection delay={120}>
         <section className="mb-10 bg-white rounded-2xl border border-gray-200 p-6">
           <h2 className="font-bold text-gray-900 mb-1">お問い合わせ</h2>
-          <p className="text-sm text-gray-500 mb-6">FAQで解決しない場合はこちらからご連絡ください。</p>
-          <ContactForm />
+          <p className="text-sm text-gray-500 mb-5">FAQで解決しない場合はこちらからご連絡ください。</p>
+          <a
+            href="https://naoya-tsuji.com/?topic=komaro#contact"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-900 border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-colors"
+          >
+            お問い合わせフォームへ
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
         </section>
       </FadeInSection>
 

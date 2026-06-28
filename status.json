@@ -15,6 +15,7 @@
     }
   },
   "recent_work": [
+    "2026-06-29: ヘルプページのお問い合わせ導線をHPの共通問い合わせフォームへ集約（https://naoya-tsuji.com/?topic=komaro#contact）。KOMARO内の重複更新画像はHP側で公開済みのため整理。",
     "2026-06-29: iOS申請準備を再開。モバイルviewportを明示し、ヘッダーのスマホ幅はみ出しを抑制。ExportOptionsを追加し、iPhone 17 Pro Maxスクリーンショット候補と修正後Archiveを作成。commit/push/Vercel本番デプロイ完了。",
     "2026-05-21: Capacitor iOS/Androidアプリ版の土台構築（ios/・android/ディレクトリ・Bundle ID app.komaro・アイコン・スプラッシュ設定済み）",
     "2026-05-21: スマホUI大幅改善（余白・safe-area・iOS自動ズーム抑止・共有導線整理）",
@@ -22,7 +23,7 @@
     "2026-05-20: 通知系トークンローテーション・本番再デプロイ完了",
     "2026-05-20: スマホUI改善（作成画面レスポンシブ・カレンダー時間スロット拡充）"
   ],
-  "today_work": "iOS申請準備を再検証。App Store提出用ExportOptions追加、モバイルviewport修正、iPhone 17 Pro Maxスクリーンショット候補作成、lint/build/cap sync/Archive成功。commit/push/Vercel本番デプロイ完了。",
+  "today_work": "iOS申請準備を再検証済み。追加でヘルプページのお問い合わせ導線をHP共通フォームへ集約し、問い合わせ管理を一本化。lint/build通過確認済み。",
   "next_actions": [
     "App Store Connect権限のあるApple ID/ProviderでXcodeにログインし、iOS Distribution証明書とApp Store provisioning profile作成権限を確認する",
     "App Store ConnectにKOMAROのアプリレコードを作成（Bundle ID app.komaro、SKU komaro-ios、主言語 日本語、カテゴリ 仕事効率化）",
