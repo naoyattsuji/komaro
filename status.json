@@ -15,14 +15,14 @@
     }
   },
   "recent_work": [
-    "2026-06-29: iOS申請準備を再開。モバイルviewportを明示し、ヘッダーのスマホ幅はみ出しを抑制。ExportOptionsを追加し、iPhone 17 Pro Maxスクリーンショット候補と修正後Archiveを作成。",
+    "2026-06-29: iOS申請準備を再開。モバイルviewportを明示し、ヘッダーのスマホ幅はみ出しを抑制。ExportOptionsを追加し、iPhone 17 Pro Maxスクリーンショット候補と修正後Archiveを作成。commit/push/Vercel本番デプロイ完了。",
     "2026-05-21: Capacitor iOS/Androidアプリ版の土台構築（ios/・android/ディレクトリ・Bundle ID app.komaro・アイコン・スプラッシュ設定済み）",
     "2026-05-21: スマホUI大幅改善（余白・safe-area・iOS自動ズーム抑止・共有導線整理）",
     "2026-05-21: App Store申請準備完了（.codex/app-store-submission.md・アーカイブビルド成功）",
     "2026-05-20: 通知系トークンローテーション・本番再デプロイ完了",
     "2026-05-20: スマホUI改善（作成画面レスポンシブ・カレンダー時間スロット拡充）"
   ],
-  "today_work": "iOS申請準備を再検証。App Store提出用ExportOptions追加、モバイルviewport修正、iPhone 17 Pro Maxスクリーンショット候補作成、lint/build/cap sync/Archive成功。",
+  "today_work": "iOS申請準備を再検証。App Store提出用ExportOptions追加、モバイルviewport修正、iPhone 17 Pro Maxスクリーンショット候補作成、lint/build/cap sync/Archive成功。commit/push/Vercel本番デプロイ完了。",
   "next_actions": [
     "App Store Connect権限のあるApple ID/ProviderでXcodeにログインし、iOS Distribution証明書とApp Store provisioning profile作成権限を確認する",
     "App Store ConnectにKOMAROのアプリレコードを作成（Bundle ID app.komaro、SKU komaro-ios、主言語 日本語、カテゴリ 仕事効率化）",
