@@ -117,6 +117,9 @@ Tracking:
 - [x] Simulator build launches successfully.
 - [x] Product page draft prepared.
 - [x] App Privacy draft prepared.
+- [x] iPhone 17 Pro Max screenshot candidate captured.
+- [x] CLI export options prepared at `.codex/app-store-export-options.plist`.
+- [x] Mobile viewport explicitly set to `width=device-width`.
 - [ ] Upload archive to App Store Connect.
 - [ ] Create App Store Connect app record.
 - [ ] Add screenshots.
@@ -128,11 +131,19 @@ Tracking:
 
 ## Current Upload Blocker
 
-`xcodebuild -exportArchive` failed because Xcode could not find an App Store Connect provider for the signed-in account.
+`xcodebuild -exportArchive` failed because Xcode could not authenticate with an App Store Connect provider and could not create App Store distribution signing assets.
 
 日本語:
 
-- Archive作成は成功しています。
-- CLIアップロードは `No Accounts with App Store Connect Access` で停止しました。
-- Xcodeの `Settings > Accounts` でApp Store Connect権限のあるApple IDにログインし、正しいTeam/Providerを選択する必要があります。
-- その後、Xcode OrganizerからArchiveをアップロードするか、App Store Connect APIキーを用意してCLIアップロードを再実行します。
+- 2026-06-29時点で、Archive作成は `build/KOMARO.xcarchive` に成功しています。
+- `npm run lint`、`npm run build`、`npm run cap:sync`、`xcodebuild ... archive -allowProvisioningUpdates` は成功しています。
+- CLI export は `No provider associated with App Store Connect user`、`No signing certificate "iOS Distribution" found`、`Team "NAOYA TSUJI" does not have permission to create "iOS App Store" provisioning profiles` で停止しました。
+- Xcodeの `Settings > Accounts` でApp Store Connect権限のあるApple ID / Providerを確認し、App Store配布用の証明書・プロビジョニングプロファイルを作れる権限が必要です。
+- 権限付与後は、Xcode OrganizerからArchiveをアップロードするか、App Store Connect APIキーを用意して `.codex/app-store-export-options.plist` でCLI export/uploadを再実行します。
+
+## Screenshot Candidates
+
+日本語メモ:
+
+- `assets/app-store/screenshots/iphone-17-pro-max/01-home-retry.png`
+  - iPhone 17 Pro Max シミュレータで撮影したホーム画面候補です。

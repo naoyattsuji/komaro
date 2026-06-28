@@ -10,6 +10,8 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   viewportFit: "cover",
 };
 
@@ -96,23 +98,24 @@ const jsonLd = [
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ja" className={`${geist.variable} h-full overflow-y-scroll`}>
-      <body className="min-h-full flex flex-col bg-white antialiased font-sans">
+    <html lang="ja" className={`${geist.variable} h-full overflow-x-hidden overflow-y-scroll`}>
+      <body className="min-h-full flex flex-col overflow-x-hidden bg-white antialiased font-sans">
         <NativeAppChrome />
         <header className="sticky top-0 z-30 bg-white border-b border-gray-100 pt-safe">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <div className="flex min-w-0 items-center">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex min-w-0 items-center justify-between gap-3">
+            <div className="flex min-w-0 shrink items-center">
               <Link href="/" className="flex min-w-0 items-center gap-2.5">
                 <Image src="/komaro-logo.png" alt="" width={36} height={36} className="h-9 w-9 shrink-0 object-contain" priority />
-                <Image src="/komaro-word.png" alt="KOMARO" width={110} height={30} className="h-7 w-auto min-w-0 object-contain" priority />
+                <Image src="/komaro-word.png" alt="KOMARO" width={110} height={30} className="h-6 w-auto min-w-0 object-contain sm:h-7" priority />
               </Link>
             </div>
-            <nav className="flex items-center gap-5">
+            <nav className="flex shrink-0 items-center gap-5">
               <Link href="/help" className="hidden sm:block text-sm text-gray-500 hover:text-gray-900 transition-colors">
                 ヘルプ
               </Link>
-              <Link href="/create" className="text-sm font-medium text-white bg-gray-900 hover:bg-gray-700 px-4 py-2 rounded-md transition-colors whitespace-nowrap">
-                イベントを作成
+              <Link href="/create" className="text-sm font-medium text-white bg-gray-900 hover:bg-gray-700 px-3 py-2 rounded-md transition-colors whitespace-nowrap sm:px-4" aria-label="イベントを作成">
+                <span className="sm:hidden">作成</span>
+                <span className="hidden sm:inline">イベントを作成</span>
               </Link>
             </nav>
           </div>
