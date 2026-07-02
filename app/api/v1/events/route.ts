@@ -44,9 +44,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    if (!Array.isArray(rowLabels) || rowLabels.length === 0 || rowLabels.length > 30) {
+    if (!Array.isArray(rowLabels) || rowLabels.length === 0 || rowLabels.length > 62) {
       return Response.json(
-        { error: { code: "INVALID_INPUT", message: "縦軸ラベルは1〜30個必要です" } },
+        { error: { code: "INVALID_INPUT", message: "縦軸ラベルは1〜62個必要です" } },
         { status: 400 }
       );
     }
