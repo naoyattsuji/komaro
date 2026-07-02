@@ -427,7 +427,7 @@ export function AxisEditor({
     setSelectedDateSet((prev) => {
       const next = new Set(prev);
       for (let d = 1; d <= lastDate; d++) {
-        if (next.size >= 30) break;
+        if (next.size >= 31) break;
         next.add(`${viewMonth.year}-${String(viewMonth.month).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
       }
       return next;
@@ -490,7 +490,7 @@ export function AxisEditor({
               <button
                 type="button"
                 onClick={selectCurrentMonth}
-                disabled={selectedDateSet.size >= 30}
+                disabled={selectedDateSet.size >= 31}
                 className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30"
               >
                 この月を全選択
@@ -518,7 +518,7 @@ export function AxisEditor({
                 setSelectedDateSet((prev) => {
                   const next = new Set(prev);
                   if (isSelected) next.delete(dateStr);
-                  else if (next.size < 30) next.add(dateStr);
+                  else if (next.size < 31) next.add(dateStr);
                   return next;
                 });
                 e.preventDefault();
@@ -534,7 +534,7 @@ export function AxisEditor({
                 setSelectedDateSet((prev) => {
                   const next = new Set(prev);
                   if (calDragAction.current === "remove") next.delete(dateStr);
-                  else if (next.size < 30) next.add(dateStr);
+                  else if (next.size < 31) next.add(dateStr);
                   return next;
                 });
               }}
@@ -556,7 +556,7 @@ export function AxisEditor({
                     `${viewMonth.year}-${String(viewMonth.month).padStart(2, "0")}-${String(d).padStart(2, "0")}`
                   );
                 }
-                const atMax = selectedDateSet.size >= 30;
+                const atMax = selectedDateSet.size >= 31;
                 return cells.map((dateStr, i) => {
                   if (!dateStr) return <div key={`pad-${i}`} />;
                   const isSelected = selectedDateSet.has(dateStr);
@@ -582,7 +582,7 @@ export function AxisEditor({
             {/* Summary */}
             <div className="text-xs bg-gray-50 rounded-lg px-3 py-2 text-gray-500">
               {selectedDateSet.size === 0
-                ? "日付を選択してください（最大30日）"
+                ? "日付を選択してください（最大31日）"
                 : `${selectedDateSet.size}日選択: ${rowLabels[0]} 〜 ${rowLabels[rowLabels.length - 1]}`}
             </div>
           </div>
