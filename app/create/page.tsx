@@ -112,22 +112,36 @@ function MiniPreview({ type }: { type: TableType }) {
     );
   }
 
-  // date
-  const rows: { lbl: string; v: PreviewLevel }[] = [
-    { lbl: "5/1(木)", v: 2 },
-    { lbl: "5/2(金)", v: 0 },
-    { lbl: "5/3(土)", v: 1 },
+  // date — mini calendar grid
+  const dayHeaders = ["日", "月", "火", "水", "木", "金", "土"];
+  // start on Thursday (index 4): _, _, _, _, 1, 2, 3 / 4,5,6,7,8,9,10 / 11,12,13,…
+  const calGrid: (number | null)[][] = [
+    [null, null, null, null, 1, 2, 3],
+    [4, 5, 6, 7, 8, 9, 10],
+    [11, 12, 13, null, null, null, null],
   ];
+  const selected = new Set([1, 2, 5, 7, 9, 11, 12]);
   return (
-    <div className="shrink-0 flex flex-col gap-px text-[9px] leading-none text-gray-400">
-      <div className="flex gap-px mb-0.5">
-        <div className="w-[46px]" />
-        <div className="w-6 text-center">参加</div>
+    <div className="shrink-0 flex flex-col gap-[3px] text-[8px] leading-none text-gray-400">
+      <div className="flex gap-[3px] mb-0.5">
+        {dayHeaders.map(d => <div key={d} className="w-[14px] text-center">{d}</div>)}
       </div>
-      {rows.map(row => (
-        <div key={row.lbl} className="flex gap-px items-center">
-          <div className="w-[46px]">{row.lbl}</div>
-          {cell(row.v, 0)}
+      {calGrid.map((row, ri) => (
+        <div key={ri} className="flex gap-[3px]">
+          {row.map((day, di) => {
+            if (!day) return <div key={di} className="w-[14px] h-[14px]" />;
+            const sel = selected.has(day);
+            return (
+              <div
+                key={di}
+                className={`w-[14px] h-[14px] rounded-full flex items-center justify-center text-[7px] font-medium ${
+                  sel ? "bg-gray-800 text-white" : "text-gray-300"
+                }`}
+              >
+                {day}
+              </div>
+            );
+          })}
         </div>
       ))}
     </div>
