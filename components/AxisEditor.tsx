@@ -500,12 +500,12 @@ export function AxisEditor({
                 onClick={deselectCurrentMonth}
                 className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
               >
-                全解除
+                この月を全解除
               </button>
             </div>
             {/* Calendar grid */}
             <div
-              className="grid grid-cols-7 gap-0.5 touch-none select-none"
+              className="grid grid-cols-7 gap-1 touch-none select-none"
               onPointerDown={(e) => {
                 const el = document.elementFromPoint(e.clientX, e.clientY);
                 const cell = (el as HTMLElement)?.closest("[data-caldate]") as HTMLElement | null;
@@ -542,7 +542,7 @@ export function AxisEditor({
               onPointerCancel={() => { calDragAction.current = null; calLastDragged.current = null; }}
             >
               {["日", "月", "火", "水", "木", "金", "土"].map((d) => (
-                <div key={d} className="h-8 flex items-center justify-center text-xs text-gray-400 font-medium">
+                <div key={d} className="h-7 flex items-center justify-center text-xs text-gray-400 font-medium">
                   {d}
                 </div>
               ))}
@@ -565,7 +565,7 @@ export function AxisEditor({
                     <div
                       key={dateStr}
                       data-caldate={dateStr}
-                      className={`h-8 w-full flex items-center justify-center text-sm rounded-full transition-colors cursor-pointer ${
+                      className={`h-10 w-full flex items-center justify-center text-sm rounded-full transition-colors cursor-pointer ${
                         isSelected
                           ? "bg-gray-900 text-white"
                           : !atMax

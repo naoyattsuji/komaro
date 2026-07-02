@@ -107,7 +107,7 @@ export function DateCalendarAnswer({ rowLabels, selectedCells, onSetSelected }: 
           onClick={deselectMonth}
           className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
         >
-          全解除
+          この月を全解除
         </button>
       </div>
 
@@ -144,7 +144,7 @@ export function DateCalendarAnswer({ rowLabels, selectedCells, onSetSelected }: 
         onPointerCancel={() => { dragAction.current = null; lastDragged.current = null; }}
       >
         {["日", "月", "火", "水", "木", "金", "土"].map((d) => (
-          <div key={d} className="h-8 flex items-center justify-center text-xs text-gray-400 font-medium">
+          <div key={d} className="h-7 flex items-center justify-center text-xs text-gray-400 font-medium">
             {d}
           </div>
         ))}
@@ -155,7 +155,7 @@ export function DateCalendarAnswer({ rowLabels, selectedCells, onSetSelected }: 
 
           if (rowIndex === undefined) {
             return (
-              <div key={dateStr} className="h-12 flex items-center justify-center">
+              <div key={dateStr} className="h-10 flex items-center justify-center">
                 <span className="text-sm text-gray-200">{dayNum}</span>
               </div>
             );
@@ -167,7 +167,7 @@ export function DateCalendarAnswer({ rowLabels, selectedCells, onSetSelected }: 
             <div
               key={dateStr}
               data-ansdate={dateStr}
-              className={`h-12 flex items-center justify-center rounded-full text-sm font-medium transition-colors cursor-pointer ${
+              className={`h-10 flex items-center justify-center rounded-full text-sm font-medium transition-colors cursor-pointer ${
                 isSelected ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
               }`}
             >
