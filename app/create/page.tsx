@@ -112,36 +112,27 @@ function MiniPreview({ type }: { type: TableType }) {
     );
   }
 
-  // date — mini calendar grid
+  // date — mini calendar grid (same h-3 / gap-px as other previews)
   const dayHeaders = ["日", "月", "火", "水", "木", "金", "土"];
-  // start on Thursday (index 4): _, _, _, _, 1, 2, 3 / 4,5,6,7,8,9,10 / 11,12,13,…
-  const calGrid: (number | null)[][] = [
-    [null, null, null, null, 1, 2, 3],
-    [4, 5, 6, 7, 8, 9, 10],
-    [11, 12, 13, null, null, null, null],
+  const calGrid: (boolean | null)[][] = [
+    [null, null, null, null, true, false, true],
+    [true, false, true, false, true, false, null],
+    [null, true, true, false, null, null, null],
   ];
-  const selected = new Set([1, 2, 5, 7, 9, 11, 12]);
   return (
-    <div className="shrink-0 flex flex-col gap-[3px] text-[8px] leading-none text-gray-400">
-      <div className="flex gap-[3px] mb-0.5">
-        {dayHeaders.map(d => <div key={d} className="w-[14px] text-center">{d}</div>)}
+    <div className="shrink-0 flex flex-col gap-px text-[9px] leading-none text-gray-400">
+      <div className="flex gap-px mb-0.5">
+        {dayHeaders.map(d => (
+          <div key={d} className="w-3 text-center text-[8px]">{d}</div>
+        ))}
       </div>
       {calGrid.map((row, ri) => (
-        <div key={ri} className="flex gap-[3px]">
-          {row.map((day, di) => {
-            if (!day) return <div key={di} className="w-[14px] h-[14px]" />;
-            const sel = selected.has(day);
-            return (
-              <div
-                key={di}
-                className={`w-[14px] h-[14px] rounded-full flex items-center justify-center text-[7px] font-medium ${
-                  sel ? "bg-gray-800 text-white" : "text-gray-300"
-                }`}
-              >
-                {day}
-              </div>
-            );
-          })}
+        <div key={ri} className="flex gap-px">
+          {row.map((sel, di) =>
+            sel === null
+              ? <div key={di} className="w-3 h-3" />
+              : <div key={di} className={`w-3 h-3 rounded-full ${sel ? "bg-gray-600" : "bg-gray-200"}`} />
+          )}
         </div>
       ))}
     </div>
