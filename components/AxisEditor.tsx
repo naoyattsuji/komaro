@@ -204,6 +204,10 @@ export function AxisEditor({
   const calRowTouched = useRef(autoGenerate);
   const calColTouched = useRef(autoGenerate);
 
+  // Calendar date drag state
+  const calDragAction = useRef<"add" | "remove" | null>(null);
+  const calLastDragged = useRef<string | null>(null);
+
   // DnD state
   const dragFrom = useRef<{ which: "row" | "col"; index: number } | null>(null);
   const [dragInsertAt, setDragInsertAt] = useState<{ which: "row" | "col"; insertAt: number } | null>(null);
@@ -418,6 +422,29 @@ export function AxisEditor({
     setRowMeta(next);
   };
 
+  const selectCurrentMonth = () => {
+    const lastDate = new Date(viewMonth.year, viewMonth.month, 0).getDate();
+    setSelectedDateSet((prev) => {
+      const next = new Set(prev);
+      for (let d = 1; d <= lastDate; d++) {
+        if (next.size >= 30) break;
+        next.add(`${viewMonth.year}-${String(viewMonth.month).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+      }
+      return next;
+    });
+  };
+
+  const deselectCurrentMonth = () => {
+    const lastDate = new Date(viewMonth.year, viewMonth.month, 0).getDate();
+    setSelectedDateSet((prev) => {
+      const next = new Set(prev);
+      for (let d = 1; d <= lastDate; d++) {
+        next.delete(`${viewMonth.year}-${String(viewMonth.month).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+      }
+      return next;
+    });
+  };
+
   const previewColLimit = tableType === "date" ? 1 : 5;
 
   return (
@@ -458,8 +485,62 @@ export function AxisEditor({
                 <ChevronRight size={16} />
               </button>
             </div>
+            {/* Month buttons */}
+            <div className="flex items-center justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={selectCurrentMonth}
+                disabled={selectedDateSet.size >= 30}
+                className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30"
+              >
+                この月を全選択
+              </button>
+              <button
+                type="button"
+                onClick={deselectCurrentMonth}
+                className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+              >
+                全解除
+              </button>
+            </div>
             {/* Calendar grid */}
-            <div className="grid grid-cols-7 gap-0.5">
+            <div
+              className="grid grid-cols-7 gap-0.5 touch-none select-none"
+              onPointerDown={(e) => {
+                const el = document.elementFromPoint(e.clientX, e.clientY);
+                const cell = (el as HTMLElement)?.closest("[data-caldate]") as HTMLElement | null;
+                if (!cell) return;
+                const dateStr = cell.dataset.caldate!;
+                e.currentTarget.setPointerCapture(e.pointerId);
+                const isSelected = selectedDateSet.has(dateStr);
+                calDragAction.current = isSelected ? "remove" : "add";
+                calLastDragged.current = dateStr;
+                setSelectedDateSet((prev) => {
+                  const next = new Set(prev);
+                  if (isSelected) next.delete(dateStr);
+                  else if (next.size < 30) next.add(dateStr);
+                  return next;
+                });
+                e.preventDefault();
+              }}
+              onPointerMove={(e) => {
+                if (calDragAction.current === null) return;
+                const el = document.elementFromPoint(e.clientX, e.clientY);
+                const cell = (el as HTMLElement)?.closest("[data-caldate]") as HTMLElement | null;
+                if (!cell) return;
+                const dateStr = cell.dataset.caldate!;
+                if (!dateStr || dateStr === calLastDragged.current) return;
+                calLastDragged.current = dateStr;
+                setSelectedDateSet((prev) => {
+                  const next = new Set(prev);
+                  if (calDragAction.current === "remove") next.delete(dateStr);
+                  else if (next.size < 30) next.add(dateStr);
+                  return next;
+                });
+              }}
+              onPointerUp={() => { calDragAction.current = null; calLastDragged.current = null; }}
+              onPointerCancel={() => { calDragAction.current = null; calLastDragged.current = null; }}
+            >
               {["日", "月", "火", "水", "木", "金", "土"].map((d) => (
                 <div key={d} className="h-8 flex items-center justify-center text-xs text-gray-400 font-medium">
                   {d}
@@ -481,31 +562,19 @@ export function AxisEditor({
                   const isSelected = selectedDateSet.has(dateStr);
                   const dayNum = new Date(dateStr + "T00:00:00").getDate();
                   return (
-                    <button
+                    <div
                       key={dateStr}
-                      type="button"
-                      onClick={() =>
-                        setSelectedDateSet((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(dateStr)) {
-                            next.delete(dateStr);
-                          } else if (next.size < 30) {
-                            next.add(dateStr);
-                          }
-                          return next;
-                        })
-                      }
-                      disabled={!isSelected && atMax}
-                      className={`h-8 w-full flex items-center justify-center text-sm rounded-full transition-colors ${
+                      data-caldate={dateStr}
+                      className={`h-8 w-full flex items-center justify-center text-sm rounded-full transition-colors cursor-pointer ${
                         isSelected
                           ? "bg-gray-900 text-white"
                           : !atMax
-                          ? "text-gray-700 hover:bg-gray-100 cursor-pointer"
+                          ? "text-gray-700 hover:bg-gray-100"
                           : "text-gray-300 cursor-not-allowed"
                       }`}
                     >
                       {dayNum}
-                    </button>
+                    </div>
                   );
                 });
               })()}

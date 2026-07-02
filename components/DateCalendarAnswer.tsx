@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Props {
   rowLabels: string[];
-  selectedCells: Set<string>; // keys are "rowIndex-0"
-  onToggle: (rowIndex: number) => void;
+  selectedCells: Set<string>; // "rowIndex-0"
+  onSetSelected: (rowIndex: number, selected: boolean) => void;
 }
 
 function parseLabelToDateStr(label: string): string | null {
@@ -21,7 +21,7 @@ function parseLabelToDateStr(label: string): string | null {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-export function DateCalendarAnswer({ rowLabels, selectedCells, onToggle }: Props) {
+export function DateCalendarAnswer({ rowLabels, selectedCells, onSetSelected }: Props) {
   const dateMap = new Map<string, number>(); // dateStr → rowIndex
   rowLabels.forEach((label, rowIndex) => {
     const key = parseLabelToDateStr(label);
@@ -33,6 +33,8 @@ export function DateCalendarAnswer({ rowLabels, selectedCells, onToggle }: Props
   ).sort();
 
   const [monthIndex, setMonthIndex] = useState(0);
+  const dragAction = useRef<"add" | "remove" | null>(null);
+  const lastDragged = useRef<string | null>(null);
 
   if (eventMonths.length === 0) {
     return <p className="text-sm text-gray-400">日付データがありません</p>;
@@ -49,6 +51,22 @@ export function DateCalendarAnswer({ rowLabels, selectedCells, onToggle }: Props
   for (let d = 1; d <= lastDate; d++) {
     gridCells.push(`${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
   }
+
+  const selectMonth = () => {
+    dateMap.forEach((rowIndex, dateStr) => {
+      if (dateStr.startsWith(eventMonths[monthIndex])) {
+        onSetSelected(rowIndex, true);
+      }
+    });
+  };
+
+  const deselectMonth = () => {
+    dateMap.forEach((rowIndex, dateStr) => {
+      if (dateStr.startsWith(eventMonths[monthIndex])) {
+        onSetSelected(rowIndex, false);
+      }
+    });
+  };
 
   return (
     <div className="space-y-3">
@@ -75,8 +93,56 @@ export function DateCalendarAnswer({ rowLabels, selectedCells, onToggle }: Props
         </button>
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      {/* Month buttons */}
+      <div className="flex items-center justify-end gap-1.5">
+        <button
+          type="button"
+          onClick={selectMonth}
+          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+        >
+          この月を全選択
+        </button>
+        <button
+          type="button"
+          onClick={deselectMonth}
+          className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+        >
+          全解除
+        </button>
+      </div>
+
+      {/* Calendar grid with drag support */}
+      <div
+        className="grid grid-cols-7 gap-1 touch-none select-none"
+        onPointerDown={(e) => {
+          const el = document.elementFromPoint(e.clientX, e.clientY);
+          const cell = (el as HTMLElement)?.closest("[data-ansdate]") as HTMLElement | null;
+          if (!cell) return;
+          const dateStr = cell.dataset.ansdate!;
+          const rowIndex = dateMap.get(dateStr);
+          if (rowIndex === undefined) return;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          const isSelected = selectedCells.has(`${rowIndex}-0`);
+          dragAction.current = isSelected ? "remove" : "add";
+          lastDragged.current = dateStr;
+          onSetSelected(rowIndex, !isSelected);
+          e.preventDefault();
+        }}
+        onPointerMove={(e) => {
+          if (dragAction.current === null) return;
+          const el = document.elementFromPoint(e.clientX, e.clientY);
+          const cell = (el as HTMLElement)?.closest("[data-ansdate]") as HTMLElement | null;
+          if (!cell) return;
+          const dateStr = cell.dataset.ansdate!;
+          if (!dateStr || dateStr === lastDragged.current) return;
+          const rowIndex = dateMap.get(dateStr);
+          if (rowIndex === undefined) return;
+          lastDragged.current = dateStr;
+          onSetSelected(rowIndex, dragAction.current === "add");
+        }}
+        onPointerUp={() => { dragAction.current = null; lastDragged.current = null; }}
+        onPointerCancel={() => { dragAction.current = null; lastDragged.current = null; }}
+      >
         {["日", "月", "火", "水", "木", "金", "土"].map((d) => (
           <div key={d} className="h-8 flex items-center justify-center text-xs text-gray-400 font-medium">
             {d}
@@ -98,18 +164,15 @@ export function DateCalendarAnswer({ rowLabels, selectedCells, onToggle }: Props
           const isSelected = selectedCells.has(`${rowIndex}-0`);
 
           return (
-            <button
+            <div
               key={dateStr}
-              type="button"
-              onClick={() => onToggle(rowIndex)}
-              className={`h-12 flex items-center justify-center rounded-full text-sm font-medium transition-colors ${
-                isSelected
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-700 hover:bg-gray-100"
+              data-ansdate={dateStr}
+              className={`h-12 flex items-center justify-center rounded-full text-sm font-medium transition-colors cursor-pointer ${
+                isSelected ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"
               }`}
             >
               {dayNum}
-            </button>
+            </div>
           );
         })}
       </div>

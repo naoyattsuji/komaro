@@ -320,7 +320,15 @@ export default function AnswerPage({
             <DateCalendarAnswer
               rowLabels={event.rowLabels}
               selectedCells={selectedCells}
-              onToggle={(rowIndex) => toggleCell(rowIndex, 0)}
+              onSetSelected={(rowIndex, selected) => {
+                const key = `${rowIndex}-0`;
+                setSelectedCells((prev) => {
+                  const next = new Set(prev);
+                  if (selected) next.add(key);
+                  else next.delete(key);
+                  return next;
+                });
+              }}
             />
           </div>
         ) : (
