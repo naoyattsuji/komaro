@@ -35,6 +35,7 @@ export default async function HomePage() {
                 style={{ animationDelay: "260ms" }}
               >
                 誰がいつ空いているか、コマの色で一発確認。<br />
+                日付のみの調整はカレンダーから直接選択。<br />
                 登録不要、URLを送るだけで使えます。
               </p>
               <p
@@ -113,11 +114,12 @@ export default async function HomePage() {
           <FadeInSection>
             <p className="text-xs tracking-[0.2em] text-gray-400 uppercase mb-10">Features</p>
           </FadeInSection>
-          <div className="grid sm:grid-cols-3 gap-12">
+          <div className="grid sm:grid-cols-2 gap-12">
             {[
               { num: "01", title: "全員の都合が、ひと目でわかる", desc: "コマを参加人数で色分け。「ここが一番集まれる」が一目瞭然です。" },
               { num: "02", title: "登録不要・URL共有のみ", desc: "アカウント作成なし。URLを送るだけで回答を集められます。" },
-              { num: "03", title: "カレンダー連携", desc: "確定した日程をGoogle・Yahoo・iCloudなど各カレンダーに直接追加できます。" },
+              { num: "03", title: "カレンダーで日付を直感的に選択", desc: "日付のみの日程調整はカレンダー画面でタップ・ドラッグ操作。作成・回答・集計すべてカレンダー形式で完結します。" },
+              { num: "04", title: "カレンダーアプリと連携", desc: "確定した日程をGoogle・Yahoo・iCloudなど各カレンダーに直接追加できます。" },
             ].map((f, i) => (
               <FadeInSection key={f.num} delay={i * 100}>
                 <p className="text-xs text-gray-300 font-mono mb-4">{f.num}</p>
