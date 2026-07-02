@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AvailabilityTable } from "@/components/AvailabilityTable";
+import { DateCalendarSummary } from "@/components/DateCalendarSummary";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -489,15 +490,25 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
             )}
           </div>
 
-          <AvailabilityTable
-            rowLabels={event.rowLabels}
-            colLabels={event.colLabels}
-            rowMeta={event.rowMeta}
-            mode="view"
-            cells={displayCells}
-            maxCount={displayMaxCount}
-            onCellClick={handleCellClick}
-          />
+          {event.tableType === "date" ? (
+            <DateCalendarSummary
+              rowLabels={event.rowLabels}
+              cells={displayCells}
+              maxCount={displayMaxCount}
+              totalParticipants={participants.length}
+              onDateClick={(rowIndex) => handleCellClick(rowIndex, 0)}
+            />
+          ) : (
+            <AvailabilityTable
+              rowLabels={event.rowLabels}
+              colLabels={event.colLabels}
+              rowMeta={event.rowMeta}
+              mode="view"
+              cells={displayCells}
+              maxCount={displayMaxCount}
+              onCellClick={handleCellClick}
+            />
+          )}
         </FadeInSection>
 
         {/* Sidebar: Members */}
