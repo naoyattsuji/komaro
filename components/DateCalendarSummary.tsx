@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getHeatmapColor, getHeatmapTextColor } from "@/lib/utils";
 
 interface CellSummary {
   rowIndex: number;
@@ -106,8 +107,9 @@ export function DateCalendarSummary({ rowLabels, cells, maxCount, totalParticipa
             );
           }
 
-          const isMax = data.isMax && maxCount > 0;
           const hasCount = data.count > 0;
+          const bgColor = hasCount ? getHeatmapColor(data.count, maxCount) : "";
+          const textColor = hasCount ? getHeatmapTextColor(data.count, maxCount) : "text-gray-300";
 
           return (
             <button
@@ -115,18 +117,16 @@ export function DateCalendarSummary({ rowLabels, cells, maxCount, totalParticipa
               type="button"
               onClick={() => onDateClick(data.rowIndex)}
               className={`h-14 flex flex-col items-center pt-1.5 rounded-xl transition-colors ${
-                isMax
-                  ? "bg-gray-900 text-white hover:bg-gray-800"
-                  : hasCount
-                  ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                hasCount
+                  ? `${bgColor} hover:opacity-80`
                   : "border border-gray-200 text-gray-500 hover:bg-gray-50"
               }`}
             >
-              <span className={`text-xs font-medium ${isMax ? "text-gray-400" : "text-gray-400"}`}>
+              <span className={`text-xs font-medium ${hasCount ? textColor : "text-gray-400"}`}>
                 {dayNum}
               </span>
               {hasCount ? (
-                <span className={`text-xl font-bold leading-tight ${isMax ? "text-white" : "text-gray-800"}`}>
+                <span className={`text-xl font-bold leading-tight ${textColor}`}>
                   {data.count}
                 </span>
               ) : totalParticipants > 0 ? (
@@ -141,7 +141,7 @@ export function DateCalendarSummary({ rowLabels, cells, maxCount, totalParticipa
       {maxCount > 0 && (
         <div className="flex items-center gap-4 text-xs text-gray-400 pt-1">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 bg-gray-900 rounded" />
+            <div className="w-3 h-3 bg-red-600 rounded" />
             <span>最多（{maxCount}名）</span>
           </div>
           <div className="flex items-center gap-1.5">
