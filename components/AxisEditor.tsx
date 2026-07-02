@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 
 export interface RowMeta { start: string; end: string; }
@@ -184,24 +184,25 @@ export function AxisEditor({
     return 5;
   });
 
-  // Date row generator state
-  const [dateRowStartDate, setDateRowStartDate] = useState(() => {
+  // Date row calendar state
+  const [selectedDateSet, setSelectedDateSet] = useState<Set<string>>(() => {
     if (tableType === "date" && initialValue.rowLabels.length > 0) {
-      return detectDateFromLabel(initialValue.rowLabels[0]);
+      return new Set(initialValue.rowLabels.map(detectDateFromLabel));
     }
-    return todayStr;
+    return new Set<string>();
   });
-  const [dateRowDays, setDateRowDays] = useState(() => {
+  const [viewMonth, setViewMonth] = useState<{ year: number; month: number }>(() => {
+    const today = new Date();
     if (tableType === "date" && initialValue.rowLabels.length > 0) {
-      return Math.min(30, initialValue.rowLabels.length);
+      const d = new Date(detectDateFromLabel(initialValue.rowLabels[0]) + "T00:00:00");
+      return { year: d.getFullYear(), month: d.getMonth() + 1 };
     }
-    return 7;
+    return { year: today.getFullYear(), month: today.getMonth() + 1 };
   });
 
   // Guard refs: start as autoGenerate; set to true on first user interaction
   const calRowTouched = useRef(autoGenerate);
   const calColTouched = useRef(autoGenerate);
-  const dateRowTouched = useRef(autoGenerate);
 
   // DnD state
   const dragFrom = useRef<{ which: "row" | "col"; index: number } | null>(null);
@@ -241,9 +242,16 @@ export function AxisEditor({
   }, [tableType, colMode, weekdaySelection]);
 
   useEffect(() => {
-    if (tableType !== "date" || !dateRowTouched.current) return;
-    setRowLabels(generateDateLabels(dateRowStartDate, dateRowDays).slice(0, 30));
-  }, [tableType, dateRowStartDate, dateRowDays]);
+    if (tableType !== "date") return;
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+    const sorted = Array.from(selectedDateSet).sort();
+    const labels = sorted.map((dateStr) => {
+      const d = new Date(dateStr + "T00:00:00");
+      return `${d.getMonth() + 1}/${d.getDate()}(${weekdays[d.getDay()]})`;
+    });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRowLabels(labels.length > 0 ? labels : [""]);
+  }, [tableType, selectedDateSet]);
 
   // Touch DnD (non-passive so we can preventDefault)
   useEffect(() => {
@@ -417,34 +425,96 @@ export function AxisEditor({
       {/* ── Row section ── */}
       {tableType === "date" ? (
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-2 sm:mb-3">縦軸ラベル（行）— 日付</p>
+          <p className="text-sm font-medium text-gray-700 mb-2 sm:mb-3">縦軸ラベル（行）— 日付を選択</p>
           {errors.rowLabels && <p className="text-xs text-red-500 mb-2">{errors.rowLabels}</p>}
-          <div className="space-y-2.5 sm:space-y-3">
-            <div className="grid grid-cols-[minmax(0,1fr)_6rem] gap-2 sm:grid-cols-[minmax(0,1fr)_9rem] sm:gap-3">
-              <div className="min-w-0">
-                <p className="text-xs text-gray-500 mb-1">開始日</p>
-                <input
-                  type="date"
-                  value={dateRowStartDate}
-                  onChange={(e) => { dateRowTouched.current = true; setDateRowStartDate(e.target.value); }}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-2.5 py-2 bg-white sm:px-3"
-                />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-gray-500 mb-1">日数</p>
-                <select
-                  value={dateRowDays}
-                  onChange={(e) => { dateRowTouched.current = true; setDateRowDays(Number(e.target.value)); }}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-2 py-2 bg-white sm:px-3"
-                >
-                  {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
-                    <option key={d} value={d}>{d}日間</option>
-                  ))}
-                </select>
-              </div>
+          <div className="space-y-3">
+            {/* Month navigation */}
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() =>
+                  setViewMonth((prev) => {
+                    const d = new Date(prev.year, prev.month - 2, 1);
+                    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+                  })
+                }
+                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="text-sm font-medium text-gray-700">
+                {viewMonth.year}年{viewMonth.month}月
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setViewMonth((prev) => {
+                    const d = new Date(prev.year, prev.month, 1);
+                    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+                  })
+                }
+                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"
+              >
+                <ChevronRight size={16} />
+              </button>
             </div>
+            {/* Calendar grid */}
+            <div className="grid grid-cols-7 gap-0.5">
+              {["日", "月", "火", "水", "木", "金", "土"].map((d) => (
+                <div key={d} className="h-8 flex items-center justify-center text-xs text-gray-400 font-medium">
+                  {d}
+                </div>
+              ))}
+              {(() => {
+                const firstDay = new Date(viewMonth.year, viewMonth.month - 1, 1).getDay();
+                const lastDate = new Date(viewMonth.year, viewMonth.month, 0).getDate();
+                const cells: (string | null)[] = [];
+                for (let i = 0; i < firstDay; i++) cells.push(null);
+                for (let d = 1; d <= lastDate; d++) {
+                  cells.push(
+                    `${viewMonth.year}-${String(viewMonth.month).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+                  );
+                }
+                const atMax = selectedDateSet.size >= 30;
+                return cells.map((dateStr, i) => {
+                  if (!dateStr) return <div key={`pad-${i}`} />;
+                  const isSelected = selectedDateSet.has(dateStr);
+                  const dayNum = new Date(dateStr + "T00:00:00").getDate();
+                  return (
+                    <button
+                      key={dateStr}
+                      type="button"
+                      onClick={() =>
+                        setSelectedDateSet((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(dateStr)) {
+                            next.delete(dateStr);
+                          } else if (next.size < 30) {
+                            next.add(dateStr);
+                          }
+                          return next;
+                        })
+                      }
+                      disabled={!isSelected && atMax}
+                      className={`h-8 w-full flex items-center justify-center text-sm rounded-full transition-colors ${
+                        isSelected
+                          ? "bg-gray-900 text-white"
+                          : !atMax
+                          ? "text-gray-700 hover:bg-gray-100 cursor-pointer"
+                          : "text-gray-300 cursor-not-allowed"
+                      }`}
+                    >
+                      {dayNum}
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+            {/* Summary */}
             <div className="text-xs bg-gray-50 rounded-lg px-3 py-2 text-gray-500">
-              {rowLabels.length}日: {rowLabels[0]} 〜 {rowLabels[rowLabels.length - 1]}
+              {selectedDateSet.size === 0
+                ? "日付を選択してください（最大30日）"
+                : `${selectedDateSet.size}日選択: ${rowLabels[0]} 〜 ${rowLabels[rowLabels.length - 1]}`}
             </div>
           </div>
         </div>
