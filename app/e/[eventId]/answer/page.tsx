@@ -3,6 +3,7 @@
 import { use, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AvailabilityTable } from "@/components/AvailabilityTable";
+import { DateCalendarAnswer } from "@/components/DateCalendarAnswer";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
@@ -20,6 +21,7 @@ import { rememberRecentEvent } from "@/lib/recentEvents";
 interface EventInfo {
   id: string;
   title: string;
+  tableType: string;
   rowLabels: string[];
   colLabels: string[];
   rowMeta?: { start?: string; end?: string }[];
@@ -241,7 +243,11 @@ export default function AnswerPage({
         <div>
           <h1 className="text-lg font-bold text-gray-900">{event.title}</h1>
           <p className="text-xs text-gray-500">
-            {isEditMode ? "回答を修正してください" : "参加できるコマをタップして選択してください"}
+            {isEditMode
+              ? "回答を修正してください"
+              : event.tableType === "date"
+              ? "参加できる日付をタップして選択してください"
+              : "参加できるコマをタップして選択してください"}
           </p>
         </div>
       </div>
@@ -285,9 +291,11 @@ export default function AnswerPage({
       >
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm text-gray-600 font-medium shrink-0">
-            {selectedCells.size}コマ選択中
+            {selectedCells.size}{event.tableType === "date" ? "日" : "コマ"}選択中
           </span>
-          <span className="text-xs text-gray-400 hidden sm:block truncate">ドラッグで複数まとめて選択できます</span>
+          {event.tableType !== "date" && (
+            <span className="text-xs text-gray-400 hidden sm:block truncate">ドラッグで複数まとめて選択できます</span>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-1.5 shrink-0">
           <button
@@ -305,16 +313,26 @@ export default function AnswerPage({
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table / Calendar */}
       <FadeInSection delay={60}>
-        <AvailabilityTable
-          rowLabels={event.rowLabels}
-          colLabels={event.colLabels}
-          rowMeta={event.rowMeta}
-          mode="edit"
-          selectedCells={selectedCells}
-          onCellToggle={toggleCell}
-        />
+        {event.tableType === "date" ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <DateCalendarAnswer
+              rowLabels={event.rowLabels}
+              selectedCells={selectedCells}
+              onToggle={(rowIndex) => toggleCell(rowIndex, 0)}
+            />
+          </div>
+        ) : (
+          <AvailabilityTable
+            rowLabels={event.rowLabels}
+            colLabels={event.colLabels}
+            rowMeta={event.rowMeta}
+            mode="edit"
+            selectedCells={selectedCells}
+            onCellToggle={toggleCell}
+          />
+        )}
       </FadeInSection>
 
       {/* Submit — sticky keeps it visible while scrolling table */}
