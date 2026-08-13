@@ -178,22 +178,17 @@ export default function AnswerPage({
           </Link>
         </FadeInSection>
 
+        {/* 参加者→主催者の転換導線。主要ボタンと広告の間に置き、
+            カードではなく1行のリンクにして画面の主役を「集計を見る」に保つ */}
         <FadeInSection delay={360}>
-          <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-5 py-5 text-left">
-            <p className="text-sm font-semibold text-gray-800 mb-1">
-              コマを使ってあなたもイベントを作りませんか？
-            </p>
-            <p className="text-xs text-gray-500 mb-4">
-              登録不要・URLを送るだけで日程調整ができます
-            </p>
-            <Link
-              href="/create"
-              onClick={() => trackEvent("create_from_answer_cta", { source_event_id: eventId })}
-              className="flex items-center justify-center gap-2 bg-gray-900 text-white font-medium px-5 py-2.5 rounded-md hover:bg-gray-700 transition-colors text-sm w-full"
-            >
-              イベントを作成する →
-            </Link>
-          </div>
+          <p className="text-xs text-gray-400">登録不要・URLを送るだけで日程調整ができます</p>
+          <Link
+            href="/create"
+            onClick={() => trackEvent("create_from_answer_cta", { source_event_id: eventId })}
+            className="mt-1.5 inline-block text-sm font-medium text-gray-700 underline underline-offset-4 decoration-gray-300 hover:text-gray-900 transition-colors"
+          >
+            自分でもイベントを作る →
+          </Link>
         </FadeInSection>
 
         {/* 回答が終わった後にだけ表示する。回答中の画面には広告を出さない */}
