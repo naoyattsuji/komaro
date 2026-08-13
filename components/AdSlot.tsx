@@ -1,7 +1,6 @@
 "use client";
 
 import { Capacitor } from "@capacitor/core";
-import Script from "next/script";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   ADS_PERSONALIZED,
@@ -114,12 +113,6 @@ export function AdSlot({
       // 表示が確定するまで場所を確保し、後から要素が押し下げられるのを防ぐ
       style={{ minHeight: fill === "filled" ? undefined : 120 }}
     >
-      <Script
-        id="adsbygoogle-init"
-        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CLIENT}`}
-        strategy="afterInteractive"
-        crossOrigin="anonymous"
-      />
       <p
         className={`mb-1 text-[10px] uppercase tracking-widest text-gray-300 ${
           variant === "section" ? "text-center" : ""

@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/components/ui/Toast";
 import { NativeAppChrome } from "@/components/NativeAppChrome";
+import { AdSenseScript } from "@/components/AdSenseScript";
 import Link from "next/link";
 import Image from "next/image";
 import { GoogleAnalytics } from "@next/third-parties/google";
@@ -139,6 +140,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <ToastContainer />
+        <AdSenseScript />
         <GoogleAnalytics gaId="G-BM1B0C55N2" />
       </body>
     </html>

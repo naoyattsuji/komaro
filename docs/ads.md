@@ -76,20 +76,40 @@ KOMAROのiOS/Android版は `komaro.app` をWebViewで表示する構造ですが
 
 ## 6. 有効化の手順
 
-1. AdSenseのアカウントを作り、`komaro.app` の審査を通す（辻直哉の作業。`docs/todo-for-owner.md` 参照）
-2. 広告ユニットを作り、ユニットIDを控える
-3. Vercelの環境変数に設定する:
+AdSenseは「アカウント審査 → 承認 → 広告ユニット作成」の順で、審査中は広告ユニットIDが存在しません。そのため2段階に分かれます。
+
+### 第1段階: 審査を通す（パブリッシャーIDだけを設定する）
+
+AdSenseのアカウントを作ると `ca-pub-XXXXXXXXXXXXXXXX` というパブリッシャーIDが発行され、「サイトにこのコードを設置してください」と指示されます。KOMAROでは、**パブリッシャーIDを設定するだけで審査用のコードが `komaro.app` 全体に入ります**（広告枠はまだ出ません）。
 
 ```bash
-vercel env add NEXT_PUBLIC_ADS_ENABLED production          # true
-vercel env add NEXT_PUBLIC_ADSENSE_CLIENT production       # ca-pub-XXXXXXXXXXXXXXXX
-vercel env add NEXT_PUBLIC_ADSENSE_SLOT_SUMMARY_BOTTOM production   # 数字のユニットID
+vercel env add NEXT_PUBLIC_ADSENSE_CLIENT production   # ca-pub-XXXXXXXXXXXXXXXX
+vercel --prod
 ```
 
-4. `vercel --prod` で再デプロイ
-5. 集計ページ最下部に広告が出ることを確認する
+デプロイ後、AdSense管理画面で「コードを設置しました」を押して審査を依頼します。審査は数日〜2週間程度。
+
+### 第2段階: 承認後に広告を出す
+
+承認されたら広告ユニット（ディスプレイ広告）を作り、ユニットID（数字列）を控えて設定します。
+
+```bash
+vercel env add NEXT_PUBLIC_ADS_ENABLED production                  # true
+vercel env add NEXT_PUBLIC_ADSENSE_SLOT_SUMMARY_BOTTOM production  # 数字のユニットID
+vercel --prod
+```
 
 最初は `SUMMARY_BOTTOM` の1枠だけで1〜2週間運用し、離脱率とイベント作成数が落ちていないことを確認してから他の枠を足してください。数字が悪化したら、環境変数を消すだけで即座に元に戻せます。
+
+### ⚠️ 自動広告（Auto ads）は必ずオフにすること
+
+AdSense管理画面には、Googleが勝手に広告の位置を決める「**自動広告**」という機能があります。**これをオンにすると、このドキュメントで設計した掲載位置が全て無視され、回答中のコマ表の上や画面追従バナーにも広告が入ります。** 誤タップによる無効クリックが発生し、アカウント停止のリスクにも直結します。
+
+サイト追加時に既定でオンになっていることがあるため、**AdSense管理画面 → 広告 → サイトごとの設定で「自動広告」がオフになっていることを必ず確認してください。**
+
+### 補足: 審査用コードが検出されない場合
+
+審査用のスクリプトは、ネイティブアプリのWebView内で読み込まないようにするため、サーバー側HTMLではなくブラウザ側で挿入しています（`components/AdSenseScript.tsx`）。Googleの確認がこれを検出できない場合は、サーバー側で出力する方式へ切り替えられます（その場合はアプリのUser-Agentで除外する対応が別途必要）。
 
 ## 7. 環境変数一覧
 
