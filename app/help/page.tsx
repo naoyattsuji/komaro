@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { FadeInSection } from "@/components/FadeInSection";
+import { AdSlot } from "@/components/AdSlot";
 
 export const metadata: Metadata = {
   title: "ヘルプ / よくある質問 — KOMARO",
@@ -214,6 +215,9 @@ export default function HelpPage() {
           </Link>
         </div>
       </FadeInSection>
+
+      {/* 広告はページ最下部のみ。FAQの読み進めを妨げない */}
+      <AdSlot placement="helpBottom" className="mt-12" />
 
     </div>
   );

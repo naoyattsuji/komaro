@@ -10,6 +10,7 @@ import { showToast } from "@/components/ui/Toast";
 import { getParticipantUrl, getEditUrl } from "@/lib/utils";
 import { trackEvent } from "@/lib/ga";
 import { rememberRecentEvent } from "@/lib/recentEvents";
+import { AdSlot } from "@/components/AdSlot";
 
 export default function CreateDonePage({
   searchParams,
@@ -143,6 +144,9 @@ export default function CreateDonePage({
           </Link>
         </div>
       </FadeInSection>
+
+      {/* 広告はURLのコピー導線と操作ボタンより必ず下。誤タップを防ぐため余白を広くとる */}
+      <AdSlot placement="createComplete" className="mt-12" />
 
     </div>
   );

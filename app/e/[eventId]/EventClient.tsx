@@ -24,6 +24,7 @@ import { getParticipantUrl } from "@/lib/utils";
 import { FadeInSection } from "@/components/FadeInSection";
 import { KOMAROLoader } from "@/components/KOMAROLoader";
 import { trackEvent } from "@/lib/ga";
+import { AdSlot } from "@/components/AdSlot";
 import { rememberRecentEvent } from "@/lib/recentEvents";
 
 interface EventClientProps {
@@ -659,6 +660,9 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
           </Link>
         </div>
       </FadeInSection>
+
+      {/* 広告は集計表・参加者一覧・コメントをすべて見終えた最下部にだけ置く */}
+      <AdSlot placement="summaryBottom" className="mt-8" />
       </>
       )}
 

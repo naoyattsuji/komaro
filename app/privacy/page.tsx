@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ADS_ENABLED, ADS_PERSONALIZED } from "@/lib/ads";
 
 export const metadata: Metadata = {
   title: "プライバシーポリシー — KOMARO",
@@ -80,6 +81,14 @@ export default function PrivacyPage() {
             <li>
               <strong>Google Analytics</strong>（アクセス解析）— サービス改善のため、閲覧状況や利用状況を統計的に分析します。
             </li>
+            {ADS_ENABLED && (
+              <li>
+                <strong>Google AdSense</strong>（広告配信）— 本サービスの運営費用をまかなうため、一部のページに広告を掲載しています。{" "}
+                <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer" className="text-gray-600 underline">
+                  Googleのポリシーと規約
+                </a>
+              </li>
+            )}
           </ul>
         </section>
 
@@ -95,8 +104,29 @@ export default function PrivacyPage() {
           <h2 className="text-base font-bold text-gray-900 mb-3">7. Cookie・トラッキング</h2>
           <p>
             本サービスでは、サービス改善や利用状況の把握のためにGoogle Analyticsを使用する場合があります。
-            取得される情報は統計的な分析に利用し、広告配信や第三者サービスを横断した個人の追跡を目的として使用しません。
+            取得される情報は統計的な分析に利用します。
           </p>
+          {ADS_ENABLED ? (
+            <>
+              <p className="mt-3">
+                また、本サービスの一部のページではGoogle AdSenseによる広告を配信しています。
+                広告配信のためにCookieが使用され、広告の表示回数の測定や不正クリックの防止に利用されます。
+              </p>
+              <p className="mt-3">
+                {ADS_PERSONALIZED
+                  ? "広告は閲覧履歴などに基づいてパーソナライズされる場合があります。"
+                  : "本サービスでは非パーソナライズ広告のみを配信する設定にしており、閲覧履歴に基づく広告の出し分けや、他社のアプリ・ウェブサイトを横断した個人の追跡は行いません。"}{" "}
+                <a href="https://myadcenter.google.com/" target="_blank" rel="noopener noreferrer" className="text-gray-600 underline">
+                  Google広告設定
+                </a>
+                から、パーソナライズ広告の受け取りを利用者ご自身で無効にすることもできます。
+              </p>
+            </>
+          ) : (
+            <p className="mt-3">
+              取得される情報は、広告配信や第三者サービスを横断した個人の追跡を目的として使用しません。
+            </p>
+          )}
         </section>
 
         <section>

@@ -15,6 +15,7 @@ import { FadeInSection } from "@/components/FadeInSection";
 import { KOMAROLoader } from "@/components/KOMAROLoader";
 import { trackEvent } from "@/lib/ga";
 import { rememberRecentEvent } from "@/lib/recentEvents";
+import { AdSlot } from "@/components/AdSlot";
 // import { CalendarImageReader } from "@/components/CalendarImageReader";
 // import { VoiceInputReader } from "@/components/VoiceInputReader";
 
@@ -194,6 +195,9 @@ export default function AnswerPage({
             </Link>
           </div>
         </FadeInSection>
+
+        {/* 回答が終わった後にだけ表示する。回答中の画面には広告を出さない */}
+        <AdSlot placement="answerComplete" className="mt-10 text-left" />
       </div>
     );
   }

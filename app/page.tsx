@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { FadeInSection } from "@/components/FadeInSection";
 import { NativeRecentEvents } from "@/components/NativeRecentEvents";
+import { AdSlot } from "@/components/AdSlot";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -145,6 +146,11 @@ export default async function HomePage() {
           </FadeInSection>
         </div>
       </section>
+
+      {/* 広告はCTAより下に置き、導線を横切らないようにする */}
+      <div className="max-w-6xl mx-auto w-full px-6 pb-12">
+        <AdSlot placement="homeBottom" />
+      </div>
 
     </div>
   );
