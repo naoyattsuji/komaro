@@ -38,9 +38,16 @@ const getIsNativeAppOnServer = () => true;
 export function AdSlot({
   placement,
   className = "",
+  variant = "inline",
 }: {
   placement: AdPlacement;
   className?: string;
+  /**
+   * inline: 本文の流れの中にそのまま置く。
+   * section: 完了画面など下に余白が余る画面向け。区切り線と薄い背景で
+   *          「ここから先はアプリの中身ではない」と分かる帯にする。
+   */
+  variant?: "inline" | "section";
 }) {
   const insRef = useRef<HTMLModElement>(null);
   const pushedRef = useRef(false);
@@ -95,9 +102,15 @@ export function AdSlot({
 
   if (!shouldRender || fill === "unfilled") return null;
 
+  // 完了画面用の帯。親の px-4 を打ち消して端まで伸ばし、区切り線で本文と分ける
+  const variantClass =
+    variant === "section"
+      ? "mt-12 -mx-4 border-t border-gray-100 bg-gray-50/70 px-4 pt-7 pb-9"
+      : "";
+
   return (
     <div
-      className={`native-app-hidden ${className}`}
+      className={`native-app-hidden ${variantClass} ${className}`}
       // 表示が確定するまで場所を確保し、後から要素が押し下げられるのを防ぐ
       style={{ minHeight: fill === "filled" ? undefined : 120 }}
     >
@@ -108,7 +121,9 @@ export function AdSlot({
         crossOrigin="anonymous"
       />
       <p
-        className="mb-1 text-[10px] uppercase tracking-widest text-gray-300"
+        className={`mb-1 text-[10px] uppercase tracking-widest text-gray-300 ${
+          variant === "section" ? "text-center" : ""
+        }`}
         style={{ visibility: fill === "filled" ? "visible" : "hidden" }}
       >
         スポンサー

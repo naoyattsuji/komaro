@@ -145,8 +145,8 @@ export default function CreateDonePage({
         </div>
       </FadeInSection>
 
-      {/* 広告はURLのコピー導線と操作ボタンより必ず下。誤タップを防ぐため余白を広くとる */}
-      <AdSlot placement="createComplete" className="mt-12" />
+      {/* 広告はURLのコピー導線と操作ボタンより必ず下。誤タップを防ぐため帯で区切る */}
+      <AdSlot placement="createComplete" variant="section" />
 
     </div>
   );

@@ -157,7 +157,7 @@ export default function AnswerPage({
 
   if (submitted) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+      <div className="max-w-xl mx-auto px-4 pt-16 pb-10 text-center">
         <div className="anim-hero-scale inline-flex mb-4" style={{ animationDelay: "0ms" }}>
           <CheckCircle size={52} className="text-gray-900 mx-auto" />
         </div>
@@ -197,7 +197,7 @@ export default function AnswerPage({
         </FadeInSection>
 
         {/* 回答が終わった後にだけ表示する。回答中の画面には広告を出さない */}
-        <AdSlot placement="answerComplete" className="mt-10 text-left" />
+        <AdSlot placement="answerComplete" variant="section" />
       </div>
     );
   }
