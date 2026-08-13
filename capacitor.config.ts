@@ -6,7 +6,9 @@ const config: CapacitorConfig = {
   webDir: 'public',
   server: {
     url: 'https://komaro.app',
-    cleartext: false
+    cleartext: false,
+    // 通信できないときに白画面ではなくアプリ同梱の案内を表示する
+    errorPath: 'offline.html'
   }
 };
 
