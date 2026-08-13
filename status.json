@@ -1,10 +1,26 @@
 {
   "month": "2026-05",
   "monthly_kpis": {
-    "MAU": { "target": 300, "current": 144, "unit": "人" },
-    "sessions": { "target": 1200, "current": 500, "unit": "セッション" },
-    "event_created": { "target": 25, "current": 10, "unit": "件" },
-    "new_users": { "target": 280, "current": 144, "unit": "人" }
+    "MAU": {
+      "target": 300,
+      "current": 144,
+      "unit": "人"
+    },
+    "sessions": {
+      "target": 1200,
+      "current": 500,
+      "unit": "セッション"
+    },
+    "event_created": {
+      "target": 25,
+      "current": 10,
+      "unit": "件"
+    },
+    "new_users": {
+      "target": 280,
+      "current": 144,
+      "unit": "人"
+    }
   },
   "weekly_checkpoint": {
     "week": "W4 (5/22-28)",
@@ -15,6 +31,7 @@
     }
   },
   "recent_work": [
+    "2026-08-13: iOS申請作業を再開。バージョンを1.0.0に設定し、Info.plistの不備（armv7指定・輸出規制申告・開発言語）を修正。提出用スクリーンショットをiPhone 6.9インチ5枚・iPad 13インチ4枚撮影。オフライン時の案内画面をCapacitorのerrorPathで追加（WebViewで-apple-systemが日本語へフォールバックせず豆腐になる問題も検証で発見し修正）。広告表示の基盤を既定オフで実装（集計ページ最下部ほか5枠、非パーソナライズのみ、アプリ内は非表示）。アーカイブ1.0.0とアップロード用スクリプトを用意済み。",
     "2026-06-29: ヘルプページのお問い合わせ導線をHPの共通問い合わせフォームへ集約（https://naoya-tsuji.com/?topic=komaro#contact）。KOMARO内の重複更新画像はHP側で公開済みのため整理。",
     "2026-06-29: iOS申請準備を再開。モバイルviewportを明示し、ヘッダーのスマホ幅はみ出しを抑制。ExportOptionsを追加し、iPhone 17 Pro Maxスクリーンショット候補と修正後Archiveを作成。commit/push/Vercel本番デプロイ完了。",
     "2026-05-21: Capacitor iOS/Androidアプリ版の土台構築（ios/・android/ディレクトリ・Bundle ID app.komaro・アイコン・スプラッシュ設定済み）",
@@ -23,14 +40,16 @@
     "2026-05-20: 通知系トークンローテーション・本番再デプロイ完了",
     "2026-05-20: スマホUI改善（作成画面レスポンシブ・カレンダー時間スロット拡充）"
   ],
-  "today_work": "iOS申請準備を再検証済み。追加でヘルプページのお問い合わせ導線をHP共通フォームへ集約し、問い合わせ管理を一本化。lint/build通過確認済み。",
-  "next_actions": [
-    "App Store Connect権限のあるApple ID/ProviderでXcodeにログインし、iOS Distribution証明書とApp Store provisioning profile作成権限を確認する",
-    "App Store ConnectにKOMAROのアプリレコードを作成（Bundle ID app.komaro、SKU komaro-ios、主言語 日本語、カテゴリ 仕事効率化）",
-    "Xcode OrganizerからArchiveをアップロード、またはApp Store Connect APIキーでCLI export/uploadを再実行する",
-    "App Store用スクリーンショットを最終撮影・選定する",
-    "SNS拡散開始（OGP確認後）",
-    "GA4 event_view・line_share_clickイベントが届いているか確認"
+  "today_work": [
+    "iOS申請の準備完了。App Store Connect APIキーの発行（辻直哉）だけが残りのブロッカー。",
+    "広告基盤を実装。環境変数の設定だけで有効化できる状態（docs/ads.md・docs/todo-for-owner.md）。"
   ],
-  "blockers": "CLI export/uploadはAppleアカウント権限で停止。`No provider associated with App Store Connect user`、`No signing certificate \"iOS Distribution\" found`、`Team \"NAOYA TSUJI\" does not have permission to create \"iOS App Store\" provisioning profiles`。辻直哉側でApp Store Connect権限・配布証明書作成権限の確認が必要。"
+  "next_actions": [
+    "APIキー配置後: 配布証明書生成 → アップロード → アプリレコード作成 → メタデータ登録 → 審査提出",
+    "審査で4.2（Webサイトの再パッケージ）に該当した場合の方針決定",
+    "広告は月間ページビュー1万超えまで有効化しない（現状では月200〜1,500円のため体験を優先）"
+  ],
+  "blockers": [
+    "App Store配布用証明書が未発行。App Store Connect APIキー（App Manager）の発行が必要（辻直哉のみ実行可能）"
+  ]
 }
