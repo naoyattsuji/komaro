@@ -125,26 +125,36 @@ Tracking:
 - [x] `CFBundleDevelopmentRegion` を `ja` へ変更。
 - [x] App icon 1024x1024・アルファチャンネルなしを確認。
 - [x] 提出用スクリーンショットを撮影（iPhone 6.9インチ5枚・iPad 13インチ4枚）。
-- [ ] Upload archive to App Store Connect.
-- [ ] Create App Store Connect app record.
-- [ ] Add screenshots.
-- [ ] Enter product page metadata.
-- [ ] Complete age rating.
-- [ ] Complete App Privacy.
-- [ ] Select uploaded build.
-- [ ] Submit for review.
+- [x] Upload archive to App Store Connect.
+- [x] Create App Store Connect app record.
+- [x] Add screenshots.
+- [x] Enter product page metadata.
+- [x] Complete age rating.
+- [x] Complete App Privacy.
+- [x] Select uploaded build.
+- [x] Submit for review.
 
-## Current Upload Blocker
+## Submission Result (2026-08-25)
 
-配布署名の資格情報が無いため、アップロード工程が開始できない状態です（2026-08-13時点）。
+**審査提出まで完了。** App Store Connect 上のステータスは `WAITING_FOR_REVIEW`（審査待ち）。審査には最大48時間かかる。
 
-日本語:
+- App ID: `6805110615` / Bundle ID: `app.komaro` / SKU: `komaro-ios`
+- バージョン `1.0.0`（ビルド 1）、`releaseType: AFTER_APPROVAL`（承認後に手動リリース）
+- 価格: 無料 / 配信: 175の国と地域
+- 年齢制限: 4+（ユーザー生成コンテンツのみ「あり」）
+- App Privacy: 公開済み（名前・その他のユーザコンテンツ＝個人情報に関連付けあり、デバイスID・製品の操作＝関連付けなし、トラッキングはすべて「なし」）
+- カテゴリ: 仕事効率化 / ユーティリティ
+- スクリーンショット: iPhone 6.9インチ5枚・iPad 13インチ4枚（すべて `COMPLETE`）
 
-- ローカルの署名IDは `Apple Development` と `Developer ID Application`（Mac配布用）の2つのみで、**App Store配布用の `Apple Distribution` 証明書が存在しません**。
-- App Store Connect APIキー（`~/.appstoreconnect/private_keys/AuthKey_*.p8`）も未設置です。
-- 2026-06-29のCLI exportは `No provider associated with App Store Connect user`、`No signing certificate "iOS Distribution" found`、`Team "NAOYA TSUJI" does not have permission to create "iOS App Store" provisioning profiles` で停止しました。Xcodeにサインインしている Apple ID に App Store Connect 側の権限が結び付いていないことが原因と考えられます。
-- 解消手順（辻直哉の作業）: App Store Connect → Users and Access → Integrations → App Store Connect API で **Team Key（App Manager）** を発行し、`.p8` を `~/.appstoreconnect/private_keys/` へ配置。Issuer ID を `~/.appstoreconnect/issuer_id.txt` へ保存。
-- キー設置後は、`xcodebuild -exportArchive -allowProvisioningUpdates` に `-authenticationKeyPath` / `-authenticationKeyID` / `-authenticationKeyIssuerID` を渡すことで、配布証明書とプロビジョニングプロファイルの生成からアップロードまでCLIで完結します。
+### 元のブロッカーの原因と解消
+
+6月に `No provider associated with App Store Connect user` で停止していた原因は、**このApple IDに App Store Connect API へのアクセス権が付与されていなかった**こと。App Store Connect → ユーザとアクセス → 統合 → 「アクセス権をリクエスト」から有効化して解消した（規約同意は辻直哉本人が実施）。
+
+APIキーは **管理者（Admin）権限**で発行している。App Manager では App Store 配布用証明書を新規作成できず、同じ権限エラーで止まるため。キーは作成後にアクセス権を変更できない仕様。
+
+- Key ID: `74GV67KP3Q`（`.p8` は `~/.appstoreconnect/private_keys/`、権限600）
+- Issuer ID: `~/.appstoreconnect/issuer_id.txt`
+- 以降の操作は `scripts/asc-api.mjs`（App Store Connect API クライアント）と `scripts/asc-upload-screenshots.mjs` で自動化できる
 
 ## Review Risk: Guideline 4.2 (Minimum Functionality)
 
