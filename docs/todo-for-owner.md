@@ -8,37 +8,13 @@
 
 ---
 
-## A. App Store 申請を進めるために必要（いま詰まっているのはここだけ）
+## A. App Store 申請 — ✅ 2026-08-25 完了
 
-### A-1. App Store Connect の API キーを発行する ★これが唯一のブロッカー
+**審査提出まで到達しました。** App ID `6805110615`、バージョン 1.0.0、ステータスは「審査待ち」。審査は最大48時間で、結果はAppleからメールで届きます。
 
-**なぜ必要か**: このMacには **App Store配布用の証明書（Apple Distribution）が存在しません**。今あるのは開発用と、Mac直接配布用の2つだけです。この鍵がないと、ビルドのアップロードもメタデータ登録も一切できません。
-
-**手順**（所要5分・ご自身のChromeで）
-
-1. https://appstoreconnect.apple.com/access/integrations/api を開く
-2. 「**Team Keys**」タブ →「**+**」ボタン
-3. 名前: `claude-code-cli` ／ アクセス権: **App Manager**
-4. 生成 →「**Download API Key**」で `.p8` をダウンロード（**ダウンロードは1回きり。再取得できません**）
-5. ターミナルで下記を実行してファイルを所定の場所へ移動
-
-```bash
-mkdir -p ~/.appstoreconnect/private_keys && mv ~/Downloads/AuthKey_*.p8 ~/.appstoreconnect/private_keys/
-```
-
-6. 同じ画面の上部にある **Issuer ID**（UUID形式）をコピーして、下記を実行
-
-```bash
-pbpaste > ~/.appstoreconnect/issuer_id.txt
-```
-
-**チャットにキーを貼る必要はありません。** Key ID はファイル名から読み取れます。
-
-**終わったら**「置いた」とだけ伝えてください。以降の (a) 配布証明書とプロビジョニングプロファイルの生成、(b) アーカイブのアップロード、(c) アプリレコード作成、(d) 説明文・スクリーンショット9枚・年齢制限・App Privacy・審査メモの登録、(e) 審査提出 —— は**すべてこちらで実行します**。
-
-**うまくいかない場合**: この画面が開けない、または「権限がない」と出るときは、Apple Developer Program の契約同意（Free Apps Agreement）が未完了の可能性があります。画面に出ている文言を教えてもらえれば、**サインインだけ済ませてもらった状態でブラウザ操作をこちらが代行します**（Giroku の Microsoft Partner Center のときと同じやり方です）。
-
----
+- 承認されたら手動でリリースします（自動公開しない設定にしてあります）
+- APIキーは発行済み（管理者権限・`~/.appstoreconnect/private_keys/`）。次回以降のバージョン更新は `scripts/asc-api.mjs` などで自動化できます
+- EUのトレーダーステータスは未申告のため、現状EU圏では配信されません。日本での配信には影響しません。必要になったら App Store Connect → アプリ情報 → デジタルサービス法 から申告できます
 
 ## B. 審査に落ちた場合に判断が必要なこと
 
