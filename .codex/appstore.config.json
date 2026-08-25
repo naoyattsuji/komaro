@@ -1,0 +1,64 @@
+{
+  "appName": "KOMARO",
+  "bundleId": "app.komaro",
+  "sku": "komaro-ios",
+  "primaryLocale": "ja",
+  "projectDir": "/Users/naoyatsuji/Desktop/dev/KOMARO",
+  "xcodeProject": "ios/App/App.xcodeproj",
+  "scheme": "App",
+  "teamId": "243ATW576T",
+  "archivePath": "build/KOMARO-1.0.0.xcarchive",
+  "version": "1.0.0",
+  "copyright": "2026 Naoya Tsuji",
+  "releaseType": "AFTER_APPROVAL",
+  "usesIdfa": false,
+  "categories": {
+    "primary": "PRODUCTIVITY",
+    "secondary": "UTILITIES"
+  },
+  "localizations": {
+    "ja": {
+      "subtitle": "コマで見る日程調整",
+      "privacyPolicyUrl": "https://komaro.app/privacy",
+      "description": "KOMAROは、複数人の日程調整をシンプルに進めるためのスケジュール調整アプリです。\n\nイベントを作成してURLを共有すると、参加者は空いているコマをタップするだけで回答できます。集計画面では参加できる人数がコマの色で表示されるため、全員が集まりやすい時間をすばやく見つけられます。\n\n主な機能:\n\n- 登録不要でイベント作成\n- 参加者向けURLをLINEやチャットで共有\n- コマの色で空き時間を集計\n- セルをタップして参加可能メンバーを確認\n- 回答の修正、イベント設定の編集\n- カレンダーへの予定追加\n- アプリ内の最近のイベント履歴\n\n会議、飲み会、面談、イベント運営など、複数人の予定をまとめたい場面で使えます。",
+      "keywords": "日程調整,予定調整,スケジュール,カレンダー,会議,イベント,出欠,LINE共有",
+      "supportUrl": "https://komaro.app/help",
+      "marketingUrl": "https://komaro.app",
+      "promotionalText": "登録不要。URLを共有するだけで、メンバーの空き時間をコマの色でひと目確認できます。"
+    }
+  },
+  "ageRating": {
+    "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+    "contests": "NONE",
+    "gamblingSimulated": "NONE",
+    "medicalOrTreatmentInformation": "NONE",
+    "profanityOrCrudeHumor": "NONE",
+    "sexualContentOrNudity": "NONE",
+    "sexualContentGraphicAndNudity": "NONE",
+    "horrorOrFearThemes": "NONE",
+    "matureOrSuggestiveThemes": "NONE",
+    "violenceCartoonOrFantasy": "NONE",
+    "violenceRealistic": "NONE",
+    "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+    "gunsOrOtherWeapons": "NONE",
+    "healthOrWellnessTopics": false,
+    "gambling": false,
+    "lootBox": false,
+    "unrestrictedWebAccess": false,
+    "messagingAndChat": false,
+    "socialMedia": false,
+    "socialMediaAgeRestricted": false,
+    "userGeneratedContent": true,
+    "advertising": false,
+    "parentalControls": false,
+    "ageAssurance": false
+  },
+  "review": {
+    "demoAccountRequired": false,
+    "notes": "KOMARO is a schedule coordination app for Japanese users. No login or account is required.\n\nHow to review:\n1. Tap the \"作成\" (Create) button in the header.\n2. Enter any event title and tap \"次へ: 軸の設定\" (Next), then \"イベントを作成する\" (Create event).\n3. On the completion screen, tap \"イベントを確認する\" (View event) to open the aggregated availability grid.\n4. Tap \"回答する\" (Answer) to enter a name and select available time cells, then submit.\n5. The grid colors each cell by how many participants are available.\n\nThe app also keeps a recent-event history stored locally on the device, shown on the home screen under \"最近のイベント\" (Recent events). This section appears only in the app, not on the website.\n\nNo user accounts, no in-app purchases, no advertising."
+  },
+  "screenshots": {
+    "APP_IPHONE_67": "assets/app-store/screenshots/iphone-6.9",
+    "APP_IPAD_PRO_3GEN_129": "assets/app-store/screenshots/ipad-13"
+  }
+}
