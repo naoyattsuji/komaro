@@ -156,6 +156,25 @@ APIキーは **管理者（Admin）権限**で発行している。App Manager �
 - Issuer ID: `~/.appstoreconnect/issuer_id.txt`
 - 以降の操作は `scripts/asc-api.mjs`（App Store Connect API クライアント）と `scripts/asc-upload-screenshots.mjs` で自動化できる
 
+## Review Round 1 (2026-08-26) — Guideline 2.1 Information Needed
+
+初回審査は**機能への指摘ではなく情報不足**で差し戻された。同日に ツモル も同一の指摘を受けている（ツモルはその後 `READY_FOR_SALE` に到達）。
+
+Appleの要求7項目: (1)実機の画面収録 (2)テスト端末とOS (3)機能・対象・課題 (4)到達手順 (5)外部サービス (6)地域差 (7)規制業種。
+
+### 対応（2026-10-15 返信済み）
+
+- 項目3〜7を審査メモへ登録済み。外部サービスには **Gemini API（音声入力・カレンダー画像読み取りの任意機能）** と **Tesseract.js（端末内OCR）** を明記（Appleは「AIサービス」の申告を明示的に求める）。
+- 実機 **iPhone 17 / iOS 26.6.1** に TestFlight で配信し、iOSの画面収録で91秒の動画を取得。ホーム画面でアイコンをタップするところから、作成→回答→集計の着色までを通しで収録。
+- 返信本文（3991文字・上限4000）と動画を App Store Connect の App Review へ送信。送信済み本文は `.codex/app-review-reply-sent-2026-10-15.txt`、動画は `assets/app-store/review-demo-2026-10-15.mp4`。
+- 「App Reviewに再提出」は無効のままで、**この種の差し戻しは返信のみで審査が再開する**。
+
+### 収録時の注意（次回以降）
+
+- **Mac側の画面収録は使えない。** iPhoneミラーリングは録画を検知すると接続を切る。
+- **iPhoneミラーリングからコントロールセンターは開けない**ため、画面収録の開始も代行できない。実機側で開始してもらう必要がある。
+- 録画は iOS の画面収録で撮り、AirDrop で Mac へ。169MB の HEVC を `ffmpeg -vf scale=-2:1280 -crf 28 -an` で 1.9MB の H.264 に変換して添付した。
+
 ## Review Risk: Guideline 4.2 (Minimum Functionality)
 
 `capacitor.config.ts` の `server.url` が `https://komaro.app` を指しており、ローカルにWeb資産を持たない純粋なWebViewラッパーです。App Store では「Webサイトを再パッケージしただけのアプリ」としてリジェクトされる可能性があります。

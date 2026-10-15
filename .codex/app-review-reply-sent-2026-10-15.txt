@@ -1,0 +1,37 @@
+Thank you for the feedback. Here is the requested information.
+
+1. Screen recording
+Attached (91s). Captured with iOS Screen Recording on a physical iPhone, beginning on the Home Screen with tapping the KOMARO icon. It shows the full core flow: creating an event, opening it, tapping "回答する" (Answer), entering a name, selecting available time cells, submitting, and the grid coloring those cells by how many participants are available.
+
+The app has none of the other listed flows: no account registration, login, or deletion (no user accounts), no paid content or subscriptions, and no prompts for location, contacts, camera, photos, notifications, or App Tracking Transparency.
+
+User-generated content: event titles, names, and comments are visible only to people who have the event URL, an unguessable random ID that is not listed or searchable. Participants can edit or delete their own answer from the result screen, and the organizer can edit or delete the event and any answer. Events are deleted automatically 120 days after their last update.
+
+2. Devices and operating systems tested
+iPhone 17 (iOS 26.6.1) - used for the attached recording, running the submitted build via TestFlight.
+iPhone 17 Pro Max Simulator (iOS 26.3) and iPad Pro 13-inch (M5) Simulator (iPadOS 26.3) were used during development.
+
+3. App functions, target audience, problem solved
+KOMARO is a free group-availability polling (schedule coordination) app for Japanese users. Coordinating a meeting time among several people normally takes many back-and-forth chat messages. With KOMARO, an organizer creates an event as a grid of candidate dates by time slots, shares one URL, and participants tap the cells they are free for. The grid colors each cell by how many people are available, so the best time is visible at a glance.
+Target audience: general users in Japan scheduling meetings, dinners, interviews, or club events. No account or specialized knowledge required.
+Core features: create an event without registration (three grid formats); share the participant URL via LINE or any chat app; answer by tapping cells; aggregated grid; tap a cell to see who is available; edit or delete answers; optional password for event settings; add a confirmed date to Google / Yahoo / iCloud calendar; and a recent-event history stored locally on the device, shown on the app home screen (only in the app, not on the website).
+
+4. Setting up and accessing the main features
+No login, demo account, or sample files needed.
+1) Launch the app. 2) Tap "作成" (Create) top-right. 3) Enter any title, tap "次へ: 軸の設定" (Next), then "イベントを作成する" (Create event). 4) Tap "イベントを確認する" (View event). 5) Tap "回答する" (Answer), type any name, tap several cells, tap "この内容で送信する" (Submit). 6) The grid counts and colors your cells. 7) Scroll the app home screen to see it under "最近のイベント" (Recent events).
+
+5. External services used
+- Vercel - hosting
+- Neon - PostgreSQL database for events, names, answers, comments
+- Google Analytics 4 - anonymous usage analytics only; no ads, no cross-app tracking
+- Google Gemini API (gemini-2.0-flash) - optional only. Parses a spoken sentence or a calendar screenshot into candidate dates when the organizer chooses voice or image input. The app is fully usable without it; dates can always be typed manually.
+- Tesseract.js - on-device OCR used with the image input feature; runs locally.
+No authentication provider, payment processor, ad SDK, or in-app purchase.
+
+6. Regional differences
+None. The app behaves identically in all regions. The interface is Japanese only, all features are available to every user, and nothing is enabled, disabled, or restricted by region.
+
+7. Regulated industry / protected third-party material
+Not applicable. KOMARO is not in a regulated industry and includes no third-party protected material. All text, icons, and illustrations are original works of the developer.
+
+Items 3-7 are also in the App Review Information notes field for future submissions. Thank you.
