@@ -199,3 +199,18 @@ Appleの要求7項目: (1)実機の画面収録 (2)テスト端末とOS (3)機�
   - `01-home.png` / `02-summary.png` / `03-answer.png` / `04-create.png`
 - 写っているイベント・参加者名はすべて撮影用に作成した架空のデモデータです。
 - 旧候補 `iphone-17-pro-max/01-home-retry.png` は履歴として残しています。
+
+## 公開（2026-10-15）
+
+**App Store で公開された。** ガイドライン2.1への返信（実機録画＋要求7項目、10/15 送信）に対し、App Review から「Thank you for providing this information. We will continue the review」との返信が 14:41（JST）に届き、その **3分後の 14:44 に審査完了**。`releaseType: AFTER_APPROVAL` のため承認と同時に自動公開された（手動リリース操作は不要だった）。
+
+- ストア: https://apps.apple.com/jp/app/komaro/id6805110615
+- `appStoreState: READY_FOR_SALE` / `appVersionState: READY_FOR_DISTRIBUTION`
+- 1.0.0（ビルド1）/ 無料 / iOS 15.0以上 / 3.4MB / 仕事効率化 / スクリーンショット iPhone5枚・iPad4枚
+- 懸念していた **ガイドライン4.2（Webサイトの再パッケージ）での指摘は無かった**。オフライン時の案内画面と端末内の最近のイベント履歴を用意していたことが効いた可能性はあるが、断定はできない。
+
+### この件からの教訓（他プロジェクトへ）
+
+- ガイドライン2.1「Information Needed」は**返信のみで審査が再開する**。「App Reviewに再提出」ボタンは無効のままで正しい。
+- 返信が受理されると、まず「情報をありがとう、審査を続行する」という定型メッセージが届き、その直後に結果が出ることがある（今回は3分後）。
+- 実機の画面収録は、Appleが明示的に求めてきた場合は避けて通れない。Macの画面収録は使えない（iPhoneミラーリングが録画を検知して切断する）ため、本人に iOS の画面収録で撮ってもらうしかない。
