@@ -9,7 +9,7 @@
  * 認証情報は ~/.appstoreconnect/ から読む。鍵の中身は一切出力しない。
  */
 import { readFileSync, readdirSync } from "node:fs";
-import { createSign, createPrivateKey, sign as cryptoSign } from "node:crypto";
+import { createPrivateKey, sign as cryptoSign } from "node:crypto";
 import { homedir } from "node:os";
 import { join } from "node:path";
 

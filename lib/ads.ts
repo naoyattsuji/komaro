@@ -12,6 +12,15 @@
 /** 広告全体のオン・オフ。未設定時はオフ。 */
 export const ADS_ENABLED = process.env.NEXT_PUBLIC_ADS_ENABLED === "true";
 
+/**
+ * AdSenseのスクリプトが読み込まれる状態かどうか。
+ *
+ * パブリッシャーIDを設定した時点で、広告枠を出していなくてもスクリプトは読み込まれ、
+ * Googleのcookieが入る。プライバシーポリシーの開示はこちらを基準にする
+ * （ADS_ENABLED は「広告枠を出すか」なので、開示の基準としては遅すぎる）。
+ */
+export const ADS_SCRIPT_LOADED = (process.env.NEXT_PUBLIC_ADSENSE_CLIENT ?? "") !== "";
+
 /** AdSenseのパブリッシャーID（例: ca-pub-1234567890123456）。 */
 export const AD_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT ?? "";
 

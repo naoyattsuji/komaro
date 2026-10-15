@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ADS_ENABLED, ADS_PERSONALIZED } from "@/lib/ads";
+import { ADS_SCRIPT_LOADED, ADS_PERSONALIZED } from "@/lib/ads";
 
 export const metadata: Metadata = {
   title: "プライバシーポリシー — KOMARO",
@@ -81,7 +81,7 @@ export default function PrivacyPage() {
             <li>
               <strong>Google Analytics</strong>（アクセス解析）— サービス改善のため、閲覧状況や利用状況を統計的に分析します。
             </li>
-            {ADS_ENABLED && (
+            {ADS_SCRIPT_LOADED && (
               <li>
                 <strong>Google AdSense</strong>（広告配信）— 本サービスの運営費用をまかなうため、一部のページに広告を掲載しています。{" "}
                 <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer" className="text-gray-600 underline">
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
             本サービスでは、サービス改善や利用状況の把握のためにGoogle Analyticsを使用する場合があります。
             取得される情報は統計的な分析に利用します。
           </p>
-          {ADS_ENABLED ? (
+          {ADS_SCRIPT_LOADED ? (
             <>
               <p className="mt-3">
                 また、本サービスの一部のページではGoogle AdSenseによる広告を配信しています。
