@@ -76,6 +76,20 @@ KOMAROのiOS/Android版は `komaro.app` をWebViewで表示する構造ですが
 
 ## 6. 有効化の手順
 
+### 現在の状態（2026-10-15）
+
+| 項目 | 状態 |
+|---|---|
+| AdSenseアカウント | 作成済み（`naoyattsuji@gmail.com`／**t が2つ**） |
+| パブリッシャーID | `ca-pub-3747635667721901`（設定・デプロイ済み） |
+| サイトの所有権確認 | ✅ **ads.txt 方式**で完了 |
+| サイト審査 | リクエスト済み・結果待ち |
+| 自動広告 | オフ（確認済み） |
+| 広告ユニット | `komaro-summary-bottom` = `4670802271`（設定・デプロイ済み） |
+| 実際の配信 | 審査承認まで `unfilled`（枠ごと非表示）。承認後に自動で出る |
+| お支払い情報 | **未入力（本人のみ）** — これが無いと承認されても配信されない |
+
+
 AdSenseは「アカウント審査 → 承認 → 広告ユニット作成」の順で、審査中は広告ユニットIDが存在しません。そのため2段階に分かれます。
 
 ### 第1段階: 審査を通す（パブリッシャーIDだけを設定する）
@@ -107,18 +121,24 @@ AdSense管理画面には、Googleが勝手に広告の位置を決める「**�
 
 サイト追加時に既定でオンになっていることがあるため、**AdSense管理画面 → 広告 → サイトごとの設定で「自動広告」がオフになっていることを必ず確認してください。**
 
-### 補足: 審査用コードが検出されない場合
+### 所有権の確認は ads.txt 方式で行うこと（AdSenseコード方式は失敗する）
 
-審査用のスクリプトは、ネイティブアプリのWebView内で読み込まないようにするため、サーバー側HTMLではなくブラウザ側で挿入しています（`components/AdSenseScript.tsx`）。Googleの確認がこれを検出できない場合は、サーバー側で出力する方式へ切り替えられます（その場合はアプリのUser-Agentで除外する対応が別途必要）。
+AdSense の「サイトの所有権を確認してください」には3つの方式があるが、**`AdSense コード スニペット` 方式は必ず失敗する**（2026-10-15 に確認）。
+
+理由は、審査用スクリプトをサーバー側HTMLではなくブラウザ側で挿入しているため（`components/AdSenseScript.tsx`）。これは**ネイティブアプリのWebView内で読み込まないようにするための設計**であり、不具合ではない。AdSense のクローラは生のHTMLを読むため、スクリプトタグが見つからない。
+
+**`ads.txt スニペット` 方式を選ぶこと。** `app/ads.txt/route.ts` がパブリッシャーIDから自動生成して配信しているので、`NEXT_PUBLIC_ADSENSE_CLIENT` が設定されていれば追加作業なしで通る。
+
+サーバー側で出力する方式へ切り替えることもできるが、その場合はアプリのUser-Agentで除外する対応が別途必要になり、取りこぼすとポリシー違反（アカウント停止）に直結するため、ads.txt 方式を推奨する。
 
 ## 7. 環境変数一覧
 
 | 変数名 | 役割 | 既定 |
 |---|---|---|
-| `NEXT_PUBLIC_ADS_ENABLED` | 広告全体のオン・オフ | 未設定（オフ） |
-| `NEXT_PUBLIC_ADSENSE_CLIENT` | パブリッシャーID（`ca-pub-...`） | 未設定 |
+| `NEXT_PUBLIC_ADS_ENABLED` | 広告全体のオン・オフ | **`true`（設定済み）** |
+| `NEXT_PUBLIC_ADSENSE_CLIENT` | パブリッシャーID（`ca-pub-...`） | **`ca-pub-3747635667721901`（設定済み）** |
 | `NEXT_PUBLIC_ADS_PERSONALIZED` | パーソナライズ広告を許可するか | 未設定（非パーソナライズのみ） |
-| `NEXT_PUBLIC_ADSENSE_SLOT_SUMMARY_BOTTOM` | 集計ページ最下部の枠ID | 未設定 |
+| `NEXT_PUBLIC_ADSENSE_SLOT_SUMMARY_BOTTOM` | 集計ページ最下部の枠ID | **`4670802271`（設定済み）** |
 | `NEXT_PUBLIC_ADSENSE_SLOT_HOME_BOTTOM` | トップページ最下部の枠ID | 未設定 |
 | `NEXT_PUBLIC_ADSENSE_SLOT_HELP_BOTTOM` | ヘルプ最下部の枠ID | 未設定 |
 | `NEXT_PUBLIC_ADSENSE_SLOT_ANSWER_COMPLETE` | 回答完了画面の枠ID | 未設定 |
