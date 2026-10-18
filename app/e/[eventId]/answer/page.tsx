@@ -354,6 +354,12 @@ export default function AnswerPage({
         </Button>
       </div>
 
+      {/* 送信ボタンの真下は親指の着地点にあたる。誤タップは広告主への無効クリックとして
+          計上され、AdSenseアカウント停止の直接の原因になるため、128pxの余白を必ず挟む。
+          この余白を詰めないこと。 */}
+      <div aria-hidden className="h-32" />
+      <AdSlot placement="answerBottom" variant="section" />
+
       {/* Duplicate name modal */}
       <Modal
         open={showDuplicateModal}

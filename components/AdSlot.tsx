@@ -1,7 +1,7 @@
 "use client";
 
 import { Capacitor } from "@capacitor/core";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   ADS_PERSONALIZED,
   AD_CLIENT,
@@ -28,6 +28,20 @@ const getIsNativeApp = () => Capacitor.isNativePlatform();
 const getIsNativeAppOnServer = () => true;
 
 /**
+ * 画面幅の条件を満たしているか。
+ *
+ * CSSで隠すのではなく描画自体をやめる。display:noneの中で広告を要求すると、
+ * 見えていない広告のリクエストが発生してAdSenseのポリシー上の問題になるため。
+ */
+function subscribeMediaQuery(query: string) {
+  return (onChange: () => void) => {
+    const mql = window.matchMedia(query);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  };
+}
+
+/**
  * AdSenseの広告枠。
  *
  * - 未設定・ネイティブアプリ内では何も描画しない。
@@ -38,6 +52,7 @@ export function AdSlot({
   placement,
   className = "",
   variant = "inline",
+  minWidth,
 }: {
   placement: AdPlacement;
   className?: string;
@@ -47,6 +62,11 @@ export function AdSlot({
    *          「ここから先はアプリの中身ではない」と分かる帯にする。
    */
   variant?: "inline" | "section";
+  /**
+   * この画面幅（px）未満では描画しない。PC専用の枠に使う。
+   * CSSで隠すのではなく要素ごと出さないため、見えない広告の要求が発生しない。
+   */
+  minWidth?: number;
 }) {
   const insRef = useRef<HTMLModElement>(null);
   const pushedRef = useRef(false);
@@ -58,9 +78,23 @@ export function AdSlot({
     getIsNativeAppOnServer
   );
 
+  // subscribe が毎描画で新しい関数になると購読し直しが走るので固定する
+  const subscribeWidth = useMemo(
+    () => (minWidth ? subscribeMediaQuery(`(min-width: ${minWidth}px)`) : subscribeNothing),
+    [minWidth]
+  );
+  const getWidthOk = useCallback(
+    () => (minWidth ? window.matchMedia(`(min-width: ${minWidth}px)`).matches : true),
+    [minWidth]
+  );
+  // サーバー側では画面幅が分からない。幅の条件がある枠は描画しない側に倒す
+  const getWidthOkOnServer = useCallback(() => !minWidth, [minWidth]);
+
+  const widthOk = useSyncExternalStore(subscribeWidth, getWidthOk, getWidthOkOnServer);
+
   const configured = isAdPlacementConfigured(placement);
   const slotId = AD_SLOTS[placement];
-  const shouldRender = configured && !isNativeApp;
+  const shouldRender = configured && !isNativeApp && widthOk;
 
   useEffect(() => {
     if (!shouldRender || pushedRef.current) return;

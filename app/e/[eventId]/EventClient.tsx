@@ -510,6 +510,9 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               onCellClick={handleCellClick}
             />
           )}
+
+          {/* 表を見た直後で視線がここにある。セルとは余白で離し、誤タップを避ける */}
+          <AdSlot placement="summaryUnderTable" className="mt-6" />
         </FadeInSection>
 
         {/* Sidebar: Members */}
@@ -568,6 +571,9 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
               </Button>
             </Link>
           </div>
+
+          {/* サイドバーの余白。PC専用（スマホでは2カラムにならず、ただの差し込みになるため） */}
+          <AdSlot placement="summarySidebar" minWidth={768} />
         </FadeInSection>
       </div>
 

@@ -130,6 +130,13 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* 機能紹介とCTAの間。読み物の切れ目なので割り込み感が小さい */}
+      <div className="bg-white">
+        <div className="max-w-6xl mx-auto px-6">
+          <AdSlot placement="homeMiddle" className="py-10" />
+        </div>
+      </div>
+
       {/* CTA */}
       <section className="bg-white py-20">
         <div className="max-w-6xl mx-auto px-6">

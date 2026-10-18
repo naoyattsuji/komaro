@@ -50,6 +50,26 @@ export const AD_SLOTS = {
   answerComplete: process.env.NEXT_PUBLIC_ADSENSE_SLOT_ANSWER_COMPLETE ?? "",
   /** イベント作成の完了画面。URLのコピー導線より必ず下に置く。 */
   createComplete: process.env.NEXT_PUBLIC_ADSENSE_SLOT_CREATE_COMPLETE ?? "",
+  /**
+   * 集計表の直下（PCは左カラム内、スマホは表と参加者一覧の間）。
+   * 表を見た直後で視線がそこにあるため最も見られるが、参加者一覧を下へ押し下げる。
+   */
+  summaryUnderTable: process.env.NEXT_PUBLIC_ADSENSE_SLOT_SUMMARY_UNDER_TABLE ?? "",
+  /**
+   * 集計ページのサイドバー下部。**PC専用**（`minWidth` で768px未満では描画しない）。
+   * もともと空いている余白のため、何も押し下げずに枠を増やせる。
+   */
+  summarySidebar: process.env.NEXT_PUBLIC_ADSENSE_SLOT_SUMMARY_SIDEBAR ?? "",
+  /**
+   * 回答画面・送信ボタンの下。
+   *
+   * 表示回数は多いが、全幅の送信ボタンの真下は親指の着地点にあたる。
+   * 誤タップは広告主への無効クリックとして計上され、AdSenseアカウント停止の
+   * 直接の原因になるため、**送信ボタンとの間に128pxの余白を必ず確保すること**。
+   */
+  answerBottom: process.env.NEXT_PUBLIC_ADSENSE_SLOT_ANSWER_BOTTOM ?? "",
+  /** トップページ中盤。機能紹介とCTAの間。読み物の切れ目で割り込み感が小さい。 */
+  homeMiddle: process.env.NEXT_PUBLIC_ADSENSE_SLOT_HOME_MIDDLE ?? "",
 } as const;
 
 export type AdPlacement = keyof typeof AD_SLOTS;
