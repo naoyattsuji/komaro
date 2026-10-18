@@ -28,6 +28,16 @@ const getIsNativeApp = () => Capacitor.isNativePlatform();
 const getIsNativeAppOnServer = () => true;
 
 /**
+ * `?ads=preview` が付いているか。
+ *
+ * 枠の位置を実機で見て確認するための表示専用モード。広告ユニットIDが
+ * 未設定の枠も含めて、ダミーの枠を描画する。**AdSenseへのリクエストは一切行わない**ため、
+ * 無効なインプレッションが発生する心配はない。
+ */
+const getAdPreview = () =>
+  new URLSearchParams(window.location.search).get("ads") === "preview";
+
+/**
  * 画面幅の条件を満たしているか。
  *
  * CSSで隠すのではなく描画自体をやめる。display:noneの中で広告を要求すると、
@@ -92,12 +102,15 @@ export function AdSlot({
 
   const widthOk = useSyncExternalStore(subscribeWidth, getWidthOk, getWidthOkOnServer);
 
+  const isPreview = useSyncExternalStore(subscribeNothing, getAdPreview, () => false);
+
   const configured = isAdPlacementConfigured(placement);
   const slotId = AD_SLOTS[placement];
-  const shouldRender = configured && !isNativeApp && widthOk;
+  // プレビューは枠の位置を見るためのものなので、ID未設定の枠も描画する
+  const shouldRender = (configured || isPreview) && !isNativeApp && widthOk;
 
   useEffect(() => {
-    if (!shouldRender || pushedRef.current) return;
+    if (!shouldRender || isPreview || pushedRef.current) return;
     const ins = insRef.current;
     if (!ins) return;
 
@@ -131,15 +144,33 @@ export function AdSlot({
       observer.disconnect();
       clearTimeout(timer);
     };
-  }, [shouldRender]);
+  }, [shouldRender, isPreview]);
 
-  if (!shouldRender || fill === "unfilled") return null;
+  if (!shouldRender || (!isPreview && fill === "unfilled")) return null;
 
   // 完了画面用の帯。親の px-4 を打ち消して端まで伸ばし、区切り線で本文と分ける
   const variantClass =
     variant === "section"
       ? "mt-12 -mx-4 border-t border-gray-100 bg-gray-50/70 px-4 pt-7 pb-9"
       : "";
+
+  // 位置確認用のダミー枠。AdSenseのコードは一切読み込まない
+  if (isPreview) {
+    return (
+      <div className={`native-app-hidden ${variantClass} ${className}`}>
+        <div
+          className="flex h-[250px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-red-400 bg-red-50/60"
+        >
+          <p className="mb-1 text-[10px] uppercase tracking-widest text-gray-400">スポンサー</p>
+          <p className="text-sm font-bold text-red-500">広告枠</p>
+          <p className="mt-0.5 font-mono text-[11px] text-red-400">{placement}</p>
+          {!configured && (
+            <p className="mt-2 text-[11px] text-gray-400">（この枠はまだ有効にしていません）</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
