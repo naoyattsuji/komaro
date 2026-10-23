@@ -78,3 +78,39 @@ export type AdPlacement = keyof typeof AD_SLOTS;
 export function isAdPlacementConfigured(placement: AdPlacement): boolean {
   return ADS_ENABLED && AD_CLIENT !== "" && AD_SLOTS[placement] !== "";
 }
+
+/* ------------------------------------------------------------------
+ * アプリ内の広告（AdMob）
+ *
+ * AdSenseの広告をアプリ内へ出すのはポリシー違反なので、アプリでは
+ * AdMobを使う。Web側とは別系統で、オン・オフも別に持つ。
+ * ------------------------------------------------------------------ */
+
+/** アプリ内広告のオン・オフ。未設定時はオフ。 */
+export const ADMOB_ENABLED = process.env.NEXT_PUBLIC_ADMOB_ENABLED === "true";
+
+/** バナー広告ユニットID（例: ca-app-pub-XXXX/YYYY）。 */
+export const ADMOB_BANNER_ID = process.env.NEXT_PUBLIC_ADMOB_BANNER_ID ?? "";
+
+/**
+ * バナーを出してよい画面か。
+ *
+ * AdMobのバナーは画面下に居座る「追従バナー」になる。docs/ads.md の方針では
+ * 追従バナーも、回答中のコマ表の周囲に広告を置くことも禁じているため、
+ * **画面ごとに出し分けて方針を守る**。出さない画面は次のとおり。
+ *
+ * - 回答・修正の画面: 誤タップが無効クリックとして計上され、アカウント停止に直結する
+ * - イベント作成フォーム: 作業の中断がそのまま作成数の減少になる
+ * - 利用規約・プライバシーポリシー: 信頼を担保するページ
+ */
+export function shouldShowAppBanner(pathname: string): boolean {
+  if (!ADMOB_ENABLED || ADMOB_BANNER_ID === "") return false;
+
+  // /e/<id>/answer, /e/<id>/edit, /e/<id>/edit/settings
+  if (/^\/e\/[^/]+\/(answer|edit)/.test(pathname)) return false;
+  // 作成フォーム本体。完了画面 /create/done には出す
+  if (pathname === "/create") return false;
+  if (pathname === "/terms" || pathname === "/privacy") return false;
+
+  return true;
+}

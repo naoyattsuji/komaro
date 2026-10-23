@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/components/ui/Toast";
 import { NativeAppChrome } from "@/components/NativeAppChrome";
+import { NativeAdBanner } from "@/components/NativeAdBanner";
 import { AdSenseScript } from "@/components/AdSenseScript";
 import Link from "next/link";
 import Image from "next/image";
@@ -102,6 +103,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ja" className={`${geist.variable} h-full overflow-x-hidden overflow-y-scroll`}>
       <body className="min-h-full flex flex-col overflow-x-hidden bg-white antialiased font-sans">
         <NativeAppChrome />
+        <NativeAdBanner />
         <header className="sticky top-0 z-30 bg-white border-b border-gray-100 pt-safe">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex min-w-0 items-center justify-between gap-3">
             <div className="flex min-w-0 shrink items-center">
