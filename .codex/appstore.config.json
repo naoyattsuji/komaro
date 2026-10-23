@@ -7,8 +7,8 @@
   "xcodeProject": "ios/App/App.xcodeproj",
   "scheme": "App",
   "teamId": "243ATW576T",
-  "archivePath": "build/KOMARO-1.0.0.xcarchive",
-  "version": "1.0.0",
+  "archivePath": "build/KOMARO-1.0.1.xcarchive",
+  "version": "1.0.1",
   "copyright": "2026 Naoya Tsuji",
   "releaseType": "AFTER_APPROVAL",
   "usesIdfa": false,
@@ -24,7 +24,8 @@
       "keywords": "日程調整,予定調整,スケジュール,カレンダー,会議,イベント,出欠,LINE共有",
       "supportUrl": "https://komaro.app/help",
       "marketingUrl": "https://komaro.app",
-      "promotionalText": "登録不要。URLを共有するだけで、メンバーの空き時間をコマの色でひと目確認できます。"
+      "promotionalText": "登録不要。URLを共有するだけで、メンバーの空き時間をコマの色でひと目確認できます。",
+      "whatsNew": "アプリ内に広告を追加しました。回答中の画面や作成フォームには表示されません。"
     }
   },
   "ageRating": {
@@ -49,7 +50,7 @@
     "socialMedia": false,
     "socialMediaAgeRestricted": false,
     "userGeneratedContent": true,
-    "advertising": false,
+    "advertising": true,
     "parentalControls": false,
     "ageAssurance": false
   },
