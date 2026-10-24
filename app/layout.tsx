@@ -113,6 +113,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </Link>
             </div>
             <nav className="flex shrink-0 items-center gap-5">
+              <Link href="/guide" className="hidden sm:block text-sm text-gray-500 hover:text-gray-900 transition-colors">
+                ガイド
+              </Link>
               <Link href="/help" className="hidden sm:block text-sm text-gray-500 hover:text-gray-900 transition-colors">
                 ヘルプ
               </Link>
@@ -131,7 +134,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="text-xs text-gray-400">© 2026 KOMARO</span>
             </div>
             <div className="flex items-center gap-5">
+              <Link href="/guide" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">日程調整ガイド</Link>
               <Link href="/help" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">ヘルプ / FAQ</Link>
+              <Link href="/about" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">運営者情報</Link>
               <Link href="/terms" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">利用規約</Link>
               <Link href="/privacy" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">プライバシーポリシー</Link>
             </div>

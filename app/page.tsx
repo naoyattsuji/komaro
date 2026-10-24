@@ -4,6 +4,7 @@ import { FadeInSection } from "@/components/FadeInSection";
 import { NativeRecentEvents } from "@/components/NativeRecentEvents";
 import { AdSlot } from "@/components/AdSlot";
 import { prisma } from "@/lib/db";
+import { guides } from "@/lib/guides";
 
 export const dynamic = "force-dynamic";
 
@@ -127,6 +128,35 @@ export default async function HomePage() {
               </FadeInSection>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Guide — 日程調整のコツ（/guide） */}
+      <section className="native-app-hidden bg-white py-20 border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6">
+          <FadeInSection>
+            <p className="text-xs tracking-[0.2em] text-gray-400 uppercase mb-4">Guide</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-8 tracking-tight">日程調整のコツ</h2>
+          </FadeInSection>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {guides.slice(0, 3).map((g, i) => (
+              <FadeInSection key={g.slug} delay={i * 100}>
+                <Link
+                  href={`/guide/${g.slug}`}
+                  className="block h-full rounded-xl border border-gray-200 p-5 hover:bg-gray-50 transition-colors"
+                >
+                  <h3 className="font-bold text-gray-900 text-base mb-2 leading-snug">{g.title}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">{g.lead}</p>
+                </Link>
+              </FadeInSection>
+            ))}
+          </div>
+          <FadeInSection>
+            <Link href="/guide" className="inline-flex items-center gap-2 mt-8 text-sm font-medium text-gray-900 hover:underline underline-offset-4">
+              すべてのガイドを見る
+              <ArrowRight size={16} />
+            </Link>
+          </FadeInSection>
         </div>
       </section>
 

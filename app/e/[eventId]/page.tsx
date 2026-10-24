@@ -20,6 +20,8 @@ export async function generateMetadata({
   return {
     title: `${title} | KOMARO`,
     description,
+    // 利用者ごとの集計ページは検索に載せない（URLを知っている人だけが見るもの）
+    robots: { index: false, follow: true },
     openGraph: {
       title: `${title} | KOMARO`,
       description,
