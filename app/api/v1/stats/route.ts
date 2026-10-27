@@ -24,15 +24,16 @@ export async function GET(req: Request) {
   if (!allowed(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const live = { deletedAt: null };
-  const [events, new1, new7, new30, participants, p1, p7, p30] = await Promise.all([
+  const [events, new7, new30, participants, p1, p7, p30, p90, p365] = await Promise.all([
     prisma.event.count({ where: live }),
-    prisma.event.count({ where: { ...live, createdAt: { gte: daysAgo(1) } } }),
     prisma.event.count({ where: { ...live, createdAt: { gte: daysAgo(7) } } }),
     prisma.event.count({ where: { ...live, createdAt: { gte: daysAgo(30) } } }),
     prisma.participant.count(),
     prisma.participant.count({ where: { createdAt: { gte: daysAgo(1) } } }),
     prisma.participant.count({ where: { createdAt: { gte: daysAgo(7) } } }),
     prisma.participant.count({ where: { createdAt: { gte: daysAgo(30) } } }),
+    prisma.participant.count({ where: { createdAt: { gte: daysAgo(90) } } }),
+    prisma.participant.count({ where: { createdAt: { gte: daysAgo(365) } } }),
   ]);
 
   // 管理画面の共通の形（Supabase の dashboard_stats と同じ）。KOMARO はアカウントが無いので「人」は回答した人
@@ -44,11 +45,12 @@ export async function GET(req: Request) {
       active1: p1,
       active7: p7,
       active30: p30,
+      active90: p90,
+      active365: p365,
       extra: [
-        { label: "予定（作成）", value: events },
-        { label: "予定（7日間）", value: new7 },
-        { label: "予定（30日間）", value: new30 },
-        { label: "予定（今日）", value: new1 },
+        { label: "作られた予定", value: events },
+        { label: "予定（7日）", value: new7 },
+        { label: "予定（30日）", value: new30 },
       ],
     },
     { headers: { "cache-control": "no-store" } },
