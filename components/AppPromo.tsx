@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { trackEvent } from "@/lib/ga";
 
 const APP_STORE_URL = "https://apps.apple.com/jp/app/komaro/id6805110615";
@@ -23,6 +23,17 @@ function isStandalone() {
     (window.navigator as Navigator & { standalone?: boolean }).standalone === true
   );
 }
+
+/**
+ * App Storeへの案内を出す端末か。
+ *
+ * 端末の種類は購読する必要がない外部の値なので `useSyncExternalStore` で読む。
+ * 効果の中で `setState` すると、描画のあとにもう一度描画が走る（lintにも止められる）。
+ */
+const subscribeNothing = () => () => {};
+const getIsIOSTarget = () => !isStandalone() && isIOS();
+// サーバー側では端末が分からない。出さない側に倒す
+const getIsIOSTargetOnServer = () => false;
 
 type InstallPrompt = Event & {
   prompt: () => Promise<void>;
@@ -48,9 +59,9 @@ function PromoCard({
       <Image
         src="/icon-192.png"
         alt=""
-        width={44}
-        height={44}
-        className="h-11 w-11 shrink-0 rounded-[10px]"
+        width={40}
+        height={40}
+        className="h-10 w-10 shrink-0 rounded-[10px]"
       />
       <div className="min-w-0 flex-1 text-left">
         <p className="text-sm font-bold text-gray-900">{title}</p>
@@ -63,7 +74,9 @@ function PromoCard({
   );
 
   const className =
-    "flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50/70 px-4 py-3.5 transition-colors hover:bg-gray-100";
+    // 説明文は1行に収まる長さにしてあり、この余白で高さ66pxに収まる。
+    // 文言を長くすると折り返して2行になり、一気に84pxまで伸びるので注意。
+    "flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50/70 px-4 py-3 transition-colors hover:bg-gray-100";
 
   return href ? (
     <a href={href} target="_blank" rel="noopener noreferrer" onClick={onClick} className={className}>
@@ -87,16 +100,11 @@ function PromoCard({
  * AdSenseの審査が通れば本物の広告が入り、この案内は出なくなる。
  */
 export function AppPromo({ placement, className = "" }: { placement: string; className?: string }) {
-  const [ios, setIos] = useState(false);
+  const ios = useSyncExternalStore(subscribeNothing, getIsIOSTarget, getIsIOSTargetOnServer);
   const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
 
   useEffect(() => {
-    if (isStandalone()) return;
-
-    if (isIOS()) {
-      setIos(true);
-      return;
-    }
+    if (ios || isStandalone()) return;
 
     // Androidなどで「ホーム画面に追加」が可能になったときに届く。
     // 既にインストール済み・条件を満たさない場合は発火しないので、
@@ -112,14 +120,14 @@ export function AppPromo({ placement, className = "" }: { placement: string; cla
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
     };
-  }, []);
+  }, [ios]);
 
   if (ios) {
     return (
       <div className={`native-app-hidden ${className}`}>
         <PromoCard
           title="iPhoneアプリがあります"
-          body="ホーム画面から開けて、見たイベントがすぐ出ます"
+          body="見たイベントがすぐ開けます"
           action="入手"
           href={APP_STORE_URL}
           onClick={() => trackEvent("app_promo_click", { placement, kind: "ios" })}
