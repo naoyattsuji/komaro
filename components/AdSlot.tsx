@@ -9,6 +9,7 @@ import {
   isAdPlacementConfigured,
   type AdPlacement,
 } from "@/lib/ads";
+import { AppPromo } from "@/components/AppPromo";
 
 declare global {
   interface Window {
@@ -36,6 +37,27 @@ const getIsNativeAppOnServer = () => true;
  */
 const getAdPreview = () =>
   new URLSearchParams(window.location.search).get("ads") === "preview";
+
+/** iOS端末か。App Storeへの案内は、実際に入れられる人にだけ出す。 */
+const getIsIOS = () =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  // iPadOSはMacintoshを名乗るため、タッチの有無で見分ける
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+/**
+ * 広告が出ないときにアプリの案内を代わりに出してよい枠。
+ *
+ * **1ページに1つだけ**にするため、各ページの最後に1つしかない枠に限っている。
+ * 集計ページの途中の枠（summaryUnderTable・summarySidebar）やトップ中盤を含めると、
+ * 同じ案内が1画面に3つ並んでしまう。
+ */
+const PROMO_PLACEMENTS = new Set<AdPlacement>([
+  "summaryBottom",
+  "homeBottom",
+  "helpBottom",
+  "answerComplete",
+  "createComplete",
+]);
 
 /**
  * 画面幅の条件を満たしているか。
@@ -103,6 +125,7 @@ export function AdSlot({
   const widthOk = useSyncExternalStore(subscribeWidth, getWidthOk, getWidthOkOnServer);
 
   const isPreview = useSyncExternalStore(subscribeNothing, getAdPreview, () => false);
+  const isIOS = useSyncExternalStore(subscribeNothing, getIsIOS, () => false);
 
   const configured = isAdPlacementConfigured(placement);
   const slotId = AD_SLOTS[placement];
@@ -146,7 +169,20 @@ export function AdSlot({
     };
   }, [shouldRender, isPreview]);
 
-  if (!shouldRender || (!isPreview && fill === "unfilled")) return null;
+  const adShown = shouldRender && (isPreview || fill !== "unfilled");
+
+  // 広告が出ないときは、その場所にアプリの案内を代わりに出す。
+  // AdSenseの審査が通って広告が配信され始めれば、こちらは自動的に出なくなる。
+  if (!adShown) {
+    const canPromote =
+      !isNativeApp && widthOk && isIOS && PROMO_PLACEMENTS.has(placement);
+    if (!canPromote) return null;
+    return (
+      <div className={`native-app-hidden ${className}`}>
+        <AppPromo placement={placement} />
+      </div>
+    );
+  }
 
   // 完了画面用の帯。親の px-4 を打ち消して端まで伸ばし、区切り線で本文と分ける
   const variantClass =
