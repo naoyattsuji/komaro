@@ -62,7 +62,6 @@ export async function GET(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(rawTitle)} – カレンダーに追加</title>
-<script>window.location.href="${webcalUrl}";</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f9fafb;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -103,6 +102,11 @@ a{display:flex;align-items:center;justify-content:center;width:100%;padding:14px
 if(/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.navigator.standalone){
   document.getElementById("appPromo").hidden=false;
 }
+// カレンダーアプリを自動で開く。
+// **この移動は必ず描画のあとに行うこと。** head で先に実行すると、iOSでは本体が
+// 一度も描かれないまま webcal:// へ移るため、「開きますか？」を閉じたあとに
+// 真っ白なページだけが残る（下の案内もアプリの誘導も見えない）。
+setTimeout(function(){ window.location.href = "${webcalUrl}"; }, 150);
 </script>
 </body>
 </html>`;
