@@ -114,3 +114,35 @@ export function shouldShowAppBanner(pathname: string): boolean {
 
   return true;
 }
+
+// ── アプリ内の全画面広告（AdMob インタースティシャル） ────────────────────
+//
+// 設計と、なぜこの条件なのかは docs/ads-interstitial.md。
+// **閉じるボタンは広告（Google側）が持っており、こちらでは作れない。**
+// 出るまで最大5秒、第三者入札の動画では最大30秒かかることがある。
+// こちらに決められるのは「出すか、出さないか」だけなので、頻度で抑える。
+
+/** 全画面広告のユニットID。未設定なら出さない。 */
+export const ADMOB_INTERSTITIAL_ID = process.env.NEXT_PUBLIC_ADMOB_INTERSTITIAL_ID ?? "";
+
+/** イベント作成の完了時に出すか。 */
+export const ADMOB_INTERSTITIAL_ON_CREATE =
+  process.env.NEXT_PUBLIC_ADMOB_INTERSTITIAL_ON_CREATE === "true";
+
+/** 回答送信の完了時に出すか。 */
+export const ADMOB_INTERSTITIAL_ON_ANSWER =
+  process.env.NEXT_PUBLIC_ADMOB_INTERSTITIAL_ON_ANSWER === "true";
+
+/**
+ * その場面で全画面広告を出す設定になっているか。
+ *
+ * **カレンダー追加（`calendar`）では出さない。** カレンダーアプリへ出ていく操作なので、
+ * 戻ってきた瞬間に全画面広告を出すのは体験が悪く、ポリシー上もグレー。
+ * あの導線はWebのアプリ誘導だけが受け持つ。
+ */
+export function isInterstitialEnabledFor(placement: string): boolean {
+  if (!ADMOB_ENABLED || ADMOB_INTERSTITIAL_ID === "") return false;
+  if (placement === "create") return ADMOB_INTERSTITIAL_ON_CREATE;
+  if (placement === "answer") return ADMOB_INTERSTITIAL_ON_ANSWER;
+  return false;
+}

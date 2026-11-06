@@ -10,7 +10,7 @@ import { showToast } from "@/components/ui/Toast";
 import { getParticipantUrl, getEditUrl } from "@/lib/utils";
 import { trackEvent } from "@/lib/ga";
 import { rememberRecentEvent } from "@/lib/recentEvents";
-import { requestAppPromo } from "@/lib/appPromo";
+import { notifyTaskDone } from "@/lib/taskDone";
 import { AdSlot } from "@/components/AdSlot";
 
 export default function CreateDonePage({
@@ -24,8 +24,9 @@ export default function CreateDonePage({
     if (!id) return;
     trackEvent("event_created", { event_id: id });
     rememberRecentEvent({ id, kind: "created" });
-    // 作業が終わった直後。出るかどうかは頻度と端末を見て向こうが決める
-    requestAppPromo("create");
+    // 作業が終わった直後。Webはアプリ誘導、アプリはAdMobの全画面広告。
+    // 出るかどうかは受け取る側が決める
+    notifyTaskDone("create");
   }, [id]);
 
   if (!id || !token) {

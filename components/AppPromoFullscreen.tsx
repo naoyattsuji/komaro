@@ -8,7 +8,6 @@ import { trackEvent } from "@/lib/ga";
 import {
   APP_PROMO_FULLSCREEN_ENABLED,
   APP_STORE_URL,
-  type AppPromoPlacement,
   canShowFullscreenPromo,
   getIsIOSTarget,
   getIsIOSTargetOnServer,
@@ -17,9 +16,9 @@ import {
   markFullscreenPromoConverted,
   markFullscreenPromoDismissed,
   markFullscreenPromoShown,
-  onAppPromoRequest,
   subscribeNothing,
 } from "@/lib/appPromo";
+import { onTaskDone, type TaskDonePlacement } from "@/lib/taskDone";
 
 /** 指が離れてからこれだけ待ってから出す。着地点に重ねないため。 */
 const SHOW_DELAY_MS = 800;
@@ -57,7 +56,7 @@ const COPY: Record<Kind, { title: string; body: string; action: string }> = {
  * - Androidなどで「ホーム画面に追加」ができない端末
  */
 export function AppPromoFullscreen() {
-  const [placement, setPlacement] = useState<AppPromoPlacement | null>(null);
+  const [placement, setPlacement] = useState<TaskDonePlacement | null>(null);
   const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
 
   const ios = useSyncExternalStore(subscribeNothing, getIsIOSTarget, getIsIOSTargetOnServer);
@@ -114,7 +113,7 @@ export function AppPromoFullscreen() {
   useEffect(() => {
     if (!APP_PROMO_FULLSCREEN_ENABLED || isNativeApp) return;
 
-    return onAppPromoRequest((next) => {
+    return onTaskDone((next) => {
       if (kind === null) return;
       if (isStandalone()) return;
       if (!canShowFullscreenPromo()) return;

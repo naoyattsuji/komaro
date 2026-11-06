@@ -6,7 +6,7 @@ import {
   CalendarEventParams,
   buildShortCalendarUrl,
 } from "@/lib/utils";
-import { requestAppPromo } from "@/lib/appPromo";
+import { notifyTaskDone } from "@/lib/taskDone";
 
 interface CalendarExportProps {
   params: CalendarEventParams;
@@ -24,7 +24,7 @@ export function CalendarExport({ params, copyText }: CalendarExportProps) {
    * **Appleだけは同じタブで移動する**ため呼んでいない。あちらは移動先の案内ページ
    * （app/cal/[type]/[eventId]/route.ts）に誘導を置いてある。
    */
-  const handleAdded = () => requestAppPromo("calendar");
+  const handleAdded = () => notifyTaskDone("calendar");
 
   const handleCopy = async () => {
     try {

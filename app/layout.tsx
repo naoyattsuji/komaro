@@ -5,6 +5,7 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { NativeAppChrome } from "@/components/NativeAppChrome";
 import { AppPromoFullscreen } from "@/components/AppPromoFullscreen";
 import { NativeAdBanner } from "@/components/NativeAdBanner";
+import { NativeInterstitial } from "@/components/NativeInterstitial";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { AdSenseScript } from "@/components/AdSenseScript";
 import Link from "next/link";
@@ -107,6 +108,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NativeAppChrome />
         <NativeAdBanner />
         <AppPromoFullscreen />
+        <NativeInterstitial />
         <ServiceWorkerRegister />
         <header className="sticky top-0 z-30 bg-white border-b border-gray-100 pt-safe">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex min-w-0 items-center justify-between gap-3">

@@ -9,10 +9,9 @@
  * 設計は docs/ads-interstitial.md。
  */
 
-export const APP_STORE_URL = "https://apps.apple.com/jp/app/komaro/id6805110615";
+import { DAY_MS, readJson, todayKey, writeJson } from "@/lib/taskDone";
 
-/** 全画面の誘導を出す場面。 */
-export type AppPromoPlacement = "create" | "answer" | "calendar";
+export const APP_STORE_URL = "https://apps.apple.com/jp/app/komaro/id6805110615";
 
 /** 全画面の誘導を出すか。未設定ならオフ。 */
 export const APP_PROMO_FULLSCREEN_ENABLED =
@@ -58,7 +57,6 @@ export type InstallPrompt = Event & {
 
 const LEDGER_KEY = "komaro_app_promo";
 
-const DAY = 24 * 60 * 60 * 1000;
 /** 1日に出せる回数。 */
 const MAX_PER_DAY = 1;
 /** ×で閉じられたあと黙る日数。 */
@@ -81,44 +79,21 @@ interface Ledger {
   converted?: boolean;
 }
 
-function today() {
-  return new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD
-}
-
-function readLedger(): Ledger | null {
-  try {
-    const raw = window.localStorage.getItem(LEDGER_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? (parsed as Ledger) : {};
-  } catch {
-    return null;
-  }
-}
-
-function writeLedger(next: Ledger) {
-  try {
-    window.localStorage.setItem(LEDGER_KEY, JSON.stringify(next));
-  } catch {
-    // 書けなくても利用には影響しない
-  }
-}
-
 /** いま全画面の誘導を出してよいか。 */
 export function canShowFullscreenPromo(): boolean {
-  const ledger = readLedger();
+  const ledger = readJson<Ledger>(LEDGER_KEY);
   // 読めない＝記録できない。無限に出し続ける事故を避けるため出さない
   if (!ledger) return false;
   if (ledger.converted) return false;
   if (ledger.mutedUntil && Date.now() < ledger.mutedUntil) return false;
-  if (ledger.day === today() && (ledger.dayCount ?? 0) >= MAX_PER_DAY) return false;
+  if (ledger.day === todayKey() && (ledger.dayCount ?? 0) >= MAX_PER_DAY) return false;
   return true;
 }
 
 export function markFullscreenPromoShown() {
-  const ledger = readLedger() ?? {};
-  const d = today();
-  writeLedger({
+  const ledger = readJson<Ledger>(LEDGER_KEY) ?? {};
+  const d = todayKey();
+  writeJson(LEDGER_KEY, {
     ...ledger,
     day: d,
     dayCount: ledger.day === d ? (ledger.dayCount ?? 0) + 1 : 1,
@@ -132,40 +107,13 @@ export function markFullscreenPromoShown() {
  * 1日1回の上限だけで足りる。
  */
 export function markFullscreenPromoDismissed() {
-  const ledger = readLedger() ?? {};
+  const ledger = readJson<Ledger>(LEDGER_KEY) ?? {};
   const dismissals = (ledger.dismissals ?? 0) + 1;
   const days = dismissals >= DISMISSALS_BEFORE_LONG_MUTE ? LONG_MUTE_DAYS : MUTE_AFTER_DISMISS_DAYS;
-  writeLedger({ ...ledger, dismissals, mutedUntil: Date.now() + days * DAY });
+  writeJson(LEDGER_KEY, { ...ledger, dismissals, mutedUntil: Date.now() + days * DAY_MS });
 }
 
 /** 「入手」「追加」が押された。以後は出さない。 */
 export function markFullscreenPromoConverted() {
-  writeLedger({ ...(readLedger() ?? {}), converted: true });
-}
-
-// ── 出すきっかけ ───────────────────────────────────────────────────────────
-//
-// 誘導を出したい場所（作成完了・回答完了・カレンダー追加）と、実際に描画する
-// コンポーネント（レイアウトに1つだけ置く）を繋ぐ。ページ側は
-// `requestAppPromo("answer")` を呼ぶだけでよい。
-
-type Listener = (placement: AppPromoPlacement) => void;
-
-const listeners = new Set<Listener>();
-
-export function onAppPromoRequest(listener: Listener) {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-/**
- * 全画面の誘導を出すよう頼む。
- *
- * 出るかどうかは受け取る側が決める（端末・頻度・設定）。
- * **呼ぶ側は結果を気にしなくてよい。** 出なくても画面は何も変わらない。
- */
-export function requestAppPromo(placement: AppPromoPlacement) {
-  listeners.forEach((listener) => listener(placement));
+  writeJson(LEDGER_KEY, { ...(readJson<Ledger>(LEDGER_KEY) ?? {}), converted: true });
 }
