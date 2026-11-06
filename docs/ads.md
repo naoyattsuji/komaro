@@ -82,6 +82,7 @@ KOMAROは「日程調整を最短で終わらせる」ための道具です。�
 | パブリッシャーID | `pub-3747635667721901`（AdSenseと共通） |
 | アプリID | `ca-app-pub-3747635667721901~5450876372` |
 | バナー広告ユニットID | `ca-app-pub-3747635667721901/9198549694` |
+| 全画面広告ユニットID | `ca-app-pub-3747635667721901/4223667992`（2026-11-06 作成。詳細は `docs/ads-interstitial.md`） |
 | ストアの紐付け | App Store / `6805110615` |
 | app-ads.txt | `https://komaro.app/app-ads.txt` で配信中（`app/app-ads.txt/route.ts`） |
 
