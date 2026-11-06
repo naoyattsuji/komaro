@@ -64,7 +64,7 @@ export async function GET(
 <title>${esc(rawTitle)} – カレンダーに追加</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f9fafb;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
+body{font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;background:#f9fafb;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
 .card{background:#fff;border-radius:16px;padding:32px 24px;max-width:360px;width:100%;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center}
 .logo{font-size:10px;font-weight:700;letter-spacing:.15em;color:#9ca3af;text-transform:uppercase;margin-bottom:20px}
 h1{font-size:17px;font-weight:700;color:#111;line-height:1.45;margin-bottom:8px}
