@@ -94,7 +94,7 @@ a{display:flex;align-items:center;justify-content:center;width:100%;padding:14px
        代わりにこの行き止まりのページへ置いている。iPhoneのときだけ出す -->
   <a href="${APP_STORE_URL}" class="app" id="appPromo" hidden>
     <img src="/icon-192.png" alt="">
-    <span class="t"><b>iPhoneアプリがあります</b><span>見たイベントがすぐ開けます</span></span>
+    <span class="t"><b>iPhoneアプリ</b><span>見たイベントがすぐ開けます</span></span>
     <span class="go">入手</span>
   </a>
 </div>
