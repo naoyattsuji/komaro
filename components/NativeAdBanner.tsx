@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { ADMOB_BANNER_ID, ADMOB_ENABLED, shouldShowAppBanner } from "@/lib/ads";
+import { ensureAdMobInitialized } from "@/lib/admob";
 
 /**
  * アプリ内のAdMobバナー。
@@ -38,7 +39,7 @@ export function NativeAdBanner() {
       if (cancelled) return;
 
       if (!initializedRef.current) {
-        await AdMob.initialize({ initializeForTesting: false });
+        await ensureAdMobInitialized();
         // バナーの実寸が決まったら、その高さぶん本文の下に余白を作る
         await AdMob.addListener(BannerAdPluginEvents.SizeChanged, ({ height }) => {
           document.body.style.paddingBottom = height > 0 ? `${height}px` : "";

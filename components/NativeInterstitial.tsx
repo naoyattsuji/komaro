@@ -3,6 +3,7 @@
 import { Capacitor } from "@capacitor/core";
 import { useEffect, useRef } from "react";
 import { ADMOB_INTERSTITIAL_ID, isInterstitialEnabledFor } from "@/lib/ads";
+import { ensureAdMobInitialized } from "@/lib/admob";
 import { trackEvent } from "@/lib/ga";
 import { onTaskDone, readJson, todayKey, writeJson } from "@/lib/taskDone";
 
@@ -82,6 +83,9 @@ export function NativeInterstitial() {
         if (triedRef.current && !readyRef.current) return;
         triedRef.current = true;
         try {
+          // **バナーが無効でもここで初期化される。** 以前はバナー側だけが
+          // 初期化していたため、全画面広告だけをオンにすると読み込めなかった
+          await ensureAdMobInitialized();
           await AdMob.prepareInterstitial({
             adId: ADMOB_INTERSTITIAL_ID,
             // 非パーソナライズのみ。バナーと揃える（ATTを出さないため）
