@@ -306,3 +306,9 @@ AdSense の「サイトの所有権を確認してください」には3つの�
 - `components/AdSlot.tsx` — 広告枠のコンポーネント
 - `app/ads.txt/route.ts` — ads.txtの配信
 - `app/privacy/page.tsx` — 広告オン時に自動で現れる開示文
+
+## SKAdNetwork の名簿（2026-11-07 追加）
+
+広告の効果測定に使う名簿（Google の全50件）を `ios/App/App/Info.plist` に入れた。
+**アプリの中に焼き付くので、次の版をビルドして提出したときに初めて有効になる。**
+仕組みと注意点は `../../ops/ads-skadnetwork.md`。
