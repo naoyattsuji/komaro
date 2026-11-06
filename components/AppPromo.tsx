@@ -3,42 +3,14 @@
 import Image from "next/image";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { trackEvent } from "@/lib/ga";
-
-const APP_STORE_URL = "https://apps.apple.com/jp/app/komaro/id6805110615";
-
-/** iOS端末か。App Storeへの案内は、実際に入れられる人にだけ出す。 */
-function isIOS() {
-  return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    // iPadOSはMacintoshを名乗るため、タッチの有無で見分ける
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
-
-/** すでにホーム画面から開いている（インストール済み）か。 */
-function isStandalone() {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    // iOS Safari の独自プロパティ
-    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
-}
-
-/**
- * App Storeへの案内を出す端末か。
- *
- * 端末の種類は購読する必要がない外部の値なので `useSyncExternalStore` で読む。
- * 効果の中で `setState` すると、描画のあとにもう一度描画が走る（lintにも止められる）。
- */
-const subscribeNothing = () => () => {};
-const getIsIOSTarget = () => !isStandalone() && isIOS();
-// サーバー側では端末が分からない。出さない側に倒す
-const getIsIOSTargetOnServer = () => false;
-
-type InstallPrompt = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-};
+import {
+  APP_STORE_URL,
+  getIsIOSTarget,
+  getIsIOSTargetOnServer,
+  type InstallPrompt,
+  isStandalone,
+  subscribeNothing,
+} from "@/lib/appPromo";
 
 /** 見た目の共通部分。広告ではないので「スポンサー」とは書かない。 */
 function PromoCard({

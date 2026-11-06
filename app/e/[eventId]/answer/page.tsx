@@ -15,6 +15,7 @@ import { FadeInSection } from "@/components/FadeInSection";
 import { KOMAROLoader } from "@/components/KOMAROLoader";
 import { trackEvent } from "@/lib/ga";
 import { rememberRecentEvent } from "@/lib/recentEvents";
+import { requestAppPromo } from "@/lib/appPromo";
 import { AdSlot } from "@/components/AdSlot";
 // import { CalendarImageReader } from "@/components/CalendarImageReader";
 // import { VoiceInputReader } from "@/components/VoiceInputReader";
@@ -142,6 +143,9 @@ export default function AnswerPage({
         router.push(`/e/${eventId}`);
       } else {
         setSubmitted(true);
+        // 完了はページ遷移ではなく同じURLのまま状態が変わるだけなので、
+        // パスでは判定できない。送信が通ったここで呼ぶ
+        requestAppPromo("answer");
       }
     } finally {
       setSubmitting(false);

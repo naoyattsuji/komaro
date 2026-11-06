@@ -6,6 +6,7 @@ import {
   CalendarEventParams,
   buildShortCalendarUrl,
 } from "@/lib/utils";
+import { requestAppPromo } from "@/lib/appPromo";
 
 interface CalendarExportProps {
   params: CalendarEventParams;
@@ -15,6 +16,15 @@ interface CalendarExportProps {
 
 export function CalendarExport({ params, copyText }: CalendarExportProps) {
   const [copied, setCopied] = useState(false);
+
+  /**
+   * 別タブで開くカレンダーに追加したとき。
+   *
+   * このタブは残るので、ここでアプリへの誘導を出せる（docs/ads-interstitial.md）。
+   * **Appleだけは同じタブで移動する**ため呼んでいない。あちらは移動先の案内ページ
+   * （app/cal/[type]/[eventId]/route.ts）に誘導を置いてある。
+   */
+  const handleAdded = () => requestAppPromo("calendar");
 
   const handleCopy = async () => {
     try {
@@ -46,6 +56,7 @@ export function CalendarExport({ params, copyText }: CalendarExportProps) {
             href={buildShortCalendarUrl("google", params)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleAdded}
             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <ExternalLink size={12} className="text-[#4285F4]" />
@@ -55,6 +66,7 @@ export function CalendarExport({ params, copyText }: CalendarExportProps) {
             href={buildShortCalendarUrl("yahoo", params)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleAdded}
             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <ExternalLink size={12} className="text-[#FF0033]" />
@@ -64,6 +76,7 @@ export function CalendarExport({ params, copyText }: CalendarExportProps) {
             href={buildShortCalendarUrl("outlook", params)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleAdded}
             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <ExternalLink size={12} className="text-[#0078D4]" />
@@ -83,6 +96,7 @@ export function CalendarExport({ params, copyText }: CalendarExportProps) {
             href={buildShortCalendarUrl("timetree", params)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleAdded}
             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <Calendar size={12} className="text-[#27B87F]" />
@@ -92,6 +106,7 @@ export function CalendarExport({ params, copyText }: CalendarExportProps) {
             href={buildShortCalendarUrl("other", params)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleAdded}
             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <MoreHorizontal size={12} className="text-gray-500" />

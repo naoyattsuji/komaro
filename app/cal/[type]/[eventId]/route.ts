@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { generateIcsContent } from "@/lib/utils";
+import { APP_STORE_URL } from "@/lib/appPromo";
 
 export async function GET(
   req: NextRequest,
@@ -73,6 +74,12 @@ a{display:flex;align-items:center;justify-content:center;width:100%;padding:14px
 .primary{background:#111;color:#fff;margin-bottom:10px}
 .secondary{background:#f3f4f6;color:#374151}
 .note{font-size:11px;color:#9ca3af;margin-top:16px;line-height:1.65}
+.app{display:flex;align-items:center;gap:12px;margin-top:20px;padding:12px 16px;border:1px solid #e5e7eb;border-radius:12px;background:#f9fafb;text-align:left;font-weight:400}
+.app img{width:40px;height:40px;border-radius:10px;flex-shrink:0}
+.app .t{flex:1;min-width:0}
+.app .t b{display:block;font-size:14px;font-weight:700;color:#111}
+.app .t span{font-size:12px;color:#6b7280}
+.app .go{flex-shrink:0;background:#111;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:500}
 </style>
 </head>
 <body>
@@ -83,7 +90,20 @@ a{display:flex;align-items:center;justify-content:center;width:100%;padding:14px
   <a href="${webcalUrl}" class="primary">カレンダーアプリで開く</a>
   <a href="${icsUrl}" class="secondary">ICSをダウンロード</a>
   <p class="note">自動で開かない場合は「カレンダーアプリで開く」をタップ。<br>TimeTreeはICSをダウンロード後、TimeTreeで開いてください。</p>
+  <!-- アプリへの誘導。この導線だけは同じタブで移動してくるため、
+       全画面の誘導（components/AppPromoFullscreen.tsx）が出せない。
+       代わりにこの行き止まりのページへ置いている。iPhoneのときだけ出す -->
+  <a href="${APP_STORE_URL}" class="app" id="appPromo" hidden>
+    <img src="/icon-192.png" alt="">
+    <span class="t"><b>iPhoneアプリがあります</b><span>見たイベントがすぐ開けます</span></span>
+    <span class="go">入手</span>
+  </a>
 </div>
+<script>
+if(/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.navigator.standalone){
+  document.getElementById("appPromo").hidden=false;
+}
+</script>
 </body>
 </html>`;
 
