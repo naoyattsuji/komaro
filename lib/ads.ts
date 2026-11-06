@@ -100,16 +100,17 @@ export const ADMOB_BANNER_ID = process.env.NEXT_PUBLIC_ADMOB_BANNER_ID ?? "";
  * **画面ごとに出し分けて方針を守る**。出さない画面は次のとおり。
  *
  * - 回答・修正の画面: 誤タップが無効クリックとして計上され、アカウント停止に直結する
- * - イベント作成フォーム: 作業の中断がそのまま作成数の減少になる
  * - 利用規約・プライバシーポリシー: 信頼を担保するページ
+ *
+ * **イベント作成フォーム（`/create`）には出す。** 当初は「作業の中断が作成数の減少に
+ * なる」として外していたが、実機で触った判断で入れた（2026-11-06）。作成数が落ちたら
+ * ここを元に戻すのが最初の手当て。
  */
 export function shouldShowAppBanner(pathname: string): boolean {
   if (!ADMOB_ENABLED || ADMOB_BANNER_ID === "") return false;
 
   // /e/<id>/answer, /e/<id>/edit, /e/<id>/edit/settings
   if (/^\/e\/[^/]+\/(answer|edit)/.test(pathname)) return false;
-  // 作成フォーム本体。完了画面 /create/done には出す
-  if (pathname === "/create") return false;
   if (pathname === "/terms" || pathname === "/privacy") return false;
 
   return true;

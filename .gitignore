@@ -48,3 +48,7 @@ ga-credentials.json
 next-env.d.ts
 
 /app/generated/prisma
+
+# シミュレーター用ビルドの作業ディレクトリ
+ios/App/DerivedDataSim/
+ios/App/DerivedData/
