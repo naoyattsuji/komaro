@@ -110,8 +110,8 @@ AdMobは「App Storeに載っているデベロッパーのサイト」のルー
 |---|---|
 | 環境変数 | `NEXT_PUBLIC_ADMOB_ENABLED` / `NEXT_PUBLIC_ADMOB_BANNER_ID`（本番に設定済み） |
 | バナー | 画面下・アダプティブ（`BannerAdPosition.BOTTOM_CENTER`） |
-| 広告の種類 | **非パーソナライズのみ**（`npa: true`） |
-| ATT | **出さない**。`requestTrackingAuthorization()` は意図的に呼んでいない |
+| 広告の種類 | ATT で許可された人だけ個人向け（`npa: false`）。それ以外は非パーソナライズ（1.0.2〜、2026-11-09） |
+| ATT | iOS 1.0.2 から。最初の広告の読み込みの前に1回。EEA・英国・スイスの端末地域では出さない（`lib/adTracking.ts`）。旧版は komaro.app の同じ JS を読むが、`AdTrackingGate` が無いので ATT を呼ばない |
 | `Info.plist` | `GADApplicationIdentifier` を設定済み |
 
 #### 掲載方針との整合（重要）
@@ -145,8 +145,7 @@ AdMobのバナーは放っておくと**全画面に居座る追従バナー**�
 1. **App Privacy の申告を更新**（App Store Connect の画面でのみ可能。APIに口が無い）
    - 「デバイスID」の用途に **サードパーティ広告** を追加
    - 「広告データ」を追加
-   - **トラッキングは「なし」のまま**でよい（非パーソナライズ広告のみでATTも出さないため、
-     Appleの定義する「トラッキング」に当たらない）
+   - **1.0.2 からトラッキングは「あり」に更新が必要**（ATT で許可された人に個人向け広告を出すため）
 2. 審査へ提出（`tools/appstore/asc-submit.mjs --submit`）
 
 **1を忘れるとリジェクトされる。** 広告SDKを入れたのに申告を更新しないのは典型的な差し戻し理由。

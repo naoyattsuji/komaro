@@ -14,7 +14,7 @@ export default function PrivacyPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-12">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">プライバシーポリシー</h1>
-      <p className="text-sm text-gray-400 mb-10">最終更新日：2026年5月</p>
+      <p className="text-sm text-gray-400 mb-10">最終更新日：2026年11月</p>
 
       <div className="prose prose-sm prose-gray max-w-none space-y-8 text-gray-700 leading-relaxed">
 
@@ -127,6 +127,11 @@ export default function PrivacyPage() {
               取得される情報は、広告配信や第三者サービスを横断した個人の追跡を目的として使用しません。
             </p>
           )}
+          <p className="mt-3">
+            iPhoneアプリではGoogle AdMobの広告を表示します。許可の画面で「許可」を選んだ場合だけ、広告IDなどを使ってあなたに合った広告を表示します。
+            許可しない場合と、EEA・英国・スイスの地域設定の端末では、非パーソナライズ広告を表示します。
+            許可はiPhoneの「設定」→「プライバシーとセキュリティ」→「トラッキング」で変えられます。
+          </p>
         </section>
 
         <section>

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { ADMOB_BANNER_ID, ADMOB_ENABLED, shouldShowAppBanner } from "@/lib/ads";
 import { ensureAdMobInitialized } from "@/lib/admob";
+import { adNonPersonalized } from "@/lib/adTracking";
 
 /**
  * アプリ内のAdMobバナー。
@@ -16,9 +17,7 @@ import { ensureAdMobInitialized } from "@/lib/admob";
  * - **画面ごとに出し分ける。** AdMobのバナーは放っておくと全画面に居座る追従バナーに
  *   なるが、docs/ads.md では追従バナーも回答画面の広告も禁じている。`shouldShowAppBanner`
  *   で許可した画面だけ表示し、回答・作成フォーム・規約では隠す。
- * - **非パーソナライズ広告のみ**（`npa: true`）。端末をまたぐ広告トラッキングをしないため、
- *   iOSのATT許可ダイアログが不要になり、App Privacyの「トラッキング」申告も立てずに済む。
- *   `requestTrackingAuthorization()` は意図的に呼んでいない。
+ * - **ATTで許可された人だけ個人向け広告**（`lib/adTracking.ts`）。それ以外は非パーソナライズ。
  * - バナーの高さぶんだけ `body` に余白を足し、コンテンツが隠れないようにする。
  */
 
@@ -65,6 +64,8 @@ export function NativeAdBanner() {
 
       if (!initializedRef.current) {
         await ensureAdMobInitialized();
+        // ATT の画面を待つ間に画面が変わったら、新しい方の処理に任せる（リスナーの二重登録を防ぐ）
+        if (cancelled) return;
         // バナーの実寸が決まったら、その高さぶん本文の下に余白を作る
         await AdMob.addListener(BannerAdPluginEvents.SizeChanged, ({ height }) => {
           if (height > 0) heightRef.current = height;
@@ -85,8 +86,7 @@ export function NativeAdBanner() {
           adSize: BannerAdSize.ADAPTIVE_BANNER,
           position: BannerAdPosition.BOTTOM_CENTER,
           margin: 0,
-          // 非パーソナライズ広告のみ。ATTとApp Privacyの申告を増やさないため
-          npa: true,
+          npa: await adNonPersonalized(),
         });
         shownRef.current = true;
       } else if (!wanted && shownRef.current) {

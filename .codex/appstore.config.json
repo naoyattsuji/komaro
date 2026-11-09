@@ -7,11 +7,11 @@
   "xcodeProject": "ios/App/App.xcodeproj",
   "scheme": "App",
   "teamId": "243ATW576T",
-  "archivePath": "build/KOMARO-1.0.1.xcarchive",
-  "version": "1.0.1",
+  "archivePath": "build/KOMARO-1.0.2.xcarchive",
+  "version": "1.0.2",
   "copyright": "2026 Naoya Tsuji",
   "releaseType": "AFTER_APPROVAL",
-  "usesIdfa": false,
+  "usesIdfa": true,
   "categories": {
     "primary": "PRODUCTIVITY",
     "secondary": "UTILITIES"
@@ -25,7 +25,7 @@
       "supportUrl": "https://komaro.app/help",
       "marketingUrl": "https://komaro.app",
       "promotionalText": "登録不要。URLを共有するだけで、メンバーの空き時間をコマの色でひと目確認できます。",
-      "whatsNew": "アプリ内に広告を追加しました。回答中の画面や作成フォームには表示されません。"
+      "whatsNew": "広告の設定を見直しました。"
     }
   },
   "ageRating": {

@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { useEffect, useRef } from "react";
 import { ADMOB_INTERSTITIAL_ID, isInterstitialEnabledFor } from "@/lib/ads";
 import { ensureAdMobInitialized } from "@/lib/admob";
+import { adNonPersonalized } from "@/lib/adTracking";
 import { trackEvent } from "@/lib/ga";
 import { onTaskDone, readJson, todayKey, writeJson } from "@/lib/taskDone";
 
@@ -88,8 +89,7 @@ export function NativeInterstitial() {
           await ensureAdMobInitialized();
           await AdMob.prepareInterstitial({
             adId: ADMOB_INTERSTITIAL_ID,
-            // 非パーソナライズのみ。バナーと揃える（ATTを出さないため）
-            npa: true,
+            npa: await adNonPersonalized(),
           });
         } catch {
           readyRef.current = false;
