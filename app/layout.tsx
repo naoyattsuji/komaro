@@ -139,12 +139,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Image src="/komaro-logo.png" alt="" width={20} height={20} className="h-5 w-5 object-contain opacity-40" />
               <span className="text-xs text-gray-400">© 2026 KOMARO</span>
             </div>
-            <div className="flex items-center gap-5">
-              <Link href="/guide" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">日程調整ガイド</Link>
-              <Link href="/help" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">ヘルプ / FAQ</Link>
-              <Link href="/about" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">運営者情報</Link>
-              <Link href="/terms" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">利用規約</Link>
-              <Link href="/privacy" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">プライバシーポリシー</Link>
+            {/* **折り返しを許し、語の途中で切らせない。** 以前は `flex` だけで
+                5つをスマホでも横一列に詰め込んでいたため、375pxの幅に収まらず
+                「プライバシーポ／リシー」のように全部が語の途中で2行に割れていた
+                （2026-11-11 実機で確認）。`whitespace-nowrap` で各リンクを
+                1語として扱い、入らない分だけ次の行へ送る */}
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 sm:justify-end">
+              <Link href="/guide" className="whitespace-nowrap text-xs text-gray-400 hover:text-gray-600 transition-colors">日程調整ガイド</Link>
+              <Link href="/help" className="whitespace-nowrap text-xs text-gray-400 hover:text-gray-600 transition-colors">ヘルプ / FAQ</Link>
+              <Link href="/about" className="whitespace-nowrap text-xs text-gray-400 hover:text-gray-600 transition-colors">運営者情報</Link>
+              <Link href="/terms" className="whitespace-nowrap text-xs text-gray-400 hover:text-gray-600 transition-colors">利用規約</Link>
+              <Link href="/privacy" className="whitespace-nowrap text-xs text-gray-400 hover:text-gray-600 transition-colors">プライバシーポリシー</Link>
             </div>
           </div>
         </footer>

@@ -16,6 +16,7 @@ import {
   markFullscreenPromoConverted,
   markFullscreenPromoDismissed,
   markFullscreenPromoShown,
+  setFullscreenPromoOpen,
   subscribeNothing,
 } from "@/lib/appPromo";
 import { onTaskDone, type TaskDonePlacement } from "@/lib/taskDone";
@@ -132,6 +133,13 @@ export function AppPromoFullscreen() {
     };
   }, []);
 
+  // 開いている間はカードの誘導（`AppPromo`）を引っ込める。
+  // 完了画面には同じ文言のカードが先に置いてあり、重なると画面に2つ並ぶ
+  useEffect(() => {
+    setFullscreenPromoOpen(open);
+    return () => setFullscreenPromoOpen(false);
+  }, [open]);
+
   // 開いている間だけ: 自動で閉じる・Escで閉じる・背面をスクロールさせない
   useEffect(() => {
     if (!open) return;
@@ -231,10 +239,13 @@ export function AppPromoFullscreen() {
           </button>
         )}
 
+        {/* **「入手する」と並の大きさにする。** 以前は極小のグレー文字で、
+            断る側だけが押しにくい作りになっていた（2026-11-11 本人の指摘）。
+            自社アプリの案内でそこまでする必要はない */}
         <button
           type="button"
           onClick={() => close("later")}
-          className="mt-3 text-xs text-gray-400 transition-colors hover:text-gray-600"
+          className="mt-2 block w-full rounded-lg px-4 py-3 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
         >
           あとで
         </button>

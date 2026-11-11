@@ -137,7 +137,11 @@ export default function AnswerPage({
         showToast(data.error?.message ?? "エラーが発生しました", "error");
         return;
       }
-      showToast(isEditMode ? "回答を修正しました！" : "回答を送信しました！");
+      // **送信のときはトーストを出さない。** このあと出る完了画面が
+      // 「回答を送信しました！」と大きく出すので、同じことを2回言うことになる
+      // （2026-11-11 実機で確認。全画面の誘導と合わせて画面に3つ並んでいた）。
+      // 修正は集計ページへ移動して完了画面が無いため、トーストで知らせる
+      if (isEditMode) showToast("回答を修正しました！");
       rememberRecentEvent({ id: eventId, title: event?.title, kind: "joined" });
       if (isEditMode) {
         router.push(`/e/${eventId}`);
@@ -360,9 +364,10 @@ export default function AnswerPage({
 
       {/* 送信ボタンの真下は親指の着地点にあたる。誤タップは広告主への無効クリックとして
           計上され、AdSenseアカウント停止の直接の原因になるため、128pxの余白を必ず挟む。
-          この余白を詰めないこと。 */}
-      <div aria-hidden className="h-32" />
-      <AdSlot placement="answerBottom" variant="section" />
+          **この余白は `tapGap` で枠と一緒に出し入れする。** 以前はここに固定の
+          `<div className="h-32" />` を置いていたため、広告が出ない間（＝審査中のいま）も
+          空白だけが残っていた（2026-11-11 実機で確認）。余白自体を無くさないこと */}
+      <AdSlot placement="answerBottom" variant="section" tapGap />
 
       {/* Duplicate name modal */}
       <Modal

@@ -5,10 +5,13 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { trackEvent } from "@/lib/ga";
 import {
   APP_STORE_URL,
+  getFullscreenPromoOpen,
+  getFullscreenPromoOpenOnServer,
   getIsIOSTarget,
   getIsIOSTargetOnServer,
   type InstallPrompt,
   isStandalone,
+  subscribeFullscreenPromo,
   subscribeNothing,
 } from "@/lib/appPromo";
 
@@ -74,6 +77,12 @@ function PromoCard({
 export function AppPromo({ placement, className = "" }: { placement: string; className?: string }) {
   const ios = useSyncExternalStore(subscribeNothing, getIsIOSTarget, getIsIOSTargetOnServer);
   const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
+  // 全画面の誘導が出ている間は引っ込める。同じ文言が画面に2つ並ぶのを防ぐ
+  const fullscreenOpen = useSyncExternalStore(
+    subscribeFullscreenPromo,
+    getFullscreenPromoOpen,
+    getFullscreenPromoOpenOnServer
+  );
 
   useEffect(() => {
     if (ios || isStandalone()) return;
@@ -93,6 +102,8 @@ export function AppPromo({ placement, className = "" }: { placement: string; cla
       window.removeEventListener("appinstalled", onInstalled);
     };
   }, [ios]);
+
+  if (fullscreenOpen) return null;
 
   if (ios) {
     return (

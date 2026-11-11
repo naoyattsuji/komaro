@@ -79,6 +79,8 @@ export function AdSlot({
   className = "",
   variant = "inline",
   minWidth,
+  promo = true,
+  tapGap = false,
 }: {
   placement: AdPlacement;
   className?: string;
@@ -93,6 +95,25 @@ export function AdSlot({
    * CSSで隠すのではなく要素ごと出さないため、見えない広告の要求が発生しない。
    */
   minWidth?: number;
+  /**
+   * 広告が出ないときにアプリの案内を代わりに出すか。既定は出す。
+   *
+   * **同じ画面にアプリ以外の案内カードが先にある枠では `false` にする。**
+   * 集計ページは「次は自分でイベントを作ろう」のカードが直前にあり、
+   * そこへ同じ形のカードを足すと灰色のカードが2枚続いて、
+   * どちらが本題か分からなくなる（2026-11-11 本人の指摘）。
+   */
+  promo?: boolean;
+  /**
+   * 枠の上に128pxの余白を入れるか。**送信ボタンの真下に置く枠だけ `true`。**
+   *
+   * 送信ボタンの真下は親指の着地点にあたる。誤タップは広告主への無効クリックとして
+   * 計上され、AdSenseアカウント停止の直接の原因になる。
+   *
+   * **この余白は枠と一緒に出し入れする。** 以前はページ側に固定の `<div className="h-32" />`
+   * を置いていたため、広告が出ない間（＝審査中のいま）も128pxの空白だけが残っていた。
+   */
+  tapGap?: boolean;
 }) {
   const insRef = useRef<HTMLModElement>(null);
   const pushedRef = useRef(false);
@@ -164,23 +185,36 @@ export function AdSlot({
 
   const adShown = shouldRender && (isPreview || fill !== "unfilled");
 
-  // 広告が出ないときは、その場所にアプリの案内を代わりに出す。
-  // AdSenseの審査が通って広告が配信され始めれば、こちらは自動的に出なくなる。
-  if (!adShown) {
-    // 端末ごとの出し分け（iOSはApp Store、Androidはホーム画面に追加）はAppPromo側で判断する
-    if (isNativeApp || !widthOk || !PROMO_PLACEMENTS.has(placement)) return null;
-    return <AppPromo placement={placement} className={className} />;
-  }
-
   // 完了画面用の帯。親の px-4 を打ち消して端まで伸ばし、区切り線で本文と分ける
   const variantClass =
     variant === "section"
       ? "mt-12 -mx-4 border-t border-gray-100 bg-gray-50/70 px-4 pt-7 pb-9"
       : "";
 
+  // 送信ボタンの真下に置く枠の、誤タップ防止の余白。枠と一緒に出し入れする
+  const gap = tapGap ? <div aria-hidden className="h-32" /> : null;
+
+  // 広告が出ないときは、その場所にアプリの案内を代わりに出す。
+  // AdSenseの審査が通って広告が配信され始めれば、こちらは自動的に出なくなる。
+  if (!adShown) {
+    // 端末ごとの出し分け（iOSはApp Store、Androidはホーム画面に追加）はAppPromo側で判断する
+    if (!promo || isNativeApp || !widthOk || !PROMO_PLACEMENTS.has(placement)) return null;
+    // **広告と同じ余白を渡す。** 以前は className だけを渡していたため、完了画面では
+    // 広告には付く帯（variantClass）がカードには付かず、画面末尾のボタンに
+    // 密着していた（2026-11-11 実機で確認）
+    return (
+      <>
+        {gap}
+        <AppPromo placement={placement} className={`${variantClass} ${className}`} />
+      </>
+    );
+  }
+
   // 位置確認用のダミー枠。AdSenseのコードは一切読み込まない
   if (isPreview) {
     return (
+      <>
+      {gap}
       <div className={`native-app-hidden ${variantClass} ${className}`}>
         <div
           className="flex h-[250px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-red-400 bg-red-50/60"
@@ -193,10 +227,13 @@ export function AdSlot({
           )}
         </div>
       </div>
+      </>
     );
   }
 
   return (
+    <>
+    {gap}
     <div
       className={`native-app-hidden ${variantClass} ${className}`}
       // 表示が確定するまで場所を確保し、後から要素が押し下げられるのを防ぐ
@@ -220,5 +257,6 @@ export function AdSlot({
         data-full-width-responsive="true"
       />
     </div>
+    </>
   );
 }

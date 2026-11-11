@@ -667,8 +667,12 @@ export function EventClient({ eventId, initialEvent }: EventClientProps) {
         </div>
       </FadeInSection>
 
-      {/* 広告は集計表・参加者一覧・コメントをすべて見終えた最下部にだけ置く */}
-      <AdSlot placement="summaryBottom" className="mt-8" />
+      {/* 広告は集計表・参加者一覧・コメントをすべて見終えた最下部にだけ置く。
+          **アプリの案内は出さない（promo={false}）。** すぐ上に「次は自分でイベントを
+          作ろう」の同じ形のカードがあり、2枚続けると灰色のカードが並んで
+          どちらが本題か分からなくなる（2026-11-11 本人の指摘）。
+          広告が配信され始めれば、その広告はここに出る */}
+      <AdSlot placement="summaryBottom" className="mt-8" promo={false} />
       </>
       )}
 

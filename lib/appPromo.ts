@@ -49,6 +49,35 @@ export type InstallPrompt = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
+// ── 全画面とカードの出し分け ──────────────────────────────────────────────
+//
+// **同じ案内を同時に2つ出さないため。** 完了画面にはカードの誘導（`AppPromo`）が
+// すでに置いてあり、そこへ全画面が重なると「iPhoneアプリがあります」が画面に
+// 2つ並ぶ（2026-11-11に実機で確認）。全画面が開いている間はカードを引っ込める。
+//
+// React の外に持つ軽い入れ物。`useSyncExternalStore` で読む。
+
+let fullscreenOpen = false;
+const fullscreenListeners = new Set<() => void>();
+
+/** 全画面の誘導が開いた・閉じたことを知らせる。 */
+export function setFullscreenPromoOpen(open: boolean) {
+  if (fullscreenOpen === open) return;
+  fullscreenOpen = open;
+  fullscreenListeners.forEach((listener) => listener());
+}
+
+export function subscribeFullscreenPromo(onChange: () => void) {
+  fullscreenListeners.add(onChange);
+  return () => {
+    fullscreenListeners.delete(onChange);
+  };
+}
+
+export const getFullscreenPromoOpen = () => fullscreenOpen;
+/** サーバー側では開いていない。 */
+export const getFullscreenPromoOpenOnServer = () => false;
+
 // ── 表示回数の記録 ─────────────────────────────────────────────────────────
 //
 // アカウントが無いサービスなので端末ごと（localStorage）でよい。
